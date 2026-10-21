@@ -18,7 +18,15 @@
 
 namespace {
 using cda_rail::simulator::RemainingTimeHeuristicType;
+using cda_rail::simulator::SimulatorType;
 using cda_rail::solver::astar_based::NextStateStrategy;
+
+const std::map<std::string, SimulatorType>& simulator_type_map() {
+  static const std::map<std::string, SimulatorType> SIMULATOR_TYPE_MAP{
+      {"Greedy", SimulatorType::Greedy},
+      {"EventBased", SimulatorType::EventBased}};
+  return SIMULATOR_TYPE_MAP;
+}
 
 const std::map<std::string, NextStateStrategy>& next_state_strategy_map() {
   static const std::map<std::string, NextStateStrategy> NEXT_STATE_STRATEGY_MAP{
@@ -41,8 +49,17 @@ remaining_time_heuristic_type_map() {
 void cda_rail::cli::add_mb_astar_options(CLI::App&        app,
                                          MbAStarSettings& settings) {
   app.add_option("-c,--dt,--timestep", settings.dt,
-                 "Time step (dt) used in the simulation")
+                 "Time step (dt) used in the greedy simulation. The "
+                 "event-based simulation simulates a train following another "
+                 "one again after at least this time.")
       ->check(CLI::PositiveNumber)
+      ->capture_default_str()
+      ->group("Model Parameters");
+  app.add_option("--simulator", settings.simulator_type,
+                 "Simulator used to evaluate the states of the search. "
+                 "Currently supports 'Greedy' and 'EventBased'.")
+      ->transform(
+          CLI::CheckedTransformer(simulator_type_map(), CLI::ignore_case))
       ->capture_default_str()
       ->group("Model Parameters");
   app.add_flag("-l,--allow-late-entry", settings.late_entry_possible,
@@ -109,6 +126,7 @@ std::string
 cda_rail::cli::generate_mb_astar_identifier(const MbAStarSettings& settings) {
   return concatenate_string_views(
       {format_double(settings.dt), "_",
+       simulator::simulator_type_to_string(settings.simulator_type), "_",
        bool_to_str(settings.late_entry_possible), "_",
        bool_to_str(settings.limit_speed_by_leaving_edges), "_",
        bool_to_str(settings.consider_earliest_exit), "_",
@@ -126,6 +144,8 @@ void cda_rail::cli::log_mb_astar_settings(
     const MbAStarSettings& settings, const std::string& working_directory) {
   PLOGD << "Solver Settings";
   PLOGD << "  Time step (dt): " << settings.dt;
+  PLOGD << "  Simulator: "
+        << simulator::simulator_type_to_string(settings.simulator_type);
   PLOGD << "  Allow late entry: " << yes_no(settings.late_entry_possible);
   PLOGD << "  Limit speed by leaving edges: "
         << yes_no(settings.limit_speed_by_leaving_edges);
@@ -147,6 +167,7 @@ void cda_rail::cli::log_mb_astar_settings(
 cda_rail::solver::astar_based::ModelDetailMBAStar
 cda_rail::cli::mb_astar_model_detail(const MbAStarSettings& settings) {
   return {.dt                  = settings.dt,
+          .simulator_type      = settings.simulator_type,
           .late_entry_possible = settings.late_entry_possible,
           .limit_speed_by_leaving_edges =
               settings.limit_speed_by_leaving_edges};

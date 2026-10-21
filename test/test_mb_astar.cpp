@@ -7,6 +7,7 @@
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include "gtest/gtest.h"
@@ -14,6 +15,17 @@
 using namespace cda_rail;
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
+
+// The solving tests run with every simulator
+class GenPOMovingBlockAStarSolverWithSimulator
+    : public testing::TestWithParam<simulator::SimulatorType> {};
+INSTANTIATE_TEST_SUITE_P(
+    Simulators, GenPOMovingBlockAStarSolverWithSimulator,
+    testing::Values(simulator::SimulatorType::Greedy,
+                    simulator::SimulatorType::EventBased),
+    [](testing::TestParamInfo<simulator::SimulatorType> const& info) {
+      return simulator::simulator_type_to_string(info.param);
+    });
 
 // ----------------------------------
 // New Tests for Time-Aware Version
@@ -1209,7 +1221,8 @@ TEST(GenPOMovingBlockAStarSolver, ExtendTrainOrderNothingToChange) {
   EXPECT_EQ(extended2.at(0).ttd_orders, state.ttd_orders);
 }
 
-TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator,
+       DesiredOrderInstanceClassical) {
   Network network;
   network.add_vertex("v0a", VertexType::TTD);
   network.add_vertex("v0b", VertexType::TTD);
@@ -1260,24 +1273,24 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto                                                 sol_obj_single =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::SingleEdge,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
   const auto sol_obj_ttd = solver.solve(
-      {.dt = 5},
+      {.dt = 5, .simulator_type = GetParam()},
       {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = false},
       {}, -1, true);
   const auto sol_obj_ttd_2 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
   const auto sol_obj_ttd_3 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false,
@@ -1355,7 +1368,8 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical) {
             100 + 10 + 10 + 100);
 }
 
-TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator,
+       DesiredOrderInstanceTimeAware) {
   Network network;
   network.add_vertex("v0a", VertexType::TTD);
   network.add_vertex("v0b", VertexType::TTD);
@@ -1406,24 +1420,24 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto                                                 sol_obj_single =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::SingleEdge,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
   const auto sol_obj_ttd = solver.solve(
-      {.dt = 5},
+      {.dt = 5, .simulator_type = GetParam()},
       {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = true},
       {}, -1, true);
   const auto sol_obj_ttd_2 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
   const auto sol_obj_ttd_3 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true,
@@ -1501,7 +1515,8 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware) {
             100 + 10 + 10 + 100);
 }
 
-TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator,
+       DesiredOrderInstanceClassical2) {
   // clang-format off
   // (tr1) -> v0a -- v1a -                    - v6a -- (short) v7a
   //                      \                  /
@@ -1575,24 +1590,24 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto                                                 sol_obj_single =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::SingleEdge,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
   const auto sol_obj_ttd = solver.solve(
-      {.dt = 5},
+      {.dt = 5, .simulator_type = GetParam()},
       {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = false},
       {}, -1, true);
   const auto sol_obj_ttd_2 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false},
                    {}, -1, true);
   const auto sol_obj_ttd_3 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = false,
@@ -1660,7 +1675,8 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceClassical2) {
             100 + 10 + 10 + 100 + 10 + 10);
 }
 
-TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware2) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator,
+       DesiredOrderInstanceTimeAware2) {
   // clang-format off
   // (tr1) -> v0a -- v1a -                    - v6a -- (short) v7a
   //                      \                  /
@@ -1734,24 +1750,24 @@ TEST(GenPOMovingBlockAStarSolver, DesiredOrderInstanceTimeAware2) {
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto                                                 sol_obj_single =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::SingleEdge,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
   const auto sol_obj_ttd = solver.solve(
-      {.dt = 5},
+      {.dt = 5, .simulator_type = GetParam()},
       {.next_state_strategy = solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = true},
       {}, -1, true);
   const auto sol_obj_ttd_2 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true},
                    {}, -1, true);
   const auto sol_obj_ttd_3 =
-      solver.solve({.dt = 5},
+      solver.solve({.dt = 5, .simulator_type = GetParam()},
                    {.next_state_strategy =
                         solver::astar_based::NextStateStrategy::NextRelevantTTD,
                     .time_aware_state_transitions = true,
@@ -2258,7 +2274,7 @@ TEST(GenPOMovingBlockAStarSolver, NextStatesTTD) {
   EXPECT_TRUE(std::ranges::contains(next_states4, expected_state4_1));
 }
 
-TEST(GenPOMovingBlockAStarSolver, SimpleInstance) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator, SimpleInstance) {
   Network    network;
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
@@ -2273,13 +2289,14 @@ TEST(GenPOMovingBlockAStarSolver, SimpleInstance) {
       network, timetable, routes);
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
-  const auto sol_obj = solver.solve(-1, true);
+  const auto                                                 sol_obj =
+      solver.solve({.simulator_type = GetParam()}, {}, {}, -1, true);
 
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
 }
 
-TEST(GenPOMovingBlockAStarSolver, SimpleInfeasibleInstance) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator, SimpleInfeasibleInstance) {
   Network    network;
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
@@ -2297,7 +2314,8 @@ TEST(GenPOMovingBlockAStarSolver, SimpleInfeasibleInstance) {
       network, timetable, routes);
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
-  const auto sol_obj = solver.solve(-1, true);
+  const auto                                                 sol_obj =
+      solver.solve({.simulator_type = GetParam()}, {}, {}, -1, true);
 
   EXPECT_FALSE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
@@ -2371,13 +2389,13 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   EXPECT_EQ(sol_obj.get_train_speed("Train1", 45), 20);
 }
 
-TEST(GenPOMovingBlockAStarSolver, GeneralSimpleNetwork) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator, GeneralSimpleNetwork) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "GeneralSimpleNetwork3Trains", "gen-po", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
        .consider_earliest_exit = true},
@@ -2593,55 +2611,55 @@ TEST(GenPOMovingBlockAStarSolver, NextStateStrategyToString) {
                exceptions::ConsistencyException);
 }
 
-TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator, SimpleNetwork) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "SimpleNetwork", "atmos2023", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
        .time_aware_state_transitions = false},
       {}, -1, true);
 
   const auto sol_obj_2 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
        .time_aware_state_transitions = true},
       {}, -1, true);
 
   const auto sol_obj_3 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = false},
       {}, -1, true);
 
   const auto sol_obj_4 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = true},
       {}, -1, true);
 
   const auto sol_obj_5 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::SingleEdge,
        .time_aware_state_transitions = false},
       {}, -1, true);
 
   const auto sol_obj_6 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::SingleEdge,
        .time_aware_state_transitions = true},
       {}, -1, true);
 
   const auto sol_obj_7 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
        .time_aware_state_transitions = true,
@@ -2688,34 +2706,34 @@ TEST(GenPOMovingBlockAStarSolver, SimpleNetwork) {
   EXPECT_GE(sol_obj_7.get_lower_bound(), instance_weighted_sum);
 }
 
-TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator, Stammstrecke4Trains) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "Stammstrecke4Trains", "atmos2023", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
        .time_aware_state_transitions = true},
       {}, -1, true);
 
   const auto sol_obj_2 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
        .time_aware_state_transitions = true},
       {}, -1, true);
 
   const auto sol_obj_3 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::SingleEdge,
        .time_aware_state_transitions = true},
       {}, -1, true);
 
   const auto sol_obj_4 = solver.solve(
-      {},
+      {.simulator_type = GetParam()},
       {.next_state_strategy =
            cda_rail::solver::astar_based::NextStateStrategy::NextRelevantTTD,
        .time_aware_state_transitions = true,
@@ -2749,7 +2767,7 @@ TEST(GenPOMovingBlockAStarSolver, Stammstrecke4Trains) {
   EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
 }
 
-TEST(GenPOMovingBlockAStarSolver, HighWeightTrain) {
+TEST_P(GenPOMovingBlockAStarSolverWithSimulator, HighWeightTrain) {
   // clang-format off
   // v0a -- v1a -
   //             \
@@ -2797,7 +2815,7 @@ TEST(GenPOMovingBlockAStarSolver, HighWeightTrain) {
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
-    {},
+    {.simulator_type = GetParam()},
     {.next_state_strategy =
          cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
      .time_aware_state_transitions = true},
@@ -2806,7 +2824,7 @@ TEST(GenPOMovingBlockAStarSolver, HighWeightTrain) {
   EXPECT_GE(sol_obj.get_exit_time("Train1"), sol_obj.get_exit_time("Train2"));
 
   const auto sol_obj2 = solver.solve(
-    {},
+    {.simulator_type = GetParam()},
     {.next_state_strategy =
          cda_rail::solver::astar_based::NextStateStrategy::NextTTD,
      .time_aware_state_transitions = false},

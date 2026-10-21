@@ -2,7 +2,7 @@
 
 #include "CustomExceptions.hpp"
 #include "GeneralSimulator.hpp"
-#include "GreedySimulator.hpp"
+#include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -36,18 +36,17 @@ remaining_time_heuristic_type_to_string(RemainingTimeHeuristicType const type) {
 /**
  * @brief Computes the objective value based on train exit times and stop times.
  *
- * @param simulator Greedy simulator providing the problem instance.
+ * @param instance The problem instance.
  * @param tr_exit_times Exit times per train.
  * @param stop_times Stop times per train and stop.
  * @return double The computed objective value.
  */
 
 [[nodiscard]] inline double
-objective_val(const GreedySimulator&                  simulator,
+objective_val(const instances::GeneralPerformanceOptimizationInstance& instance,
               const std::vector<double>&              tr_exit_times,
               const std::vector<std::vector<double>>& stop_times) {
-  return simulator.get_instance()->get_objective_val(tr_exit_times, stop_times,
-                                                     false);
+  return instance.get_objective_val(tr_exit_times, stop_times, false);
 }
 
 // ----------------------------
@@ -71,15 +70,17 @@ struct RemainingTimeHeuristicResult {
  * @brief Computes the simple remaining-time heuristic for one train.
  *
  * @param tr Train index.
- * @param simulator Greedy simulator providing route and instance data.
+ * @param instance The problem instance.
+ * @param state The routes and stop positions decided so far.
  * @param tr_exit_time Current simulated exit time.
  * @param consider_earliest_exit Whether earliest-exit constraints are enforced.
  * @return Remaining-time heuristic result for the train.
  */
-[[nodiscard]] RemainingTimeHeuristicResult
-simple_remaining_time_heuristic(size_t tr, const GreedySimulator& simulator,
-                                double tr_exit_time,
-                                bool   consider_earliest_exit);
+[[nodiscard]] RemainingTimeHeuristicResult simple_remaining_time_heuristic(
+    size_t                                                   tr,
+    const instances::GeneralPerformanceOptimizationInstance& instance,
+    const SimulatorState& state, double tr_exit_time,
+    bool consider_earliest_exit);
 
 /**
  * @brief Computes a remaining-time heuristic estimate using the selected
@@ -92,7 +93,8 @@ simple_remaining_time_heuristic(size_t tr, const GreedySimulator& simulator,
  *
  * @param type The remaining-time heuristic strategy to apply.
  * @param tr Train index.
- * @param simulator Reference to the greedy simulator.
+ * @param instance The problem instance.
+ * @param state The routes and stop positions decided so far.
  * @param tr_exit_time The train's exit time.
  * @param consider_earliest_exit Whether to consider the train's earliest exit
  * time.
@@ -100,17 +102,18 @@ simple_remaining_time_heuristic(size_t tr, const GreedySimulator& simulator,
  * @return A `RemainingTimeHeuristicResult` containing feasibility status,
  * remaining exit time, and average remaining stop delay.
  */
-[[nodiscard]] inline RemainingTimeHeuristicResult
-remaining_time_heuristic(RemainingTimeHeuristicType type, size_t tr,
-                         const GreedySimulator& simulator, double tr_exit_time,
-                         bool consider_earliest_exit) {
+[[nodiscard]] inline RemainingTimeHeuristicResult remaining_time_heuristic(
+    RemainingTimeHeuristicType type, size_t tr,
+    const instances::GeneralPerformanceOptimizationInstance& instance,
+    const SimulatorState& state, double tr_exit_time,
+    bool consider_earliest_exit) {
   switch (type) {
   case RemainingTimeHeuristicType::Zero:
     return {.feasible                     = true,
             .remaining_exit_time          = 0.0,
             .average_remaining_stop_delay = 0.0};
   case RemainingTimeHeuristicType::Simple:
-    return simple_remaining_time_heuristic(tr, simulator, tr_exit_time,
+    return simple_remaining_time_heuristic(tr, instance, state, tr_exit_time,
                                            consider_earliest_exit);
   }
   // This should never be reached
@@ -137,7 +140,8 @@ struct HeuristicResult {
  * @param remaining_time_heuristic_type Type of remaining-time heuristic variant
  * to use.
  * @param tr Train index.
- * @param simulator Greedy simulator.
+ * @param instance The problem instance.
+ * @param state The routes and stop positions decided so far.
  * @param tr_exit_time Current simulated exit time of the train.
  * @param consider_earliest_exit Whether to enforce earliest departure and exit
  * constraints.
@@ -145,16 +149,18 @@ struct HeuristicResult {
  * @return `HeuristicResult` containing feasibility status and the computed
  * objective-value difference.
  */
-[[nodiscard]] HeuristicResult
-greedy_heuristic(RemainingTimeHeuristicType remaining_time_heuristic_type,
-                 size_t tr, const GreedySimulator& simulator,
-                 double tr_exit_time, bool consider_earliest_exit);
+[[nodiscard]] HeuristicResult greedy_heuristic(
+    RemainingTimeHeuristicType remaining_time_heuristic_type, size_t tr,
+    const instances::GeneralPerformanceOptimizationInstance& instance,
+    const SimulatorState& state, double tr_exit_time,
+    bool consider_earliest_exit);
 
 /**
  * @brief Computes a weighted-sum objective-value difference for all trains.
  *
  * @param remaining_time_heuristic_type Remaining-time heuristic type.
- * @param simulator The greedy simulator.
+ * @param instance The problem instance.
+ * @param state The state that was simulated.
  * @param sim_results Simulation results with exit times and braking parameters.
  * @param consider_earliest_exit Whether to enforce earliest departure and exit
  * times.
@@ -166,10 +172,10 @@ greedy_heuristic(RemainingTimeHeuristicType remaining_time_heuristic_type,
  * match train count.
  * @throws cda_rail::exceptions::InvalidInputException If the simulation failed.
  */
-[[nodiscard]] HeuristicResult
-full_greedy_heuristic(RemainingTimeHeuristicType remaining_time_heuristic_type,
-                      const GreedySimulator&     simulator,
-                      const SimulatorResults&    sim_results,
-                      bool                       consider_earliest_exit);
+[[nodiscard]] HeuristicResult full_greedy_heuristic(
+    RemainingTimeHeuristicType remaining_time_heuristic_type,
+    const instances::GeneralPerformanceOptimizationInstance& instance,
+    const SimulatorState& state, const SimulatorResults& sim_results,
+    bool consider_earliest_exit);
 
 } // namespace cda_rail::simulator

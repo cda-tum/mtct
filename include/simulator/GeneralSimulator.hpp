@@ -1,18 +1,41 @@
 #pragma once
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "probleminstances/GeneralProblemInstance.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
 namespace cda_rail::simulator {
+
+/**
+ * @brief Which simulator obtains the trajectories of a state.
+ *
+ * `Greedy` advances all trains in time steps of a fixed length, see
+ * GreedySimulator, whereas `EventBased` only simulates a train again once
+ * something relevant to it happens, see EventSimulator.
+ */
+enum class SimulatorType : std::uint8_t { Greedy = 0, EventBased = 1 };
+/** @brief The name of @p type, as it is reported and parsed. */
+constexpr std::string simulator_type_to_string(SimulatorType const type) {
+  switch (type) {
+  case SimulatorType::Greedy:
+    return "Greedy";
+  case SimulatorType::EventBased:
+    return "EventBased";
+  default:
+    throw cda_rail::exceptions::ConsistencyException("Unknown simulator type");
+  }
+}
 
 /**
  * @brief Position of a train's front along its route in m together with its
@@ -337,6 +360,14 @@ public:
     return is_route_end_valid_stop_pos(tr, get_train_edges_of_tr(tr));
   }
 
+  /** @brief The full simulator state. */
+  [[nodiscard]] SimulatorState get_simulator_state() const {
+    return {.train_edges    = m_train_edges,
+            .ttd_orders     = m_ttd_orders,
+            .vertex_orders  = m_vertex_orders,
+            .stop_positions = m_stop_positions};
+  }
+
   // -------------------
   // EDITING FUNCTIONS
   // -------------------
@@ -391,36 +422,39 @@ public:
 
   // virtual function
   /**
-   * @brief Simulates the current state with explicit configuration flags.
+   * @brief Simulates train movements given the current routing, ordering, and
+   * stopping configuration.
    *
+   * For partial routes, it is assumed that trains instantaneously stop at
+   * their route end, where they disappear.
+   *
+   * @param dt Time step of the greedy simulator in seconds. The event-based
+   * simulator uses it as the minimal time after which a train following
+   * another one is simulated again.
    * @param late_entry_possible Whether trains may enter later than scheduled.
    * @param limit_speed_by_leaving_edges Whether leaving edges constrain speed.
    * @param save_trajectories Whether to retain detailed trajectories.
    * @param block_vertices_after_disappearing Whether trains block their last
    * vertex after disappearing on a partial route.
-   * @return Simulation results.
-   */
-  [[nodiscard]] virtual SimulatorResults
-  simulate(bool late_entry_possible, bool limit_speed_by_leaving_edges,
-           bool save_trajectories,
-           bool block_vertices_after_disappearing) const = 0;
-
-  /**
-   * @brief Simulates train movements given the current routing, ordering, and
-   * stopping configuration. For partial routes, it is assumed that trains
-   * instantaneously stop at their route end. If
-   * disappear_at_partial_route_end=true, they also disappear.
-   *
    * @return SimulatorResults containing the simulation outcome, including train
    * exit times, stop timestamps, vertex headways, and—when
    * enabled—train trajectories over time.
    */
+  [[nodiscard]] virtual SimulatorResults
+  simulate(double dt, bool late_entry_possible,
+           bool limit_speed_by_leaving_edges, bool save_trajectories,
+           bool block_vertices_after_disappearing) const = 0;
+
+  /**
+   * @brief Simulates with default values, in particular a time step of 6
+   * seconds and blocking the last vertex of a partial route.
+   */
   [[nodiscard]] SimulatorResults
-  simulate(bool late_entry_possible          = false,
+  simulate(double dt = 6.0, bool late_entry_possible = false,
            bool limit_speed_by_leaving_edges = true,
            bool save_trajectories =
                false) const { // default values for virtual function
-    return simulate(late_entry_possible, limit_speed_by_leaving_edges,
+    return simulate(dt, late_entry_possible, limit_speed_by_leaving_edges,
                     save_trajectories, true);
   };
 

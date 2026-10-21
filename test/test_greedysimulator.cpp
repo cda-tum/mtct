@@ -6,6 +6,7 @@
 #include "GeneralHelper.hpp"
 #include "datastructure/Timetable.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/EventSimulator.hpp"
 #include "simulator/GreedySimulator.hpp"
 
 #include "gtest/gtest.h"
@@ -15,6 +16,8 @@
 #include <plog/Init.h>
 #include <plog/Log.h>
 #include <plog/Severity.h>
+#include <string>
+#include <type_traits>
 
 using namespace cda_rail;
 
@@ -26,7 +29,27 @@ using namespace cda_rail;
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
-TEST(GreedySimulator, BasicFunctions) {
+// Every test that only uses the public interface runs for every simulator.
+// Where the greedy simulator's results depend on its time steps, the
+// event-based simulator is expected to be exact.
+template <typename T> class Simulator : public testing::Test {};
+using Simulators = testing::Types<cda_rail::simulator::GreedySimulator,
+                                  cda_rail::simulator::EventSimulator>;
+class SimulatorNames {
+public:
+  template <typename T> static std::string GetName(int /*index*/) {
+    return std::is_same_v<T, cda_rail::simulator::GreedySimulator>
+               ? "Greedy"
+               : "EventBased";
+  }
+};
+TYPED_TEST_SUITE(Simulator, Simulators, SimulatorNames);
+
+template <typename T>
+constexpr bool IS_GREEDY =
+    std::is_same_v<T, cda_rail::simulator::GreedySimulator>;
+
+TYPED_TEST(Simulator, BasicFunctions) {
   // Create instance
   Network     network("SimpleStation", "./data/");
   const auto& ttd_sections = network.unbreakable_sections();
@@ -75,7 +98,7 @@ TEST(GreedySimulator, BasicFunctions) {
   // Test basic functions of GreedySimulator
 
   // Train Edges
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  TypeParam simulator(instance, ttd_sections);
   EXPECT_THROW((void)simulator.set_train_edges({{l0_l1}}),
                cda_rail::exceptions::InvalidInputException);
   simulator.set_train_edges({{l0_l1, l1_l2, l2_l3}, {r0_r1, r1_r2}});
@@ -246,7 +269,7 @@ TEST(GreedySimulator, BasicFunctions) {
                cda_rail::exceptions::ConsistencyException);
 }
 
-TEST(GreedySimulator, ValidStopPos) {
+TYPED_TEST(Simulator, ValidStopPos) {
   Network    network;
   const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
   const auto v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
@@ -283,7 +306,7 @@ TEST(GreedySimulator, ValidStopPos) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
   EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr2));
@@ -317,7 +340,7 @@ TEST(GreedySimulator, ValidStopPos) {
   EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
 }
 
-TEST(GreedySimulator, TrainsOnPath) {
+TYPED_TEST(Simulator, TrainsOnPath) {
   Network network;
 
   auto const v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
@@ -363,7 +386,7 @@ TEST(GreedySimulator, TrainsOnPath) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
 
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
   simulator.set_train_edges_of_tr(tr1a, {v0_v1, v1_v2, v2_v3a});
   simulator.set_train_edges_of_tr(tr1b, {v0_v1, v1_v2});
   simulator.set_train_edges_of_tr(tr2, {v0_v1, v1_v2, v2_v3b, v3b_v4b});
@@ -2279,7 +2302,7 @@ TEST(GreedySimulator, ExitVertexOrder) {
 // Test simulation
 // -------------------
 
-TEST(GreedySimulation, SimpleSimulation) {
+TYPED_TEST(Simulator, SimpleSimulation) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2294,7 +2317,7 @@ TEST(GreedySimulation, SimpleSimulation) {
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
@@ -2314,7 +2337,7 @@ TEST(GreedySimulation, SimpleSimulation) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
 }
 
-TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
+TYPED_TEST(Simulator, SimpleSimulationAdditionalTrain) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2331,7 +2354,7 @@ TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
@@ -2353,7 +2376,7 @@ TEST(GreedySimulation, SimpleSimulationAdditionalTrain) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
 }
 
-TEST(GreedySimulation, SimpleSimulationTwoTrains) {
+TYPED_TEST(Simulator, SimpleSimulationTwoTrains) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2370,7 +2393,7 @@ TEST(GreedySimulation, SimpleSimulationTwoTrains) {
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_train_edges_of_tr(tr2, {v0_v1});
@@ -2395,7 +2418,7 @@ TEST(GreedySimulation, SimpleSimulationTwoTrains) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[1] + 30);
 }
 
-TEST(GreedySimulator, DeadlockTest1) {
+TYPED_TEST(Simulator, DeadlockTest1) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2414,7 +2437,7 @@ TEST(GreedySimulator, DeadlockTest1) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_train_edges_of_tr(tr2, {v1_v0});
@@ -2434,7 +2457,7 @@ TEST(GreedySimulator, DeadlockTest1) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
 }
 
-TEST(GreedySimulator, DeadlockTest2) {
+TYPED_TEST(Simulator, DeadlockTest2) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2465,7 +2488,7 @@ TEST(GreedySimulator, DeadlockTest2) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3});
   simulator.set_train_edges_of_tr(tr2, {v3_v2, v2_v1, v1_v0});
@@ -2487,7 +2510,7 @@ TEST(GreedySimulator, DeadlockTest2) {
   EXPECT_EQ(sim_res.vertex_headways.at(v3), 30);
 }
 
-TEST(GreedySimulator, DeadlockTest3) {
+TYPED_TEST(Simulator, DeadlockTest3) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2518,7 +2541,7 @@ TEST(GreedySimulator, DeadlockTest3) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_train_edges_of_tr(tr2, {v3_v2});
@@ -2545,7 +2568,7 @@ TEST(GreedySimulator, DeadlockTest3) {
   EXPECT_EQ(sim_res.vertex_headways.at(v3), 30 + 30);
 }
 
-TEST(GreedySimulator, PartialRouteTest) {
+TYPED_TEST(Simulator, PartialRouteTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2566,7 +2589,7 @@ TEST(GreedySimulator, PartialRouteTest) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
@@ -2581,12 +2604,14 @@ TEST(GreedySimulator, PartialRouteTest) {
   EXPECT_EQ(sim_res.exit_times.at(0),
             10.0 - 10.0 / 50.0); // this is now accounted for
   ASSERT_EQ(sim_res.train_trajectories.size(), 1);
-  ASSERT_TRUE(sim_res.train_trajectories.at(0).contains(10.0));
-  EXPECT_EQ(sim_res.train_trajectories.at(0).at(10.0).pos, 490.0);
-  EXPECT_EQ(sim_res.train_trajectories.at(0).at(10.0).vel, 0);
+  // The greedy simulator only stops the train at the end of the time step
+  const auto stop_time = IS_GREEDY<TypeParam> ? 10.0 : sim_res.exit_times.at(0);
+  ASSERT_TRUE(sim_res.train_trajectories.at(0).contains(stop_time));
+  EXPECT_EQ(sim_res.train_trajectories.at(0).at(stop_time).pos, 490.0);
+  EXPECT_EQ(sim_res.train_trajectories.at(0).at(stop_time).vel, 0);
 }
 
-TEST(GreedySimulator, OneStationTest) {
+TYPED_TEST(Simulator, OneStationTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2618,7 +2643,7 @@ TEST(GreedySimulator, OneStationTest) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2});
   simulator.append_current_stop_position_of_tr(tr1);
@@ -2641,7 +2666,7 @@ TEST(GreedySimulator, OneStationTest) {
   EXPECT_EQ(sim_res.vertex_headways.at(v3), 0); // Train does not reach v3
 }
 
-TEST(GreedySimulator, TwoStationTest) {
+TYPED_TEST(Simulator, TwoStationTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2674,7 +2699,7 @@ TEST(GreedySimulator, TwoStationTest) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3});
   simulator.append_stop_edge_to_tr(tr1, v1_v2);
@@ -2699,7 +2724,7 @@ TEST(GreedySimulator, TwoStationTest) {
   EXPECT_EQ(sim_res.vertex_headways.at(v4), 0); // Train does not reach v4
 }
 
-TEST(GreedySimulator, TrajectorySavingTest) {
+TYPED_TEST(Simulator, TrajectorySavingTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2715,7 +2740,7 @@ TEST(GreedySimulator, TrajectorySavingTest) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
@@ -2726,7 +2751,7 @@ TEST(GreedySimulator, TrajectorySavingTest) {
   EXPECT_FALSE(sim_res.train_trajectories.at(tr1).empty());
 }
 
-TEST(GreedySimulator, StandstillAtStopIsSavedByItsEndpoints) {
+TYPED_TEST(Simulator, StandstillAtStopIsSavedByItsEndpoints) {
   // The train drives at 10 m/s towards its stop at 500 m, starts braking at
   // 450 m, and arrives at time 55. It then stands for its service duration of
   // 30 s.
@@ -2747,8 +2772,8 @@ TEST(GreedySimulator, StandstillAtStopIsSavedByItsEndpoints) {
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, {});
-  cda_rail::simulator::GreedySimulator simulator(
-      instance, {}, {{v0_v1, v1_v2}}, {}, {{tr1}, {}, {tr1}}, {{500}});
+  TypeParam simulator(instance, {}, {{v0_v1, v1_v2}}, {}, {{tr1}, {}, {tr1}},
+                      {{500}});
 
   const auto sim_res = simulator.simulate(1.0, false, true, true);
   ASSERT_TRUE(sim_res.success);
@@ -2766,7 +2791,7 @@ TEST(GreedySimulator, StandstillAtStopIsSavedByItsEndpoints) {
   EXPECT_EQ(trajectory.at(85).vel, 0);
 }
 
-TEST(GreedySimulator, TwoStationTestWithExit) {
+TYPED_TEST(Simulator, TwoStationTestWithExit) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2799,7 +2824,7 @@ TEST(GreedySimulator, TwoStationTestWithExit) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1, v1_v2, v2_v3, v3_v4});
   simulator.append_stop_edge_to_tr(tr1, v1_v2);
@@ -2823,7 +2848,7 @@ TEST(GreedySimulator, TwoStationTestWithExit) {
   EXPECT_EQ(sim_res.vertex_headways.at(v4), sim_res.exit_times.at(0) + 30);
 }
 
-TEST(GreedySimulation, TightEntry) {
+TYPED_TEST(Simulator, TightEntry) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2840,7 +2865,7 @@ TEST(GreedySimulation, TightEntry) {
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_train_edges_of_tr(tr2, {v0_v1});
@@ -2861,7 +2886,7 @@ TEST(GreedySimulation, TightEntry) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
 }
 
-TEST(GreedySimulation, ExitNetworkSpeedZero) {
+TYPED_TEST(Simulator, ExitNetworkSpeedZero) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2876,7 +2901,7 @@ TEST(GreedySimulation, ExitNetworkSpeedZero) {
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
@@ -2897,7 +2922,7 @@ TEST(GreedySimulation, ExitNetworkSpeedZero) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
 }
 
-TEST(GreedySimulation, SimpleNetwork) {
+TYPED_TEST(Simulator, SimpleNetwork) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2956,7 +2981,7 @@ TEST(GreedySimulation, SimpleNetwork) {
   const auto v13a_v12 =
       instance.get_const_network().get_edge_index({"v13a"}, {"v12"});
 
-  cda_rail::simulator::GreedySimulator simulator(
+  TypeParam simulator(
       instance, {{v2c_v3, v2b_v3, v3_v2b, v3_v2a, v3_v4, v4_v3},
                  {v5_v6, v6_v5, v6_v7a, v6_v7b, v7a_v6, v7b_v6},
                  {v8a_v9, v8b_v9, v9_v8a, v9_v8b, v9_v10, v10_v9},
@@ -3090,7 +3115,7 @@ TEST(GreedySimulation, SimpleNetwork) {
   EXPECT_LE(sim_res.exit_times.at(tr12), 3450);
 }
 
-TEST(GreedySimulation, FinalState) {
+TYPED_TEST(Simulator, FinalState) {
   Network    network;
   const auto v0  = network.add_vertex("v0", VertexType::TTD);
   const auto v1  = network.add_vertex("v1", VertexType::TTD);
@@ -3119,7 +3144,7 @@ TEST(GreedySimulation, FinalState) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   EXPECT_FALSE(simulator.is_final_state());
 
@@ -3145,7 +3170,7 @@ TEST(GreedySimulation, FinalState) {
   EXPECT_TRUE(simulator.is_final_state());
 }
 
-TEST(GreedySimulation, ExitEntryZero) {
+TYPED_TEST(Simulator, ExitEntryZero) {
   Network    network;
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
@@ -3157,7 +3182,7 @@ TEST(GreedySimulation, ExitEntryZero) {
   RouteMap   routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
@@ -3177,14 +3202,14 @@ TEST(GreedySimulation, ExitEntryZero) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times.at(0) + 30);
 }
 
-TEST(GreedySimulation, FaultyInstance) {
+TYPED_TEST(Simulator, FaultyInstance) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "GeneralSimpleNetwork6Trains", "gen-po", "./data");
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  TypeParam  simulator(instance, ttd_sections);
 
   simulator.set_train_edges_of_tr(
       0, {21, 23, 24, 25, 26, 27, 29, 31, 33, 34, 35, 37, 39});
@@ -3207,7 +3232,7 @@ TEST(GreedySimulation, FaultyInstance) {
   EXPECT_NO_THROW((void)simulator.simulate(6.0, false, true));
 }
 
-TEST(GreedySimulation, TimeExtractions) {
+TYPED_TEST(Simulator, TimeExtractions) {
   // Train enters at speed 24 travels for 18 seconds -> t = 18
   // position = 18 * 24 = 432
 
@@ -3278,7 +3303,7 @@ TEST(GreedySimulation, TimeExtractions) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   // After 12 seconds: 12*24 = 288
 
@@ -3497,7 +3522,7 @@ TEST(GreedySimulation, TimeExtractions) {
   EXPECT_EQ(sim_res8.vertex_headways.at(v4), 156 + 30 + 102);
 }
 
-TEST(GreedySimulation, DisappearOnPartialRoute) {
+TYPED_TEST(Simulator, DisappearOnPartialRoute) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3520,7 +3545,7 @@ TEST(GreedySimulation, DisappearOnPartialRoute) {
   RouteMap                                                    routes;
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
@@ -3540,7 +3565,7 @@ TEST(GreedySimulation, DisappearOnPartialRoute) {
                 (5000.0 / 50.0)); // successful but delayed by tr1
 }
 
-TEST(GreedySimulation, ExitTimeConstraintNoSlowingDown) {
+TYPED_TEST(Simulator, ExitTimeConstraintNoSlowingDown) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3556,7 +3581,7 @@ TEST(GreedySimulation, ExitTimeConstraintNoSlowingDown) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
 
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
@@ -3572,7 +3597,7 @@ TEST(GreedySimulation, ExitTimeConstraintNoSlowingDown) {
   EXPECT_EQ(sim_res.exit_times[0], 105);
 }
 
-TEST(GreedySimulation, ExitTimeConstraintSlowingDown) {
+TYPED_TEST(Simulator, ExitTimeConstraintSlowingDown) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3589,7 +3614,7 @@ TEST(GreedySimulation, ExitTimeConstraintSlowingDown) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance2(
       network, timetable2, routes);
 
-  cda_rail::simulator::GreedySimulator simulator2(instance2, {});
+  TypeParam simulator2(instance2, {});
 
   simulator2.set_train_edges_of_tr(tr1, {v0_v1});
   simulator2.set_vertex_orders_of_vertex(v0, {tr1});
@@ -3606,7 +3631,7 @@ TEST(GreedySimulation, ExitTimeConstraintSlowingDown) {
   EXPECT_LE(sim_res2.exit_times[0], 115);
 }
 
-TEST(GreedySimulation, ExitTimeConstraintStopping) {
+TYPED_TEST(Simulator, ExitTimeConstraintStopping) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3623,7 +3648,7 @@ TEST(GreedySimulation, ExitTimeConstraintStopping) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance2(
       network, timetable2, routes);
 
-  cda_rail::simulator::GreedySimulator simulator2(instance2, {});
+  TypeParam simulator2(instance2, {});
 
   simulator2.set_train_edges_of_tr(tr1, {v0_v1});
   simulator2.set_vertex_orders_of_vertex(v0, {tr1});
@@ -3640,7 +3665,7 @@ TEST(GreedySimulation, ExitTimeConstraintStopping) {
   EXPECT_LE(sim_res2.exit_times[0], 205);
 }
 
-TEST(GreedySimulation, ExitWithRear) {
+TYPED_TEST(Simulator, ExitWithRear) {
   // The train leaves once its rear has passed the exit vertex, i.e., once its
   // front is 250 m beyond it, which at 50 m/s is at 105
   Network    network;
@@ -3654,7 +3679,7 @@ TEST(GreedySimulation, ExitWithRear) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       network, timetable, routes);
 
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
   simulator.set_train_edges_of_tr(tr1, {v0_v1});
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
   simulator.set_vertex_orders_of_vertex(v1, {tr1});
@@ -3668,7 +3693,7 @@ TEST(GreedySimulation, ExitWithRear) {
   EXPECT_APPROX_EQ_6(last_pos_vel.pos, 5250);
 }
 
-TEST(GreedySimulation, ExitNotBeforeScheduledExitTime) {
+TYPED_TEST(Simulator, ExitNotBeforeScheduledExitTime) {
   // Unrestricted, the train's rear passes the exit vertex at 105. If it is
   // scheduled to leave later, it leaves exactly then, irrespective of whether
   // it only slows down or has to wait. It only waits within the network, i.e.,
@@ -3688,7 +3713,7 @@ TEST(GreedySimulation, ExitNotBeforeScheduledExitTime) {
       cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
           network, timetable, routes);
 
-      cda_rail::simulator::GreedySimulator simulator(instance, {});
+      TypeParam simulator(instance, {});
       simulator.set_train_edges_of_tr(tr1, {v0_v1});
       simulator.set_vertex_orders_of_vertex(v0, {tr1});
       simulator.set_vertex_orders_of_vertex(v1, {tr1});
@@ -3717,7 +3742,7 @@ TEST(GreedySimulation, ExitNotBeforeScheduledExitTime) {
   }
 }
 
-TEST(GreedySimulator, DesiredOrderInstanceSolution) {
+TYPED_TEST(Simulator, DesiredOrderInstanceSolution) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3769,8 +3794,7 @@ TEST(GreedySimulator, DesiredOrderInstanceSolution) {
   instance.set_train_weight(tr2, 2);
   instance.set_train_weight(tr3, 3);
 
-  cda_rail::simulator::GreedySimulator simulator(instance,
-                                                 {{v12a, v12b, v12c, v23}});
+  TypeParam simulator(instance, {{v12a, v12b, v12c, v23}});
   simulator.set_train_edges_of_tr(tr1, {v01a, v12a, v23, v34});
   simulator.set_train_edges_of_tr(tr2, {v01b, v12b, v23, v34});
   simulator.set_train_edges_of_tr(tr3, {v01c, v12c, v23, v34});
@@ -3799,7 +3823,7 @@ TEST(GreedySimulator, DesiredOrderInstanceSolution) {
             100 + 10 + 10 + 100);
 }
 
-TEST(GreedySimulator, HeadOnCollision1) {
+TYPED_TEST(Simulator, HeadOnCollision1) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3888,7 +3912,7 @@ TEST(GreedySimulator, HeadOnCollision1) {
                                         reverse_edges.at(v5_v6b)};
   std::vector<cda_rail::index_set> ttd_sections{ttd1, ttd2};
 
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  TypeParam simulator(instance, ttd_sections);
   simulator.set_train_edges_of_tr(tr1, {v0a_v1a, v1a_v2, v2_v3, v3_v4, v4_v45});
   simulator.set_train_edges_of_tr(
       tr2, {reverse_edges.at(v6b_v7b), reverse_edges.at(v5_v6b),
@@ -3912,7 +3936,7 @@ TEST(GreedySimulator, HeadOnCollision1) {
   EXPECT_TRUE(sim_res2.success);
 }
 
-TEST(GreedySimulator, HeadOnCollision2) {
+TYPED_TEST(Simulator, HeadOnCollision2) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4001,7 +4025,7 @@ TEST(GreedySimulator, HeadOnCollision2) {
                                         reverse_edges.at(v5_v6b)};
   std::vector<cda_rail::index_set> ttd_sections{ttd1, ttd2};
 
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  TypeParam simulator(instance, ttd_sections);
   simulator.set_train_edges_of_tr(tr1, {v0a_v1a, v1a_v2, v2_v3, v3_v4, v4_v45});
   simulator.set_train_edges_of_tr(
       tr2, {reverse_edges.at(v6b_v7b), reverse_edges.at(v5_v6b),
@@ -4029,7 +4053,7 @@ TEST(GreedySimulator, HeadOnCollision2) {
 // Bugfixing Tests
 // -----------------
 
-TEST(GreedySimulator, SimpleNetworkTR1RL) {
+TYPED_TEST(Simulator, SimpleNetworkTR1RL) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4037,7 +4061,7 @@ TEST(GreedySimulator, SimpleNetworkTR1RL) {
       "SimpleNetwork", "atmos2023", "./data");
 
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  TypeParam  simulator(instance, ttd_sections);
 
   auto const tr1rl = instance.get_const_train_list().get_train_index("tr1rl");
   EXPECT_EQ(tr1rl, 1);
@@ -4069,7 +4093,7 @@ TEST(GreedySimulator, SimpleNetworkTR1RL) {
   EXPECT_LE(sim_res.exit_times.at(tr1rl), 960 + 6);
 }
 
-TEST(GreedySimulator, SimpleNetworkTR1LR) {
+TYPED_TEST(Simulator, SimpleNetworkTR1LR) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4077,7 +4101,7 @@ TEST(GreedySimulator, SimpleNetworkTR1LR) {
       "SimpleNetwork", "atmos2023", "./data");
 
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  TypeParam  simulator(instance, ttd_sections);
 
   auto const tr1lr = instance.get_const_train_list().get_train_index("tr1lr");
   EXPECT_EQ(tr1lr, 0);
@@ -4109,7 +4133,7 @@ TEST(GreedySimulator, SimpleNetworkTR1LR) {
   EXPECT_LE(sim_res.exit_times.at(tr1lr), 960 + 6);
 }
 
-TEST(GreedySimulator, SimpleNetworkLRTrains) {
+TYPED_TEST(Simulator, SimpleNetworkLRTrains) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4117,7 +4141,7 @@ TEST(GreedySimulator, SimpleNetworkLRTrains) {
       "SimpleNetwork", "atmos2023", "./data");
 
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
-  cda_rail::simulator::GreedySimulator simulator(instance, ttd_sections);
+  TypeParam  simulator(instance, ttd_sections);
 
   auto const tr1lr = instance.get_const_train_list().get_train_index("tr1lr");
   auto const tr2lr = instance.get_const_train_list().get_train_index("tr2lr");
@@ -4198,7 +4222,7 @@ TEST(GreedySimulator, SimpleNetworkLRTrains) {
   EXPECT_LE(sim_res.exit_times.at(tr2lr), tr2lr_earliest_exit + 6);
 }
 
-TEST(GreedySimulator, StopAtRouteEnd) {
+TYPED_TEST(Simulator, StopAtRouteEnd) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4218,7 +4242,7 @@ TEST(GreedySimulator, StopAtRouteEnd) {
   instance.add_track_to_station("Station", v0_v1);
   instance.insert_stop("Train1", "Station", 0, 30);
 
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
   simulator.append_train_edge_to_tr(0, v0_v1);
   simulator.set_stop_positions_of_tr(0, {100});
   simulator.set_vertex_orders({{0}, {0}});
@@ -4231,7 +4255,7 @@ TEST(GreedySimulator, StopAtRouteEnd) {
   EXPECT_GE(sim_res.exit_times.at(0), sim_res.stop_times.at(0).back() + 30);
 }
 
-TEST(GreedySimulator, EndAtStop) {
+TYPED_TEST(Simulator, EndAtStop) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4265,7 +4289,7 @@ TEST(GreedySimulator, EndAtStop) {
   instance.add_track_to_station("Station", v0_v1);
   instance.insert_stop("Train1", "Station", 0, 30);
 
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
   simulator.append_train_edge_to_tr(tr1, v0_v1);
   simulator.append_train_edge_to_tr(tr2, v0_v1);
   simulator.set_stop_positions_of_tr(tr1, {75});
@@ -4309,7 +4333,7 @@ TEST(GreedySimulator, EndAtStop) {
   EXPECT_EQ(sim_res_2.stop_times.at(tr1).at(0), 10);
 }
 
-TEST(GreedySimulator, TrainsFollowing) {
+TYPED_TEST(Simulator, TrainsFollowing) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4339,7 +4363,7 @@ TEST(GreedySimulator, TrainsFollowing) {
   auto const tr2 = instance.add_train("Train2", 20, 10, 2, 2, true, 60, 10,
                                       {"v0"}, 60, 10, {"v3"});
 
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
   simulator.append_train_edge_to_tr(tr1, v0_v1);
   simulator.append_train_edge_to_tr(tr2, v0_v1);
   simulator.set_vertex_orders_of_vertex(v0, {tr1, tr2});
@@ -4378,7 +4402,7 @@ TEST(GreedySimulator, TrainsFollowing) {
   EXPECT_EQ(sim_res6.exit_times.at(tr2), 70);
 }
 
-TEST(GreedySimulator, DiscretizationErrorFix) {
+TYPED_TEST(Simulator, DiscretizationErrorFix) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4401,7 +4425,7 @@ TEST(GreedySimulator, DiscretizationErrorFix) {
   auto const tr1 = instance.add_train("Train1", 20, 10, 2, 2, true, 0, 10,
                                       {"v0"}, 0, 10, {"v2"});
 
-  cda_rail::simulator::GreedySimulator simulator(instance, {});
+  TypeParam simulator(instance, {});
 
   simulator.append_train_edge_to_tr(tr1, v0_v1);
   simulator.set_vertex_orders_of_vertex(v0, {tr1});
@@ -4417,7 +4441,7 @@ TEST(GreedySimulator, DiscretizationErrorFix) {
   EXPECT_APPROX_EQ_6(sim_res2.exit_times.at(tr1), 10.0);
 }
 
-TEST(GreedySimulator, DesiredOrderInstanceSolutionBug) {
+TYPED_TEST(Simulator, DesiredOrderInstanceSolutionBug) {
   // clang-format off
   // (tr1) -> v0a -- v1a -                    - v6a -- (short) v7a
   //                      \                  /
@@ -4492,11 +4516,11 @@ TEST(GreedySimulator, DesiredOrderInstanceSolutionBug) {
   instance.set_train_weight(tr1, 1);
   instance.set_train_weight(tr2, 2);
 
-  cda_rail::simulator::GreedySimulator simulator(
-      instance, {{v1a_v2, v1b_v2, v2_v3, reverse_edges.at(v1a_v2),
-                  reverse_edges.at(v1b_v2), reverse_edges.at(v2_v3)},
-                 {v4_v5, v5_v6a, v5_v6b, reverse_edges.at(v4_v5),
-                  reverse_edges.at(v5_v6a), reverse_edges.at(v5_v6b)}});
+  TypeParam simulator(instance,
+                      {{v1a_v2, v1b_v2, v2_v3, reverse_edges.at(v1a_v2),
+                        reverse_edges.at(v1b_v2), reverse_edges.at(v2_v3)},
+                       {v4_v5, v5_v6a, v5_v6b, reverse_edges.at(v4_v5),
+                        reverse_edges.at(v5_v6a), reverse_edges.at(v5_v6b)}});
 
   simulator.set_train_edges_of_tr(
       tr1, {v0a_v1a, v1a_v2, v2_v3, v3_v4, v4_v5, v5_v6a, v6a_v7a});
