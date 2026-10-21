@@ -11,6 +11,7 @@
 #include <chrono>
 #include <concepts>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -208,6 +209,7 @@ protected:
    * option is GeneralExportOption::NoExport. If an evaluation time step is
    * given and the solution type supports it, the solution is evaluated before
    * it is exported, so that the evaluation is part of @p solution afterwards.
+   * If the evaluation fails, the solution is exported without it.
    *
    * @param solution The solution to export
    * @param solution_settings Settings describing where and what to export
@@ -225,7 +227,16 @@ protected:
     if constexpr (requires(S& sol, double dt) { sol.evaluate(dt); }) {
       if (solution_settings.evaluation_time_step.has_value() &&
           solution.has_solution()) {
-        solution.evaluate(solution_settings.evaluation_time_step.value());
+        // A failing evaluation must not cost the solution itself
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+        try {
+          solution.evaluate(solution_settings.evaluation_time_step.value());
+        } catch (const std::exception& e) {
+          PLOGW << "Exporting the solution without evaluation, since it "
+                   "failed: "
+                << e.what();
+        }
+        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
       }
     }
 

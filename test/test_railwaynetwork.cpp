@@ -682,6 +682,37 @@ TEST(RailwayNetwork, Discretize) {
   EXPECT_EQ(network.number_of_edges(), 8);
 }
 
+TEST(RailwayNetwork, SeparateEdgesAtVssOfEitherDirection) {
+  cda_rail::Network network{};
+
+  auto const v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  auto const v1 = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  auto const v2 = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+  network.add_bidirectional_edge(v0, v1, 1000, 20, true, 10);
+  network.add_bidirectional_edge(v1, v2, 500, 20, true, 10);
+
+  // The border on v0-v1 is given for the forward edge, the one on v1-v2 only
+  // for the reverse edge, i.e., 100 m from v2
+  network.separate_edges_at_vss({{200}, {}, {}, {100}});
+
+  ASSERT_TRUE(network.has_vertex("v0-v1_0"));
+  EXPECT_EQ(network.get_vertex({"v0-v1_0"}).type, cda_rail::VertexType::VSS);
+  EXPECT_EQ(network.get_edge({"v0", "v0-v1_0"}).length, 200);
+  EXPECT_EQ(network.get_edge({"v0-v1_0", "v1"}).length, 800);
+  EXPECT_EQ(network.get_edge({"v1", "v0-v1_0"}).length, 800);
+  EXPECT_EQ(network.get_edge({"v0-v1_0", "v0"}).length, 200);
+
+  ASSERT_TRUE(network.has_vertex("v1-v2_0"));
+  EXPECT_EQ(network.get_vertex({"v1-v2_0"}).type, cda_rail::VertexType::VSS);
+  EXPECT_EQ(network.get_edge({"v1", "v1-v2_0"}).length, 400);
+  EXPECT_EQ(network.get_edge({"v1-v2_0", "v2"}).length, 100);
+  EXPECT_EQ(network.get_edge({"v2", "v1-v2_0"}).length, 100);
+  EXPECT_EQ(network.get_edge({"v1-v2_0", "v1"}).length, 400);
+
+  EXPECT_EQ(network.number_of_edges(), 8);
+}
+
 /**
  * OLD NETWORK TESTS
  */
