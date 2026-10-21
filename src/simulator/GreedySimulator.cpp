@@ -1102,7 +1102,9 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
 
     if (pos >= exit_pos - GRB_EPS) {
       // The train has left the network but is not allowed to disappear yet.
-      // Hence, it waits there.
+      // Hence, it waits there. Since its moving authority keeps it within the
+      // network as long as it may not leave, this is only a safeguard for a
+      // train counted as having left within the numerical tolerance.
       retval.pos = std::min(retval.pos, std::max(0.0, exit_pos - pos));
     } else if (pos + max_displacement >= exit_pos) {
       // Train's moving authority can potentially leave the network

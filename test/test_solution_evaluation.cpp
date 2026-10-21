@@ -130,6 +130,29 @@ TEST(SolutionEvaluation, PositionBoundHoldsTrainBack) {
   EXPECT_NEAR(simulator.simulate(1.0, false, true).exit_times.at(0), 110, 1);
 }
 
+TEST(SolutionEvaluation, PositionBoundDelaysEntry) {
+  // Entering at 10 m/s, the train needs 50 m to stop. Until time 20, it has to
+  // be able to stop within 40 m, hence, it cannot enter before. It then needs
+  // 110 s until its rear has passed the exit vertex.
+  const auto                 instance = one_edge_instance(1);
+  simulator::GreedySimulator simulator(instance, {}, {{0}}, {}, {{0}, {0}},
+                                       {{}});
+  simulator.set_position_bound(
+      [](size_t /*tr*/,
+         double t) -> std::optional<simulator::GreedySimulator::PositionBound> {
+        if (t < 20) {
+          return simulator::GreedySimulator::PositionBound{.front         = 40,
+                                                           .braking_point = 40};
+        }
+        return std::nullopt;
+      });
+
+  const auto result = simulator.simulate(1.0, true, true, true);
+  ASSERT_TRUE(result.success);
+  EXPECT_EQ(result.train_trajectories.at(0).begin()->first, 20);
+  EXPECT_NEAR(result.exit_times.at(0), 130, 1);
+}
+
 TEST(SolutionEvaluation, GreedySolutionIsReproduced) {
   // A solution obtained by the greedy simulator, as the A* solver does, is
   // simulated identically, including the stop at the station. Since the
@@ -356,6 +379,31 @@ TEST(SolutionEvaluation, ExportAndImport) {
             sol.get_evaluation()->greedy.obj);
 
   std::filesystem::remove_all("./tmp-solution-evaluation");
+}
+
+TEST(SolutionEvaluation, ContradictoryOrdersEndInADeadlock) {
+  // The solution lets the second train leave before the first one, which it
+  // cannot, since it follows it on the same track. Hence, both simulations end
+  // in a deadlock, which is exported and imported as such.
+  const auto instance = one_edge_instance(2);
+  auto       sol      = following_trains_solution<
+      instances::SolGeneralPerformanceOptimizationInstance>(instance);
+  sol.set_exit_times({115, 100});
+
+  sol.evaluate(1.0);
+  ASSERT_TRUE(sol.get_evaluation().has_value());
+  EXPECT_FALSE(sol.get_evaluation()->trajectory.success);
+  EXPECT_FALSE(sol.get_evaluation()->greedy.success);
+
+  sol.export_solution("./tmp-solution-evaluation-deadlock", "test-evaluation");
+  instances::SolGeneralPerformanceOptimizationInstance sol_read(instance);
+  sol_read.load_solution("./tmp-solution-evaluation-deadlock",
+                         "test-evaluation");
+  ASSERT_TRUE(sol_read.get_evaluation().has_value());
+  EXPECT_FALSE(sol_read.get_evaluation()->trajectory.success);
+  EXPECT_FALSE(sol_read.get_evaluation()->greedy.success);
+
+  std::filesystem::remove_all("./tmp-solution-evaluation-deadlock");
 }
 
 TEST(SolutionEvaluation, AStarSolutionWithAFinerTimeStep) {

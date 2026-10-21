@@ -787,9 +787,13 @@ TEST_F(CliTest, SolveWithTheVssGenerationMip) {
 }
 
 TEST_F(CliTest, SolveAndEvaluateWithTheAStarSearch) {
-  // Without a time step of its own, the evaluation uses the one of the solver
+  // Without a time step of its own, the evaluation uses the one of the solver.
+  // The train stops on its way, so that its station delay is logged as well.
   cda_rail::cli::Session session{directory};
   build_solvable_instance(session);
+  run(session, "station add Central");
+  run(session, "station add-track Central v0 v1");
+  run(session, "train stop add ICE1 Central -t 60 -d 30");
 
   run(session, "solve mb-astar --dt 10 --export-solution "
                "--solution-export-subdirectory cli-test-solutions --evaluate");
@@ -800,7 +804,11 @@ TEST_F(CliTest, SolveAndEvaluateWithTheAStarSearch) {
   EXPECT_EQ(evaluation->dt, 10);
   EXPECT_TRUE(evaluation->trajectory.success);
   EXPECT_TRUE(evaluation->greedy.success);
+  EXPECT_EQ(evaluation->trajectory.stop_delays.at(0).size(), 1);
+  EXPECT_EQ(evaluation->greedy.stop_delays.at(0).size(), 1);
   // NOLINTEND(bugprone-unchecked-optional-access)
+  ASSERT_TRUE(session.has_solution());
+  EXPECT_NO_THROW(cda_rail::cli::log_solution_evaluation(session.solution()));
 }
 
 TEST_F(CliTest, SolveAndEvaluateWithTheVssGenerationMip) {
@@ -827,6 +835,8 @@ TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {
   // Without a solve, there is nothing to evaluate
   run(session, "solution evaluate");
   EXPECT_FALSE(session.has_solution());
+  EXPECT_THROW(std::ignore = session.solution(),
+               cda_rail::exceptions::InvalidInputException);
 
   run(session, "solve mb-astar --dt 10 --export-solution "
                "--solution-export-subdirectory cli-test-solutions");
@@ -856,10 +866,35 @@ TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {
       std::nullopt, {});
   EXPECT_THROW(session.evaluate_solution(std::nullopt),
                cda_rail::exceptions::InvalidInputException);
+  // Since this solution has not been exported, the evaluation is not written
+  EXPECT_FALSE(session.evaluate_solution(5).has_value());
 
   // The solution belongs to the instance it was obtained for
   run(session, "instance close");
   EXPECT_FALSE(session.has_solution());
+}
+
+TEST_F(CliTest, LogAnEvaluationEndingInADeadlock) {
+  // The solution is changed to let the second train leave before the first
+  // one, which it cannot, since it follows it on the same track. Hence, the
+  // evaluation ends in a deadlock, which is logged instead of any delays.
+  cda_rail::cli::Session session{directory};
+  build_solvable_instance(session);
+  run(session, "train add ICE2 -l 50 -v 20 -a 1 -d 1 -e v0 -t 30 -x v2 -y 225");
+  run(session, "route add ICE2 v0 v1 v2");
+  run(session, "solve mb-astar --dt 10");
+  ASSERT_TRUE(session.has_solution());
+
+  auto solution = session.solution();
+  solution.set_exit_times(
+      {solution.get_exit_time("ICE2"), solution.get_exit_time("ICE1")});
+  solution.evaluate(10);
+  ASSERT_TRUE(solution.get_evaluation().has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
+  EXPECT_FALSE(solution.get_evaluation()->trajectory.success);
+  EXPECT_FALSE(solution.get_evaluation()->greedy.success);
+  // NOLINTEND(bugprone-unchecked-optional-access)
+  EXPECT_NO_THROW(cda_rail::cli::log_solution_evaluation(solution));
 }
 
 TEST_F(CliTest, HelpListsTheWholeCommandTree) {

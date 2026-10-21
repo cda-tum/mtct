@@ -186,9 +186,6 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
   std::vector<std::vector<std::pair<double, size_t>>> vertex_events(
       network.number_of_vertices());
   for (size_t tr = 0; tr < num_tr; ++tr) {
-    if (train_edges.at(tr).empty()) {
-      continue;
-    }
     const auto& tr_name  = train_list.get_train(tr).get_name();
     const auto& schedule = setup.instance.get_const_schedule(tr);
     vertex_events.at(schedule.get_entry_vertex())
