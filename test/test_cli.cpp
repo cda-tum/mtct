@@ -12,6 +12,7 @@
 #include "options_mb_mip.hpp"
 #include "options_vss_mip.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "solver/GeneralSolver.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"

@@ -263,6 +263,12 @@ cda_rail::simulator::EventSimulator::fastest_phases(
     const auto v2_at = [&](double u) {
       return std::min({v2_max, accelerating(u), braking(u)});
     };
+    const auto action_at = [&](double u) {
+      if (accelerating(u) <= v2_at(u)) {
+        return Action::Accelerate;
+      }
+      return v2_max <= braking(u) ? Action::Cruise : Action::Brake;
+    };
 
     // The minimum of the three is linear in between the points at which two of
     // them are equal
@@ -281,12 +287,8 @@ cda_rail::simulator::EventSimulator::fastest_phases(
       if (u_1 - u_0 < EPS || v_s + v_e <= 0) {
         continue;
       }
-      const auto mid = (u_0 + u_1) / 2;
       add_piece(sections.at(k).start + u_0, sections.at(k).start + u_1, v_s,
-                v_e,
-                accelerating(mid) <= v2_at(mid) ? Action::Accelerate
-                : v2_max <= braking(mid)        ? Action::Cruise
-                                                : Action::Brake);
+                v_e, action_at((u_0 + u_1) / 2));
     }
     v2 = v2_at(length);
   }
@@ -366,7 +368,7 @@ cda_rail::simulator::EventSimulator::exit_movement(
     return movement;
   };
   const Movement now{.t = t, .pos = front.pos, .v = front.vel, .phases = {}};
-  const auto     fastest = continue_fastest(now, exit_pos, v_exit);
+  auto           fastest = continue_fastest(now, exit_pos, v_exit);
   if (fastest.end_time() + GRB_EPS >= exit_time) {
     return fastest;
   }
@@ -476,6 +478,13 @@ private:
     double  checkpoint{INF};
   };
 
+  // Whether a train occupies the reverse of an edge, and whether any other
+  // train may still use it
+  struct ReverseEdgeUse {
+    std::optional<Blocker> blocker;
+    bool                   used{false};
+  };
+
   struct TrainState {
     Status                 status{Status::Waiting};
     Movement               movement{};
@@ -491,7 +500,7 @@ private:
   void process(size_t tr, double t);
   void try_to_enter(size_t tr, double t);
   void enter(size_t tr, double t);
-  void serve_stop(size_t tr, double t);
+  void serve_stop(size_t tr, size_t stop, double t);
   void leave(size_t tr, double t);
   void plan(size_t tr, double t);
   void block_last_vertex(size_t tr, double t);
@@ -510,10 +519,8 @@ private:
   [[nodiscard]] std::optional<Blocker> entry_blocker(size_t tr, double t) const;
   [[nodiscard]] std::optional<Blocker> ttd_blocker(size_t tr, size_t i,
                                                    double t) const;
-  [[nodiscard]] std::optional<Blocker> reverse_blocker(size_t tr, size_t edge,
-                                                       double t) const;
-  [[nodiscard]] bool is_reverse_edge_used(size_t tr, size_t edge,
-                                          double t) const;
+  [[nodiscard]] ReverseEdgeUse         reverse_edge_use(size_t tr, size_t edge,
+                                                        double t) const;
   [[nodiscard]] std::optional<Blocker>
   vertex_order_blocker(size_t tr, size_t vertex, double t) const;
 
@@ -524,7 +531,7 @@ private:
   [[nodiscard]] std::optional<double> route_pos(size_t tr, size_t vertex) const;
   [[nodiscard]] bool                  leaves_network(size_t tr) const;
   [[nodiscard]] double                end_pos(size_t tr) const;
-  [[nodiscard]] bool                  ends_at_next_stop(size_t tr) const;
+  [[nodiscard]] std::optional<size_t> stop_at_end(size_t tr) const;
   [[nodiscard]] double                length(size_t tr) const {
     return m_instance.get_const_train_list().get_train(tr).get_length();
   }
@@ -656,8 +663,9 @@ void cda_rail::simulator::EventSimulator::Run::process(size_t tr, double t) {
     schedule(tr, state.stop_until);
     return;
   }
-  if (ends_at_next_stop(tr) && t >= state.movement.end_time()) {
-    serve_stop(tr, t);
+  if (const auto stop = stop_at_end(tr);
+      stop.has_value() && t >= state.movement.end_time()) {
+    serve_stop(tr, *stop, t);
     return;
   }
   if (front(tr, t).pos > end_pos(tr) - GRB_EPS) {
@@ -724,26 +732,27 @@ void cda_rail::simulator::EventSimulator::Run::enter(size_t tr, double t) {
   }
 }
 
-void cda_rail::simulator::EventSimulator::Run::serve_stop(size_t tr, double t) {
+void cda_rail::simulator::EventSimulator::Run::serve_stop(size_t tr,
+                                                          size_t stop,
+                                                          double t) {
   auto&       state = m_trains.at(tr);
-  const auto& stop =
-      m_instance.get_const_schedule(tr).get_stops().at(*state.next_stop);
+  const auto& scheduled_stop =
+      m_instance.get_const_schedule(tr).get_stops().at(stop);
   const auto pos = state.movement.end_pos();
   PLOGV << "At time " << t << ", train " << tr << " stops at "
-        << stop.get_station().name;
+        << scheduled_stop.get_station().name;
   record(tr, t);
   if (m_save_trajectories) {
     m_trajectories.at(tr)[t] = {.pos = pos, .vel = 0};
   }
   m_stop_times.at(tr).push_back(t);
-  state.stop_until =
-      std::max(t + stop.get_service_duration(), stop.get_earliest_departure());
-  state.next_stop =
-      *state.next_stop + 1 < m_simulator.get_stop_positions_of_tr(tr).size()
-          ? std::optional{*state.next_stop + 1}
-          : std::nullopt;
-  state.movement = {.t = t, .pos = pos, .v = 0, .phases = {}};
-  state.blocker  = std::nullopt;
+  state.stop_until = std::max(t + scheduled_stop.get_service_duration(),
+                              scheduled_stop.get_earliest_departure());
+  state.next_stop  = stop + 1 < m_simulator.get_stop_positions_of_tr(tr).size()
+                         ? std::optional{stop + 1}
+                         : std::nullopt;
+  state.movement   = {.t = t, .pos = pos, .v = 0, .phases = {}};
+  state.blocker    = std::nullopt;
   schedule(tr, state.stop_until);
 }
 
@@ -820,7 +829,7 @@ void cda_rail::simulator::EventSimulator::Run::plan(size_t tr, double t) {
           std::max(t + m_dt, state.movement.final_braking_start());
     }
     next = release_time(*state.blocker, t);
-    if (ends_at_next_stop(tr)) {
+    if (stop_at_end(tr).has_value()) {
       next = std::min(next, state.movement.end_time());
     }
   }
@@ -959,11 +968,12 @@ cda_rail::simulator::EventSimulator::Run::find_target(size_t tr, double t,
         limit_to({.pos = m.at(i), .end = End::Obstacle, .blocker = *blocker});
       }
       if (m_block_vertices) {
-        if (const auto blocker = reverse_blocker(tr, edges.at(i), t);
-            blocker.has_value()) {
-          limit_to({.pos = m.at(i), .end = End::Obstacle, .blocker = *blocker});
-        } else if (m.at(i) > braking_point + GRB_EPS &&
-                   is_reverse_edge_used(tr, edges.at(i), t)) {
+        const auto reverse = reverse_edge_use(tr, edges.at(i), t);
+        if (reverse.blocker.has_value()) {
+          limit_to({.pos     = m.at(i),
+                    .end     = End::Obstacle,
+                    .blocker = *reverse.blocker});
+        } else if (reverse.used && m.at(i) > braking_point + GRB_EPS) {
           // Whether the edge is free is only decided once the train cannot
           // stop in front of it anymore
           checkpoint = std::min(checkpoint, m.at(i));
@@ -1049,7 +1059,7 @@ cda_rail::simulator::EventSimulator::Run::entry_blocker(size_t tr,
                                    std::min(free, edge_length) + GRB_EPS};
       }
     }
-    if (const auto blocker = reverse_blocker(tr, edges.at(i), t);
+    if (const auto blocker = reverse_edge_use(tr, edges.at(i), t).blocker;
         blocker.has_value()) {
       return blocker;
     }
@@ -1080,47 +1090,40 @@ cda_rail::simulator::EventSimulator::Run::ttd_blocker(size_t tr, size_t i,
   return is_released(blocker, t) ? std::nullopt : std::optional{blocker};
 }
 
-std::optional<cda_rail::simulator::EventSimulator::Run::Blocker>
-cda_rail::simulator::EventSimulator::Run::reverse_blocker(size_t tr,
-                                                          size_t edge,
-                                                          double t) const {
-  // A train on the reverse edge occupies it up to its braking point
-  const auto reverse = network().get_reverse_edge_index(edge);
+cda_rail::simulator::EventSimulator::Run::ReverseEdgeUse
+cda_rail::simulator::EventSimulator::Run::reverse_edge_use(size_t tr,
+                                                           size_t edge,
+                                                           double t) const {
+  // A train on the reverse edge occupies it up to its braking point, as in
+  // GreedySimulator::is_ok_to_enter, and a train that has not passed it yet
+  // may still use it
+  ReverseEdgeUse use{};
+  const auto     reverse = network().get_reverse_edge_index(edge);
   if (!reverse.has_value()) {
-    return std::nullopt;
+    return use;
   }
+  const auto reverse_length = network().get_edge(*reverse).length;
   for (const auto other : m_trains_on_edges.at(*reverse)) {
-    if (other == tr || m_trains.at(other).status != Status::Driving) {
+    const auto status = m_trains.at(other).status;
+    if (other == tr || status == Status::Left) {
+      continue;
+    }
+    if (status == Status::Waiting) {
+      use.used = true;
       continue;
     }
     const auto [pos, vel] = front(other, t);
     const auto start      = m_edge_starts.at(other).at(*reverse);
-    const auto end        = start + network().get_edge(*reverse).length;
-    if (pos + m_simulator.tr_braking_distance(other, vel) > start + EPS &&
-        pos - length(other) < end - EPS) {
-      return Blocker{.train = other, .rear_pos = end};
+    if (pos - length(other) >= start + reverse_length - EPS) {
+      continue; // The other train has passed the reverse edge
+    }
+    use.used = true;
+    if (pos + m_simulator.tr_braking_distance(other, vel) > start + EPS) {
+      use.blocker = Blocker{.train = other, .rear_pos = start + reverse_length};
+      return use;
     }
   }
-  return std::nullopt;
-}
-
-bool cda_rail::simulator::EventSimulator::Run::is_reverse_edge_used(
-    size_t tr, size_t edge, double t) const {
-  const auto reverse = network().get_reverse_edge_index(edge);
-  if (!reverse.has_value()) {
-    return false;
-  }
-  for (const auto other : m_trains_on_edges.at(*reverse)) {
-    const auto status = m_trains.at(other).status;
-    if (other != tr && (status == Status::Waiting ||
-                        (status == Status::Driving &&
-                         front(other, t).pos - length(other) <
-                             m_edge_starts.at(other).at(*reverse) +
-                                 network().get_edge(*reverse).length - EPS))) {
-      return true;
-    }
-  }
-  return false;
+  return use;
 }
 
 std::optional<cda_rail::simulator::EventSimulator::Run::Blocker>
@@ -1207,15 +1210,19 @@ double cda_rail::simulator::EventSimulator::Run::end_pos(size_t tr) const {
   return m_milestones.at(tr).back() + (leaves_network(tr) ? length(tr) : 0.0);
 }
 
-bool cda_rail::simulator::EventSimulator::Run::ends_at_next_stop(
-    size_t tr) const {
-  // As in the greedy simulator, a train standing close enough to its next stop
-  // serves it
-  const auto& state = m_trains.at(tr);
-  return state.next_stop.has_value() && state.movement.end_speed() < V_MIN &&
-         state.movement.end_pos() >=
-             m_simulator.get_stop_positions_of_tr(tr).at(*state.next_stop) -
-                 STOP_TOLERANCE;
+std::optional<size_t>
+cda_rail::simulator::EventSimulator::Run::stop_at_end(size_t tr) const {
+  // The next stop if the train's movement ends with it standing close enough
+  // to serve it, as in the greedy simulator
+  const auto& state     = m_trains.at(tr);
+  const auto  next_stop = state.next_stop;
+  if (next_stop.has_value() && state.movement.end_speed() < V_MIN &&
+      state.movement.end_pos() >=
+          m_simulator.get_stop_positions_of_tr(tr).at(*next_stop) -
+              STOP_TOLERANCE) {
+    return next_stop;
+  }
+  return std::nullopt;
 }
 
 // Trajectories

@@ -4,6 +4,7 @@
 #include "Formatting.hpp"
 #include "StringHelper.hpp"
 #include "options_common.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 

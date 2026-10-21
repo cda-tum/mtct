@@ -1,5 +1,6 @@
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "plog/Log.h"
