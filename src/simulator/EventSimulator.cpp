@@ -25,6 +25,7 @@
 #include <optional>
 #include <queue>
 #include <ranges>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -231,19 +232,20 @@ cda_rail::simulator::EventSimulator::fastest_phases(
         v2_end.at(k) + (2 * d * (sections.at(k).end - sections.at(k).start)));
   }
 
-  // Consecutive pieces with the same acceleration form one phase, whose
+  // Consecutive pieces in which the train does the same form one phase, whose
   // duration follows from its length to avoid summing up rounding errors
+  enum class Action : std::uint8_t { Accelerate, Cruise, Brake };
   std::vector<Phase>    phases;
-  std::optional<double> last_acceleration;
+  std::optional<Action> last_action;
   double                phase_start = pos;
   const auto add_piece = [&](double start, double end, double v_s, double v_e,
-                             double acceleration) {
-    if (last_acceleration == acceleration) {
+                             Action action) {
+    if (last_action == action) {
       phases.back().v_end = v_e;
     } else {
       phases.push_back({.duration = 0, .v_start = v_s, .v_end = v_e});
-      last_acceleration = acceleration;
-      phase_start       = start;
+      last_action = action;
+      phase_start = start;
     }
     phases.back().duration =
         2 * (end - phase_start) / (phases.back().v_start + v_e);
@@ -282,9 +284,9 @@ cda_rail::simulator::EventSimulator::fastest_phases(
       const auto mid = (u_0 + u_1) / 2;
       add_piece(sections.at(k).start + u_0, sections.at(k).start + u_1, v_s,
                 v_e,
-                accelerating(mid) <= v2_at(mid) ? a
-                : v2_max <= braking(mid)        ? 0.0
-                                                : -d);
+                accelerating(mid) <= v2_at(mid) ? Action::Accelerate
+                : v2_max <= braking(mid)        ? Action::Cruise
+                                                : Action::Brake);
     }
     v2 = v2_at(length);
   }
@@ -329,7 +331,7 @@ cda_rail::simulator::EventSimulator::speed_limits(
     if (mid > milestones.back()) {
       v_max = std::min(v_max, network.get_edge(edges.back()).max_speed);
     }
-    if (!limits.empty() && limits.back().v_max == v_max) {
+    if (!limits.empty() && approx_equal(limits.back().v_max, v_max)) {
       limits.back().end = end;
     } else {
       limits.push_back({.end = end, .v_max = v_max});
@@ -482,6 +484,7 @@ private:
     double                 blocked_pos{INF};
     std::optional<Blocker> blocker;
     double                 next_event{INF};
+    size_t                 next_event_id{0};
   };
 
   // Events
@@ -554,8 +557,11 @@ private:
   std::vector<double>                             m_exit_times;
   std::vector<std::vector<double>>                m_stop_times;
   std::vector<std::map<double, PosVel>>           m_trajectories;
-  std::priority_queue<std::pair<double, size_t>,
-                      std::vector<std::pair<double, size_t>>, std::greater<>>
+  // Every event is the time, the train, and the train's event id at the time
+  // it was scheduled
+  std::priority_queue<std::tuple<double, size_t, size_t>,
+                      std::vector<std::tuple<double, size_t, size_t>>,
+                      std::greater<>>
        m_events;
   bool m_failed{false};
 };
@@ -598,12 +604,13 @@ cda_rail::simulator::EventSimulator::Run::simulate() {
   double last_t           = -INF;
   size_t same_time_events = 0;
   while (!m_failed && !m_events.empty()) {
-    const auto [t, tr] = m_events.top();
+    const auto [t, tr, id] = m_events.top();
     m_events.pop();
-    if (t != m_trains.at(tr).next_event) {
+    if (id != m_trains.at(tr).next_event_id) {
       continue; // The train has been rescheduled since
     }
-    same_time_events = t == last_t ? same_time_events + 1 : 0;
+    // The events are handled in chronological order
+    same_time_events = t <= last_t ? same_time_events + 1 : 0;
     last_t           = t;
     if (same_time_events > SAME_TIME_EVENT_LIMIT * m_trains.size()) {
       throw exceptions::ConsistencyException(
@@ -853,9 +860,11 @@ void cda_rail::simulator::EventSimulator::Run::block_last_vertex(size_t tr,
 // Event queue
 
 void cda_rail::simulator::EventSimulator::Run::schedule(size_t tr, double t) {
-  m_trains.at(tr).next_event = t;
+  auto& state      = m_trains.at(tr);
+  state.next_event = t;
+  ++state.next_event_id;
   if (t < INF) {
-    m_events.emplace(t, tr);
+    m_events.emplace(t, tr, state.next_event_id);
   }
 }
 

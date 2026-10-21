@@ -16,7 +16,6 @@
 #include <plog/Init.h>
 #include <plog/Log.h>
 #include <plog/Severity.h>
-#include <string>
 #include <type_traits>
 
 using namespace cda_rail;
@@ -29,27 +28,27 @@ using namespace cda_rail;
 // NOLINTBEGIN
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)
 
-// Every test that only uses the public interface runs for every simulator.
-// Where the greedy simulator's results depend on its time steps, the
-// event-based simulator is expected to be exact.
-template <typename T> class Simulator : public testing::Test {};
-using Simulators = testing::Types<cda_rail::simulator::GreedySimulator,
-                                  cda_rail::simulator::EventSimulator>;
-class SimulatorNames {
-public:
-  template <typename T> static std::string GetName(int /*index*/) {
-    return std::is_same_v<T, cda_rail::simulator::GreedySimulator>
-               ? "Greedy"
-               : "EventBased";
-  }
-};
-TYPED_TEST_SUITE(Simulator, Simulators, SimulatorNames);
+// Every test that only uses the public interface runs for both simulators:
+// SIMULATOR_TEST(Name) defines the tests GreedySimulator.Name and
+// EventSimulator.Name, whose body is that of a function template with the
+// simulator's type as its parameter TypeParam. Where the greedy simulator's
+// results depend on its time steps, the event-based simulator is expected to
+// be exact.
+#define SIMULATOR_TEST(Name)                                                   \
+  template <typename TypeParam> void Name##_for();                             \
+  TEST(GreedySimulator, Name) {                                                \
+    Name##_for<cda_rail::simulator::GreedySimulator>();                        \
+  }                                                                            \
+  TEST(EventSimulator, Name) {                                                 \
+    Name##_for<cda_rail::simulator::EventSimulator>();                         \
+  }                                                                            \
+  template <typename TypeParam> void Name##_for()
 
 template <typename T>
 constexpr bool IS_GREEDY =
     std::is_same_v<T, cda_rail::simulator::GreedySimulator>;
 
-TYPED_TEST(Simulator, BasicFunctions) {
+SIMULATOR_TEST(BasicFunctions) {
   // Create instance
   Network     network("SimpleStation", "./data/");
   const auto& ttd_sections = network.unbreakable_sections();
@@ -269,7 +268,7 @@ TYPED_TEST(Simulator, BasicFunctions) {
                cda_rail::exceptions::ConsistencyException);
 }
 
-TYPED_TEST(Simulator, ValidStopPos) {
+SIMULATOR_TEST(ValidStopPos) {
   Network    network;
   const auto v4 = network.add_vertex("v4", cda_rail::VertexType::TTD);
   const auto v0 = network.add_vertex("v0", cda_rail::VertexType::TTD);
@@ -340,7 +339,7 @@ TYPED_TEST(Simulator, ValidStopPos) {
   EXPECT_FALSE(simulator.is_current_pos_valid_stop_position(tr1));
 }
 
-TYPED_TEST(Simulator, TrainsOnPath) {
+SIMULATOR_TEST(TrainsOnPath) {
   Network network;
 
   auto const v0  = network.add_vertex("v0", cda_rail::VertexType::TTD);
@@ -2302,7 +2301,7 @@ TEST(GreedySimulator, ExitVertexOrder) {
 // Test simulation
 // -------------------
 
-TYPED_TEST(Simulator, SimpleSimulation) {
+SIMULATOR_TEST(SimpleSimulation) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2337,7 +2336,7 @@ TYPED_TEST(Simulator, SimpleSimulation) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
 }
 
-TYPED_TEST(Simulator, SimpleSimulationAdditionalTrain) {
+SIMULATOR_TEST(SimpleSimulationAdditionalTrain) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2376,7 +2375,7 @@ TYPED_TEST(Simulator, SimpleSimulationAdditionalTrain) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
 }
 
-TYPED_TEST(Simulator, SimpleSimulationTwoTrains) {
+SIMULATOR_TEST(SimpleSimulationTwoTrains) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2418,7 +2417,7 @@ TYPED_TEST(Simulator, SimpleSimulationTwoTrains) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[1] + 30);
 }
 
-TYPED_TEST(Simulator, DeadlockTest1) {
+SIMULATOR_TEST(DeadlockTest1) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2457,7 +2456,7 @@ TYPED_TEST(Simulator, DeadlockTest1) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
 }
 
-TYPED_TEST(Simulator, DeadlockTest2) {
+SIMULATOR_TEST(DeadlockTest2) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2510,7 +2509,7 @@ TYPED_TEST(Simulator, DeadlockTest2) {
   EXPECT_EQ(sim_res.vertex_headways.at(v3), 30);
 }
 
-TYPED_TEST(Simulator, DeadlockTest3) {
+SIMULATOR_TEST(DeadlockTest3) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2568,7 +2567,7 @@ TYPED_TEST(Simulator, DeadlockTest3) {
   EXPECT_EQ(sim_res.vertex_headways.at(v3), 30 + 30);
 }
 
-TYPED_TEST(Simulator, PartialRouteTest) {
+SIMULATOR_TEST(PartialRouteTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2611,7 +2610,7 @@ TYPED_TEST(Simulator, PartialRouteTest) {
   EXPECT_EQ(sim_res.train_trajectories.at(0).at(stop_time).vel, 0);
 }
 
-TYPED_TEST(Simulator, OneStationTest) {
+SIMULATOR_TEST(OneStationTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2666,7 +2665,7 @@ TYPED_TEST(Simulator, OneStationTest) {
   EXPECT_EQ(sim_res.vertex_headways.at(v3), 0); // Train does not reach v3
 }
 
-TYPED_TEST(Simulator, TwoStationTest) {
+SIMULATOR_TEST(TwoStationTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2724,7 +2723,7 @@ TYPED_TEST(Simulator, TwoStationTest) {
   EXPECT_EQ(sim_res.vertex_headways.at(v4), 0); // Train does not reach v4
 }
 
-TYPED_TEST(Simulator, TrajectorySavingTest) {
+SIMULATOR_TEST(TrajectorySavingTest) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2751,7 +2750,7 @@ TYPED_TEST(Simulator, TrajectorySavingTest) {
   EXPECT_FALSE(sim_res.train_trajectories.at(tr1).empty());
 }
 
-TYPED_TEST(Simulator, StandstillAtStopIsSavedByItsEndpoints) {
+SIMULATOR_TEST(StandstillAtStopIsSavedByItsEndpoints) {
   // The train drives at 10 m/s towards its stop at 500 m, starts braking at
   // 450 m, and arrives at time 55. It then stands for its service duration of
   // 30 s.
@@ -2791,7 +2790,7 @@ TYPED_TEST(Simulator, StandstillAtStopIsSavedByItsEndpoints) {
   EXPECT_EQ(trajectory.at(85).vel, 0);
 }
 
-TYPED_TEST(Simulator, TwoStationTestWithExit) {
+SIMULATOR_TEST(TwoStationTestWithExit) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2848,7 +2847,7 @@ TYPED_TEST(Simulator, TwoStationTestWithExit) {
   EXPECT_EQ(sim_res.vertex_headways.at(v4), sim_res.exit_times.at(0) + 30);
 }
 
-TYPED_TEST(Simulator, TightEntry) {
+SIMULATOR_TEST(TightEntry) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2886,7 +2885,7 @@ TYPED_TEST(Simulator, TightEntry) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), 0);
 }
 
-TYPED_TEST(Simulator, ExitNetworkSpeedZero) {
+SIMULATOR_TEST(ExitNetworkSpeedZero) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2922,7 +2921,7 @@ TYPED_TEST(Simulator, ExitNetworkSpeedZero) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
 }
 
-TYPED_TEST(Simulator, SimpleNetwork) {
+SIMULATOR_TEST(SimpleNetwork) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -2981,6 +2980,7 @@ TYPED_TEST(Simulator, SimpleNetwork) {
   const auto v13a_v12 =
       instance.get_const_network().get_edge_index({"v13a"}, {"v12"});
 
+  // The TTD sections are the switch areas around v3, v6, v9, and v12
   TypeParam simulator(
       instance, {{v2c_v3, v2b_v3, v3_v2b, v3_v2a, v3_v4, v4_v3},
                  {v5_v6, v6_v5, v6_v7a, v6_v7b, v7a_v6, v7b_v6},
@@ -3036,11 +3036,13 @@ TYPED_TEST(Simulator, SimpleNetwork) {
   const auto v14b = instance.get_const_network().get_vertex_index("v14b");
   const auto v14c = instance.get_const_network().get_vertex_index("v14c");
 
+  // A single train on the first edge of its route
   simulator.set_train_edges_of_tr(tr00, {v14a_v13a});
   simulator.set_vertex_orders_of_vertex(v14a, {tr00});
   const auto sim_res_init = simulator.simulate(6.0, true, true);
   EXPECT_TRUE(sim_res_init.success);
 
+  // The complete routes of all trains, which run in both directions
   simulator.set_train_edges_of_tr(tr00, {v14a_v13a, v13a_v12, v12_v11, v11_v10,
                                          v10_v9, v9_v8a, v8a_v7a, v7a_v6, v6_v5,
                                          v5_v4, v4_v3, v3_v2a, v2a_v1a});
@@ -3060,6 +3062,7 @@ TYPED_TEST(Simulator, SimpleNetwork) {
                                          v10_v9, v9_v8a, v8a_v7a, v7a_v6, v6_v5,
                                          v5_v4, v4_v3, v3_v2b, v2b_v1b});
 
+  // The stop positions of the trains Train0_*
   simulator.append_stop_edge_to_tr(tr00, v14a_v13a);
   simulator.append_stop_edge_to_tr(tr00, v2a_v1a);
   simulator.append_stop_edge_to_tr(tr01, v1c_v2c);
@@ -3067,6 +3070,7 @@ TYPED_TEST(Simulator, SimpleNetwork) {
   simulator.append_stop_edge_to_tr(tr02, v1c_v2c);
   simulator.append_stop_edge_to_tr(tr02, v13c_v14c);
 
+  // The orders in which the trains enter and leave the network
   simulator.set_vertex_orders_of_vertex(v1a, {tr00});
   simulator.set_vertex_orders_of_vertex(v1b, {tr10, tr11, tr12});
   simulator.set_vertex_orders_of_vertex(v1c, {tr01, tr02});
@@ -3074,6 +3078,7 @@ TYPED_TEST(Simulator, SimpleNetwork) {
   simulator.set_vertex_orders_of_vertex(v14b, {tr11, tr12, tr10});
   simulator.set_vertex_orders_of_vertex(v14c, {tr01, tr02});
 
+  // The orders in which the trains pass the TTD sections
   simulator.set_ttd_orders_of_ttd(0, {tr01, tr02, tr10, tr00, tr11, tr12});
   simulator.set_ttd_orders_of_ttd(1, {tr01, tr02, tr10, tr00, tr11, tr12});
   simulator.set_ttd_orders_of_ttd(2, {tr00, tr11, tr12, tr01, tr02, tr10});
@@ -3115,7 +3120,7 @@ TYPED_TEST(Simulator, SimpleNetwork) {
   EXPECT_LE(sim_res.exit_times.at(tr12), 3450);
 }
 
-TYPED_TEST(Simulator, FinalState) {
+SIMULATOR_TEST(FinalState) {
   Network    network;
   const auto v0  = network.add_vertex("v0", VertexType::TTD);
   const auto v1  = network.add_vertex("v1", VertexType::TTD);
@@ -3170,7 +3175,7 @@ TYPED_TEST(Simulator, FinalState) {
   EXPECT_TRUE(simulator.is_final_state());
 }
 
-TYPED_TEST(Simulator, ExitEntryZero) {
+SIMULATOR_TEST(ExitEntryZero) {
   Network    network;
   const auto v0 = network.add_vertex("v0", VertexType::TTD, 60);
   const auto v1 = network.add_vertex("v1", VertexType::TTD, 30);
@@ -3202,7 +3207,7 @@ TYPED_TEST(Simulator, ExitEntryZero) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times.at(0) + 30);
 }
 
-TYPED_TEST(Simulator, FaultyInstance) {
+SIMULATOR_TEST(FaultyInstance) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3232,7 +3237,7 @@ TYPED_TEST(Simulator, FaultyInstance) {
   EXPECT_NO_THROW((void)simulator.simulate(6.0, false, true));
 }
 
-TYPED_TEST(Simulator, TimeExtractions) {
+SIMULATOR_TEST(TimeExtractions) {
   // Train enters at speed 24 travels for 18 seconds -> t = 18
   // position = 18 * 24 = 432
 
@@ -3522,7 +3527,7 @@ TYPED_TEST(Simulator, TimeExtractions) {
   EXPECT_EQ(sim_res8.vertex_headways.at(v4), 156 + 30 + 102);
 }
 
-TYPED_TEST(Simulator, DisappearOnPartialRoute) {
+SIMULATOR_TEST(DisappearOnPartialRoute) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3565,7 +3570,7 @@ TYPED_TEST(Simulator, DisappearOnPartialRoute) {
                 (5000.0 / 50.0)); // successful but delayed by tr1
 }
 
-TYPED_TEST(Simulator, ExitTimeConstraintNoSlowingDown) {
+SIMULATOR_TEST(ExitTimeConstraintNoSlowingDown) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3597,7 +3602,7 @@ TYPED_TEST(Simulator, ExitTimeConstraintNoSlowingDown) {
   EXPECT_EQ(sim_res.exit_times[0], 105);
 }
 
-TYPED_TEST(Simulator, ExitTimeConstraintSlowingDown) {
+SIMULATOR_TEST(ExitTimeConstraintSlowingDown) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3631,7 +3636,7 @@ TYPED_TEST(Simulator, ExitTimeConstraintSlowingDown) {
   EXPECT_LE(sim_res2.exit_times[0], 115);
 }
 
-TYPED_TEST(Simulator, ExitTimeConstraintStopping) {
+SIMULATOR_TEST(ExitTimeConstraintStopping) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3665,7 +3670,7 @@ TYPED_TEST(Simulator, ExitTimeConstraintStopping) {
   EXPECT_LE(sim_res2.exit_times[0], 205);
 }
 
-TYPED_TEST(Simulator, ExitWithRear) {
+SIMULATOR_TEST(ExitWithRear) {
   // The train leaves once its rear has passed the exit vertex, i.e., once its
   // front is 250 m beyond it, which at 50 m/s is at 105
   Network    network;
@@ -3693,7 +3698,7 @@ TYPED_TEST(Simulator, ExitWithRear) {
   EXPECT_APPROX_EQ_6(last_pos_vel.pos, 5250);
 }
 
-TYPED_TEST(Simulator, ExitNotBeforeScheduledExitTime) {
+SIMULATOR_TEST(ExitNotBeforeScheduledExitTime) {
   // Unrestricted, the train's rear passes the exit vertex at 105. If it is
   // scheduled to leave later, it leaves exactly then, irrespective of whether
   // it only slows down or has to wait. It only waits within the network, i.e.,
@@ -3742,7 +3747,7 @@ TYPED_TEST(Simulator, ExitNotBeforeScheduledExitTime) {
   }
 }
 
-TYPED_TEST(Simulator, DesiredOrderInstanceSolution) {
+SIMULATOR_TEST(DesiredOrderInstanceSolution) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3823,7 +3828,7 @@ TYPED_TEST(Simulator, DesiredOrderInstanceSolution) {
             100 + 10 + 10 + 100);
 }
 
-TYPED_TEST(Simulator, HeadOnCollision1) {
+SIMULATOR_TEST(HeadOnCollision1) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -3936,7 +3941,7 @@ TYPED_TEST(Simulator, HeadOnCollision1) {
   EXPECT_TRUE(sim_res2.success);
 }
 
-TYPED_TEST(Simulator, HeadOnCollision2) {
+SIMULATOR_TEST(HeadOnCollision2) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4053,7 +4058,7 @@ TYPED_TEST(Simulator, HeadOnCollision2) {
 // Bugfixing Tests
 // -----------------
 
-TYPED_TEST(Simulator, SimpleNetworkTR1RL) {
+SIMULATOR_TEST(SimpleNetworkTR1RL) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4093,7 +4098,7 @@ TYPED_TEST(Simulator, SimpleNetworkTR1RL) {
   EXPECT_LE(sim_res.exit_times.at(tr1rl), 960 + 6);
 }
 
-TYPED_TEST(Simulator, SimpleNetworkTR1LR) {
+SIMULATOR_TEST(SimpleNetworkTR1LR) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4133,7 +4138,7 @@ TYPED_TEST(Simulator, SimpleNetworkTR1LR) {
   EXPECT_LE(sim_res.exit_times.at(tr1lr), 960 + 6);
 }
 
-TYPED_TEST(Simulator, SimpleNetworkLRTrains) {
+SIMULATOR_TEST(SimpleNetworkLRTrains) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4222,7 +4227,7 @@ TYPED_TEST(Simulator, SimpleNetworkLRTrains) {
   EXPECT_LE(sim_res.exit_times.at(tr2lr), tr2lr_earliest_exit + 6);
 }
 
-TYPED_TEST(Simulator, StopAtRouteEnd) {
+SIMULATOR_TEST(StopAtRouteEnd) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4255,7 +4260,7 @@ TYPED_TEST(Simulator, StopAtRouteEnd) {
   EXPECT_GE(sim_res.exit_times.at(0), sim_res.stop_times.at(0).back() + 30);
 }
 
-TYPED_TEST(Simulator, EndAtStop) {
+SIMULATOR_TEST(EndAtStop) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4333,7 +4338,7 @@ TYPED_TEST(Simulator, EndAtStop) {
   EXPECT_EQ(sim_res_2.stop_times.at(tr1).at(0), 10);
 }
 
-TYPED_TEST(Simulator, TrainsFollowing) {
+SIMULATOR_TEST(TrainsFollowing) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4402,7 +4407,7 @@ TYPED_TEST(Simulator, TrainsFollowing) {
   EXPECT_EQ(sim_res6.exit_times.at(tr2), 70);
 }
 
-TYPED_TEST(Simulator, DiscretizationErrorFix) {
+SIMULATOR_TEST(DiscretizationErrorFix) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
@@ -4441,7 +4446,7 @@ TYPED_TEST(Simulator, DiscretizationErrorFix) {
   EXPECT_APPROX_EQ_6(sim_res2.exit_times.at(tr1), 10.0);
 }
 
-TYPED_TEST(Simulator, DesiredOrderInstanceSolutionBug) {
+SIMULATOR_TEST(DesiredOrderInstanceSolutionBug) {
   // clang-format off
   // (tr1) -> v0a -- v1a -                    - v6a -- (short) v7a
   //                      \                  /
