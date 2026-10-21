@@ -399,11 +399,10 @@ TEST(SolutionEvaluation, ContradictoryOrdersEndInADeadlock) {
   instances::SolGeneralPerformanceOptimizationInstance sol_read(instance);
   sol_read.load_solution("./tmp-solution-evaluation-deadlock",
                          "test-evaluation");
+  std::filesystem::remove_all("./tmp-solution-evaluation-deadlock");
   ASSERT_TRUE(sol_read.get_evaluation().has_value());
   EXPECT_FALSE(sol_read.get_evaluation()->trajectory.success);
   EXPECT_FALSE(sol_read.get_evaluation()->greedy.success);
-
-  std::filesystem::remove_all("./tmp-solution-evaluation-deadlock");
 }
 
 TEST(SolutionEvaluation, AStarSolutionWithAFinerTimeStep) {
