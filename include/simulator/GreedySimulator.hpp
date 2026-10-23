@@ -194,7 +194,7 @@ public:
   // SIMULATION
   // ------------------
   /**
-   * @brief Runs the greedy simulation with an explicit time step.
+   * @brief Runs the greedy simulation in time steps of length @p dt.
    *
    * @param dt Simulation time step in seconds.
    * @param late_entry_possible Whether trains may enter later than scheduled.
@@ -205,28 +205,9 @@ public:
    * @return Simulation results.
    */
   [[nodiscard]] SimulatorResults
-  simulate(double dt, bool late_entry_possible = false,
-           bool limit_speed_by_leaving_edges      = true,
-           bool save_trajectories                 = false,
-           bool block_vertices_after_disappearing = true) const;
-
-  /**
-   * @brief Runs the simulation using a fixed time step of 6.0 seconds.
-   *
-   * @param late_entry_possible Whether trains may enter later than scheduled.
-   * @param limit_speed_by_leaving_edges Whether leaving edges constrain speed.
-   * @param save_trajectories Whether to retain detailed trajectories.
-   * @param block_vertices_after_disappearing Whether trains block their last
-   *        vertex after disappearing on a partial route.
-   * @return SimulatorResults containing the simulation outcome.
-   */
-  [[nodiscard]] SimulatorResults
-  simulate(bool late_entry_possible, bool limit_speed_by_leaving_edges,
-           bool save_trajectories,
-           bool block_vertices_after_disappearing) const override {
-    return simulate(6.0, late_entry_possible, limit_speed_by_leaving_edges,
-                    save_trajectories, block_vertices_after_disappearing);
-  }
+  simulate(double dt, bool late_entry_possible,
+           bool limit_speed_by_leaving_edges, bool save_trajectories,
+           bool block_vertices_after_disappearing) const override;
 
 private:
   // ---------------------------

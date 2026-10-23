@@ -1,9 +1,11 @@
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "plog/Log.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/EventSimulator.hpp"
 #include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
@@ -14,10 +16,29 @@
 #include <chrono>
 #include <cstddef>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <ranges>
 #include <unordered_set>
+#include <utility>
 #include <vector>
+
+namespace {
+std::unique_ptr<cda_rail::simulator::GeneralSimulator> make_simulator(
+    cda_rail::simulator::SimulatorType                                 type,
+    cda_rail::instances::GeneralPerformanceOptimizationInstance const& instance,
+    std::vector<cda_rail::index_set> ttd_sections) {
+  switch (type) {
+  case cda_rail::simulator::SimulatorType::Greedy:
+    return std::make_unique<cda_rail::simulator::GreedySimulator>(
+        instance, std::move(ttd_sections));
+  case cda_rail::simulator::SimulatorType::EventBased:
+    return std::make_unique<cda_rail::simulator::EventSimulator>(
+        instance, std::move(ttd_sections));
+  }
+  throw cda_rail::exceptions::ConsistencyException("Unknown simulator type");
+}
+} // namespace
 
 // --------------------
 // SOLVE
@@ -43,7 +64,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   const auto ttd_sections =
       get_instance().get_const_network().unbreakable_sections();
-  simulator::GreedySimulator simulator(get_instance(), ttd_sections);
+  const auto simulator = make_simulator(model_detail_input.simulator_type,
+                                        get_instance(), ttd_sections);
 
   std::unordered_set<simulator::SimulatorState> explored_states;
   MinPriorityQueue                              pq;
@@ -68,21 +90,23 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   PLOGI << "Starting A* search";
 
   // const auto [init_feas, init_exit_times, init_braking, init_headways] =
-  const auto init_simulator_result = simulator.simulate(
+  const auto init_simulator_result = simulator->simulate(
       model_detail_input.dt, model_detail_input.late_entry_possible,
       model_detail_input.limit_speed_by_leaving_edges, false,
       !solver_strategy_input.time_aware_state_transitions);
   states_simulated++;
+  const auto init_state = simulator->get_simulator_state();
   const auto init_obj =
-      simulator::objective_val(simulator, init_simulator_result.exit_times,
+      simulator::objective_val(get_instance(), init_simulator_result.exit_times,
                                init_simulator_result.stop_times);
   const auto [init_heuristic_feas, init_heuristic_val] =
       simulator::full_greedy_heuristic(
-          solver_strategy_input.remaining_time_heuristic_type, simulator,
-          init_simulator_result, solver_strategy_input.consider_earliest_exit);
+          solver_strategy_input.remaining_time_heuristic_type, get_instance(),
+          init_state, init_simulator_result,
+          solver_strategy_input.consider_earliest_exit);
 
   PLOGD << "Initial state: final = "
-        << (simulator.is_final_state() ? "yes" : "no")
+        << (simulator->is_final_state() ? "yes" : "no")
         << ", objective = " << init_obj
         << ", heuristic = " << init_heuristic_val
         << ", total = " << init_obj + init_heuristic_val
@@ -92,15 +116,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         << (init_heuristic_feas ? "feasible" : "infeasible");
 
   if (init_simulator_result.success && init_heuristic_feas) {
-    const simulator::SimulatorState init_state{
-        .train_edges    = simulator.get_train_edges(),
-        .ttd_orders     = simulator.get_ttd_orders(),
-        .vertex_orders  = simulator.get_vertex_orders(),
-        .stop_positions = simulator.get_stop_positions()};
     pq.push(
         {init_obj, init_heuristic_val,
          init_obj + solver_strategy_input.a_star_weight * init_heuristic_val,
-         init_obj + init_heuristic_val, simulator.is_final_state(), init_state,
+         init_obj + init_heuristic_val, simulator->is_final_state(), init_state,
          init_simulator_result});
     explored_states.insert(init_state);
   }
@@ -176,9 +195,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         state_reexplorations++;
         continue;
       }
-      simulator.set_simulator_state(s);
+      simulator->set_simulator_state(s);
 
-      const auto sim_res = simulator.simulate(
+      const auto sim_res = simulator->simulate(
           model_detail_input.dt, model_detail_input.late_entry_possible,
           model_detail_input.limit_speed_by_leaving_edges, false,
           !solver_strategy_input.time_aware_state_transitions);
@@ -187,16 +206,17 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         PLOGV << "State is infeasible, skipping.";
         continue;
       }
-      const auto obj = simulator::objective_val(simulator, sim_res.exit_times,
-                                                sim_res.stop_times);
+      const auto obj = simulator::objective_val(
+          get_instance(), sim_res.exit_times, sim_res.stop_times);
       const auto [heuristic_feas, heuristic_val] =
           simulator::full_greedy_heuristic(
-              solver_strategy_input.remaining_time_heuristic_type, simulator,
-              sim_res, solver_strategy_input.consider_earliest_exit);
+              solver_strategy_input.remaining_time_heuristic_type,
+              get_instance(), s, sim_res,
+              solver_strategy_input.consider_earliest_exit);
       const auto new_obj =
           obj + solver_strategy_input.a_star_weight * heuristic_val;
       const auto new_unweighted_obj = obj + heuristic_val;
-      const auto final              = simulator.is_final_state();
+      const auto final              = simulator->is_final_state();
       PLOGV << "Objective = " << obj << ", heuristic = " << heuristic_val
             << ", total = " << new_obj << ", feasibility = "
             << (heuristic_feas ? "feasible" : "infeasible")
@@ -257,10 +277,10 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   if (sol_object.has_solution()) {
     // Add solution data to the solution object
 
-    simulator.set_simulator_state(best_state);
+    simulator->set_simulator_state(best_state);
 
     // Determine trajectories
-    const auto final_simulation_result = simulator.simulate(
+    const auto final_simulation_result = simulator->simulate(
         model_detail_input.dt, model_detail_input.late_entry_possible,
         model_detail_input.limit_speed_by_leaving_edges, true,
         true); // no partial routes should exist
@@ -396,7 +416,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
                            {"max_heuristic_inconsistency",
                             max_heuristic_inconsistency}},
           .string_data =
-              {{"remaining_time_heuristic",
+              {{"simulator", simulator::simulator_type_to_string(
+                                 model_detail_input.simulator_type)},
+               {"remaining_time_heuristic",
                 simulator::remaining_time_heuristic_type_to_string(
                     solver_strategy_input.remaining_time_heuristic_type)},
                {"next_state_strategy",

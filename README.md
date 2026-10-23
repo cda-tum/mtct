@@ -612,7 +612,10 @@ Export Options:
 ##### A\* Based
 
 `rail_gen_po_moving_block_astar_testing` searches for such a routing using an A\* search on simulated train movements [[8,9]](#references).
-The time step of that simulation is given by `--dt`.
+By default, the trains are simulated in time steps given by `--dt`.
+`--simulator EventBased` uses an event-based simulation instead [[11]](#references), in which a train is only simulated again once something relevant to it happens.
+This is usually faster.
+Its trajectories are exact, apart from trains closely following another one, which are simulated again at the earliest after `--dt` seconds.
 How far the trains are moved in every step is controlled by `--next-state-strategy`, and which heuristic estimates the remaining time by `--remaining-time-heuristic-strategy`.
 Using `--time-aware-state-transitions`, states that cannot lead to a better solution are not explored, which reduces the runtime drastically.
 If a proven optimal solution is not needed, `--heuristic-weight` allows to weight the heuristic, which speeds up the search while still guaranteeing an approximation factor.
@@ -648,7 +651,12 @@ Instance:
 
 Model Parameters:
   -c,     --dt, --timestep FLOAT:POSITIVE [6]
-                              Time step (dt) used in the simulation
+                              Time step (dt) used in the greedy simulation. The event-based
+                              simulation simulates a train following another one again after at
+                              least this time.
+          --simulator ENUM:value in {EventBased->1,Greedy->0} OR {1,0} [0]
+                              Simulator used to evaluate the states of the search. Currently
+                              supports 'Greedy' and 'EventBased'.
   -l,     --allow-late-entry  Allow late entry (delays) in the solution (default without flag
                               is false)
   -f{false}, --speed-limit-only-on-train-front{false}, --limit-speed-by-leaving-edges
@@ -746,3 +754,5 @@ If you have any questions, feel free to contact us via etcs.cda@xcit.tum.de or b
 [[9]](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf) Stefan Engels and Robert Wille. **"Time-Aware A\* for Optimal Train Routing on Moving Block Systems"**. Symposium on Algorithmic Approaches for Transportation Modelling, Optimization, and Systems (ATMOS), 2026 ([doi](https://doi.org/10.4230/OASIcs.ATMOS.2026.3), [pdf](https://www.cda.cit.tum.de/files/eda/2026_atmos_timeaware_astar_mb.pdf))
 
 [[10]](https://www.gurobi.com) Gurobi Optimization, LLC. **"Gurobi Optimizer Reference Manual"**. 2026
+
+[11] Sebastian Ludwig. **"Event-Based Simulation of Modern Railway Networks"**. Unpublished bachelor's thesis, Technical University of Munich, 2026

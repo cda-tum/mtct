@@ -12,6 +12,7 @@
 #include "options_mb_mip.hpp"
 #include "options_vss_mip.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "solver/GeneralSolver.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
@@ -1202,9 +1203,12 @@ TEST(CliOptions, MbAStarSettings) {
   cda_rail::cli::MbAStarSettings settings;
   CLI::App                       app;
   cda_rail::cli::add_mb_astar_options(app, settings);
-  app.parse(std::string{"-c 3 -l -w 1.5 -x NextTTD -r Zero -a -f -y"});
+  app.parse(std::string{
+      "-c 3 -l -w 1.5 -x NextTTD -r Zero -a -f -y --simulator EventBased"});
 
   EXPECT_DOUBLE_EQ(settings.dt, 3);
+  EXPECT_EQ(settings.simulator_type,
+            cda_rail::simulator::SimulatorType::EventBased);
   EXPECT_TRUE(settings.late_entry_possible);
   EXPECT_DOUBLE_EQ(settings.a_star_weight, 1.5);
   EXPECT_EQ(settings.next_state_strategy,
@@ -1232,7 +1236,7 @@ TEST(CliOptions, MbAStarGeneratedIdentifier) {
 
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
   EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
-            "6_f_t_t_f_1_SingleEdge_Simple_-1");
+            "6_Greedy_f_t_t_f_1_SingleEdge_Simple_-1");
 }
 
 TEST(CliVssOptions, ModelAndSolverSettings) {
@@ -1418,11 +1422,14 @@ TEST(CliOptions, MbAStarSettingsReachTheSolver) {
   cda_rail::cli::MbAStarSettings settings;
   CLI::App                       app;
   cda_rail::cli::add_mb_astar_options(app, settings);
-  app.parse(std::string{"-c 3 -l -f -y -a -w 1.5 -x NextTTD -r Zero"});
+  app.parse(std::string{
+      "-c 3 -l -f -y -a -w 1.5 -x NextTTD -r Zero --simulator EventBased"});
   cda_rail::cli::finalize_mb_astar_settings(settings);
 
   const auto detail = cda_rail::cli::mb_astar_model_detail(settings);
   EXPECT_DOUBLE_EQ(detail.dt, 3);
+  EXPECT_EQ(detail.simulator_type,
+            cda_rail::simulator::SimulatorType::EventBased);
   EXPECT_TRUE(detail.late_entry_possible);
   EXPECT_FALSE(detail.limit_speed_by_leaving_edges);
 

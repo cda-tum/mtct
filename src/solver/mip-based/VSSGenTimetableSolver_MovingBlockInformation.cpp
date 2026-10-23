@@ -291,7 +291,13 @@ void cda_rail::solver::mip_based::
     }
   }
 
-  // Additional fix order by constraints on x variables on every edge
+  // Additional fix order on every edge: the following train may only enter the
+  // edge once the rear of the previous train has passed its start. The front of
+  // a train has passed the start of an edge if x_mu of that edge is 1, the rear
+  // has passed it if x_lda is 0 for the edge of the route ending there, i.e.,
+  // the edge before e or, in the opposite direction, the reverse edge. Together
+  // with the separation constraints, this also fixes the order in which the
+  // trains leave the edge.
   for (size_t e = 0; e < num_edges; ++e) {
     const auto& network   = m_instance.get_const_network();
     const auto& edge_obj  = network.get_edge(e);
@@ -300,7 +306,6 @@ void cda_rail::solver::mip_based::
                             "]";
     const auto  tr_order_on_e =
         m_moving_block_solution.get_train_order_with_reverse(e);
-    const std::optional<size_t> rev_e = network.get_reverse_edge_index(e);
     for (size_t tr_i = 1; tr_i < tr_order_on_e.size(); tr_i++) {
       // Fix order on edge e
       const auto& [tr_following, tr_following_direction] =
@@ -312,22 +317,23 @@ void cda_rail::solver::mip_based::
       const auto& tr_following_obj =
           m_instance.get_const_train_list().get_train(tr_following);
 
-      const auto& [tr_prev, tr_prev_direction] = tr_order_on_e.at(tr_i - 1);
+      const auto  tr_prev = tr_order_on_e.at(tr_i - 1).train_id;
       const auto& tr_prev_obj =
           m_instance.get_const_train_list().get_train(tr_prev);
 
       const auto& tr_following_interval = train_interval[tr_following];
       const auto& tr_prev_interval      = train_interval[tr_prev];
 
-      assert(tr_prev_direction || rev_e.has_value());
-
-      const auto& prev_e = tr_prev_direction ? e : rev_e.value();
-
-      GRBLinExpr prev_x_expr      = 0;
-      GRBLinExpr following_x_expr = 0;
-      for (size_t t_idx = tr_following_interval.first;
-           t_idx <= tr_following_interval.second; ++t_idx) {
-        following_x_expr += m_vars["x"](tr_following, t_idx, e);
+      const auto& prev_edges = m_instance.get_const_routes()
+                                   .get_route(tr_prev_obj.get_name())
+                                   .get_edges();
+      const auto  prev_rear_edge =
+          std::ranges::find_if(prev_edges, [&](size_t prev_edge) {
+            return network.get_edge(prev_edge).target == edge_obj.source;
+          });
+      if (prev_rear_edge == prev_edges.end()) {
+        // e starts at the entry vertex of tr_prev, see common_entry
+        continue;
       }
 
       for (size_t t_idx =
@@ -336,33 +342,27 @@ void cda_rail::solver::mip_based::
            std::max(tr_prev_interval.second, tr_following_interval.second);
            ++t_idx) {
         const auto t = static_cast<double>(t_idx) * dt;
-        if (t_idx >= tr_prev_interval.first &&
-            t_idx <= tr_prev_interval.second) {
-          prev_x_expr += m_vars["x"](tr_prev, t_idx, prev_e);
-        }
-        if (t_idx - 1 >= tr_following_interval.first &&
-            t_idx - 1 <= tr_following_interval.second) {
-          following_x_expr -= m_vars["x"](tr_following, t_idx - 1, e);
-        }
+        const bool prev_present =
+            t_idx >= tr_prev_interval.first && t_idx <= tr_prev_interval.second;
+        const bool following_present = t_idx >= tr_following_interval.first &&
+                                       t_idx <= tr_following_interval.second;
+        const auto name = "fix_order_entry_" + tr_prev_obj.get_name() + "_" +
+                          tr_following_obj.get_name() + "_" +
+                          std::to_string(t) + "_" + edge_name;
 
-        // tr_following can only be on the edge after tr_prev
-        if (t_idx >= tr_following_interval.first &&
-            t_idx <= tr_following_interval.second) {
-          m_model->addConstr(m_vars["x"](tr_following, t_idx, e) <= prev_x_expr,
-                             "fix_order_type_1_" + tr_prev_obj.get_name() +
-                                 "_" + tr_following_obj.get_name() + "_" +
-                                 std::to_string(t) + "_" + edge_name);
-        }
-
-        // tr_prev can only be on the edge if tr_following will still be on the
-        // edge
-        if (t_idx >= tr_prev_interval.first &&
-            t_idx <= tr_prev_interval.second) {
-          m_model->addConstr(m_vars["x"](tr_prev, t_idx, prev_e) <=
-                                 following_x_expr,
-                             "fix_order_type_2_" + tr_prev_obj.get_name() +
-                                 "_" + tr_following_obj.get_name() + "_" +
-                                 std::to_string(t) + "_" + edge_name);
+        // Before tr_prev enters, its rear has not passed the start of e. After
+        // tr_following has left, its front has.
+        if (prev_present && following_present) {
+          m_model->addConstr(
+              m_vars["x_mu"](tr_following, t_idx, e) +
+                      m_vars["x_lda"](tr_prev, t_idx, *prev_rear_edge) <=
+                  1,
+              name);
+        } else if (following_present && t_idx < tr_prev_interval.first) {
+          m_model->addConstr(m_vars["x_mu"](tr_following, t_idx, e) <= 0, name);
+        } else if (prev_present && t_idx > tr_following_interval.second) {
+          m_model->addConstr(
+              m_vars["x_lda"](tr_prev, t_idx, *prev_rear_edge) <= 0, name);
         }
       }
     }

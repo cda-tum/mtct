@@ -75,11 +75,18 @@ next_state_strategy_to_string(NextStateStrategy strategy) {
   }
 }
 
-/** @brief What the simulation underlying the A* search does. */
+/**
+ * @brief What the simulation underlying the A* search does.
+ *
+ * `dt` is the time step of the greedy simulator, see
+ * simulator::GeneralSimulator::simulate for its meaning for the event-based
+ * one.
+ */
 struct ModelDetailMBAStar {
-  double dt                  = 6.0; // DB simulation default is 6 seconds
-  bool   late_entry_possible = false;
-  bool   limit_speed_by_leaving_edges = true;
+  double                   dt = 6.0; // DB simulation default is 6 seconds
+  simulator::SimulatorType simulator_type = simulator::SimulatorType::Greedy;
+  bool                     late_entry_possible          = false;
+  bool                     limit_speed_by_leaving_edges = true;
 };
 
 /**
@@ -105,7 +112,7 @@ namespace cda_rail::solver::astar_based {
  *
  * A state consists of the decisions made so far, i.e. of partial routes,
  * orders, and stop positions, see simulator::SimulatorState. Its value is the
- * objective of the trajectories that the greedy simulator obtains for it, and
+ * objective of the trajectories that the chosen simulator obtains for it, and
  * the remaining objective is estimated by a heuristic, see
  * simulator::greedy_heuristic. The first final state that is dequeued is
  * therefore an optimal solution.

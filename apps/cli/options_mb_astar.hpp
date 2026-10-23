@@ -2,6 +2,7 @@
 
 #include "CLI/CLI.hpp"
 #include "options_common.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
@@ -16,12 +17,13 @@ namespace cda_rail::cli {
  * subcommand of `rail_cli`.
  */
 struct MbAStarSettings {
-  double                                 dt{6};
-  bool                                   late_entry_possible{false};
-  bool                                   limit_speed_by_leaving_edges{true};
-  bool                                   consider_earliest_exit{true};
-  bool                                   time_aware_state_transitions{false};
-  double                                 a_star_weight{1.0};
+  double                   dt{6};
+  simulator::SimulatorType simulator_type{simulator::SimulatorType::Greedy};
+  bool                     late_entry_possible{false};
+  bool                     limit_speed_by_leaving_edges{true};
+  bool                     consider_earliest_exit{true};
+  bool                     time_aware_state_transitions{false};
+  double                   a_star_weight{1.0};
   solver::astar_based::NextStateStrategy next_state_strategy{
       solver::astar_based::NextStateStrategy::SingleEdge};
   simulator::RemainingTimeHeuristicType remaining_time_heuristic_type{
