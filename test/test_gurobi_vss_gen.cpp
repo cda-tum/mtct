@@ -235,6 +235,10 @@ void check_schedule_within_dt_and_order(
 }
 } // namespace
 
+// The enums have a fixed underlying type, so a value without an enumerator is
+// well-defined; it is exactly what the conversions have to reject.
+// NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+
 TEST(VSSGenSolver, UpdateStrategyToString) {
   EXPECT_EQ(cda_rail::solver::mip_based::update_strategy_to_string(
                 cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed),
@@ -262,6 +266,8 @@ TEST(VSSGenSolver, OptimalityStrategyToString) {
                    static_cast<cda_rail::OptimalityStrategy>(255)),
                cda_rail::exceptions::ConsistencyException);
 }
+
+// NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 TEST(VSSGenSolver, GurobiVSSDiscretizeInstanceWithoutChange) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(

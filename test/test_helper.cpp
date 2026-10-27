@@ -142,6 +142,10 @@ TEST(VSSModel, Functions) {
   EXPECT_EQ(cda_rail::vss::CHEBYSHEV.get_name(), "Chebyshev");
 }
 
+// The enums have a fixed underlying type, so a value without an enumerator is
+// well-defined; it is exactly what the conversions have to reject.
+// NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+
 TEST(VSSModel, ModelTypeToString) {
   EXPECT_EQ(
       cda_rail::vss::model_type_to_string(cda_rail::vss::ModelType::Discrete),
@@ -171,6 +175,8 @@ TEST(GeneralSimulator, SimulatorTypeToString) {
                    static_cast<cda_rail::simulator::SimulatorType>(255)),
                cda_rail::exceptions::ConsistencyException);
 }
+
+// NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 TEST(Helper, GreedySimulatorStateHash) {
   cda_rail::simulator::SimulatorState state1;

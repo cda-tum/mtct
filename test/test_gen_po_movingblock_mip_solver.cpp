@@ -273,6 +273,10 @@ void check_objective_if_optimal_or_warn(const SolutionType& solution,
 }
 } // namespace
 
+// The enums have a fixed underlying type, so a value without an enumerator is
+// well-defined; it is exactly what the conversions have to reject.
+// NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+
 TEST(GenPOMovingBlockMIPSolver, VelocityRefinementStrategyToString) {
   EXPECT_EQ(cda_rail::solver::mip_based::velocity_refinement_strategy_to_string(
                 cda_rail::VelocityRefinementStrategy::None),
@@ -317,6 +321,8 @@ TEST(GenPOMovingBlockMIPSolver, LazyTrainSelectionStrategyToString) {
                    static_cast<LazyTrainSelectionStrategy>(255)),
                cda_rail::exceptions::ConsistencyException);
 }
+
+// NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
