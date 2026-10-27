@@ -465,20 +465,21 @@ private:
                                        double dt) const;
 
   /**
-   * @brief Earliest time at which the train's rear passes the exit vertex if
-   *        the train starts from a standstill and is not hindered otherwise.
+   * @brief Earliest time at which the train's rear passes the exit vertex in
+   *        the simulation if the train is not hindered otherwise.
    *
    * @param tr Train index.
    * @param train Train object containing dynamic limits.
-   * @param pos Train-front position at which the train stands.
-   * @param start_time Time at which the train starts.
+   * @param pos Train-front position at the start.
+   * @param v_0 Train speed at the start.
+   * @param start_time Time of the start.
    * @param dt Simulation time step.
    * @return Time at which the rear passes the exit vertex, or INF if the
    *         train does not get there.
    */
-  [[nodiscard]] double
-  earliest_exit_from_standstill(size_t tr, const Train& train, double pos,
-                                double start_time, double dt) const;
+  [[nodiscard]] double earliest_exit(size_t tr, const Train& train, double pos,
+                                     double v_0, double start_time,
+                                     double dt) const;
 
   /**
    * @brief Converts a next-stop position into a moving-authority distance.

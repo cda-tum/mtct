@@ -832,7 +832,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   // At most one border used per train
   for (size_t tr = 0; tr < num_tr; ++tr) {
-    for (size_t t = train_interval[tr].first; t < train_interval[tr].second;
+    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       // sum_(e,vss) b_front(tr, t, e_index, vss) <= 1
       // sum_(e,vss) b_rear(tr, t, e_index, vss) <= 1
