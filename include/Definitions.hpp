@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <stdexcept>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -49,6 +51,24 @@ enum class SolutionStatus : std::uint8_t {
   Timeout    = 3,
   Unknown    = 4
 };
+/** @brief The name of @p status, as it is reported, exported and imported. */
+[[nodiscard]] constexpr std::string
+solution_status_to_string(SolutionStatus const status) {
+  switch (status) {
+  case SolutionStatus::Optimal:
+    return "Optimal";
+  case SolutionStatus::Feasible:
+    return "Feasible";
+  case SolutionStatus::Infeasible:
+    return "Infeasible";
+  case SolutionStatus::Timeout:
+    return "Timeout";
+  case SolutionStatus::Unknown:
+    return "Unknown";
+  default:
+    throw std::invalid_argument("Unknown solution status.");
+  }
+}
 /**
  * @brief How hard a solver tries to prove optimality.
  *

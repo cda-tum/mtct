@@ -4,11 +4,14 @@
 #include "EOMHelper.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
+#include "nlohmann/json.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
 #include <cmath>
 #include <filesystem>
+#include <fstream>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -878,6 +881,26 @@ TEST(GeneralPerformanceOptimizationInstances,
   auto sol2_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
   sol2_read.load_solution("./tmp", "test-sol-instance-2");
+
+  // The status is exported by its name, independent of the values of
+  // SolutionStatus. Hence, a number is no valid status.
+  {
+    const std::filesystem::path data_path =
+        "./tmp/solutions/test-sol-instance-1/UnnamedSubdirectory/"
+        "UnnamedInstance/solution_data.json";
+    std::ifstream  data_file(data_path);
+    nlohmann::json data = nlohmann::json::parse(data_file);
+    data_file.close();
+    EXPECT_EQ(data.at("status").get<std::string>(), "Optimal");
+    data["status"] = 0;
+    std::ofstream(data_path) << data;
+    auto sol_numeric_status =
+        cda_rail::instances::SolGeneralPerformanceOptimizationInstance(
+            instance);
+    EXPECT_THROW(
+        sol_numeric_status.load_solution("./tmp", "test-sol-instance-1"),
+        cda_rail::exceptions::ImportException);
+  }
   std::filesystem::remove_all("./tmp");
 
   EXPECT_TRUE(sol1_read.check_consistency());

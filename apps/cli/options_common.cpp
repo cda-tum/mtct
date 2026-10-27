@@ -250,25 +250,7 @@ void cda_rail::cli::log_solving_settings(const SolvingSettings& settings) {
 
 void cda_rail::cli::log_solution_status(SolutionStatus const status,
                                         double const         objective) {
-  std::string sol_status{"ERROR"};
-  switch (status) {
-  case SolutionStatus::Optimal:
-    sol_status = "Optimal";
-    break;
-  case SolutionStatus::Feasible:
-    sol_status = "Feasible";
-    break;
-  case SolutionStatus::Infeasible:
-    sol_status = "Infeasible";
-    break;
-  case SolutionStatus::Timeout:
-    sol_status = "Timeout";
-    break;
-  case SolutionStatus::Unknown:
-    sol_status = "Unknown";
-    break;
-  }
-  PLOGI << "Solution status: " << sol_status;
+  PLOGI << "Solution status: " << solution_status_to_string(status);
   PLOGI << "Solution objective: " << objective;
 }
 
