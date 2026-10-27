@@ -1474,6 +1474,19 @@ TEST(CliOptions, InstanceExportAndSolutionAreLogged) {
   });
 }
 
+TEST(CliOptions, VertexTypeToString) {
+  EXPECT_EQ(
+      cda_rail::cli::vertex_type_to_string(cda_rail::VertexType::NoBorder),
+      "NoBorder");
+  EXPECT_EQ(cda_rail::cli::vertex_type_to_string(cda_rail::VertexType::VSS),
+            "VSS");
+  EXPECT_EQ(cda_rail::cli::vertex_type_to_string(cda_rail::VertexType::TTD),
+            "TTD");
+  EXPECT_EQ(
+      cda_rail::cli::vertex_type_to_string(cda_rail::VertexType::NoBorderVSS),
+      "NoBorderVSS");
+}
+
 TEST(CliOptions, AnUnknownEnumValueIsPrintedAsUnknown) {
   // The listings look a value up in the option map to print its name; a value
   // that is not in the map must not go unnoticed.

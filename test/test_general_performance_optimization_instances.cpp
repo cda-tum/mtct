@@ -11,6 +11,7 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -947,6 +948,18 @@ TEST(GeneralPerformanceOptimizationInstances,
             sol2_read.get_instance()->get_const_network().get_edge_index(
                 {"v1"}, {"v2"}));
   EXPECT_FALSE(sol2_read.get_instance()->get_const_routes().has_route("tr2"));
+}
+
+TEST(GeneralPerformanceOptimizationInstances, SolutionStatusToString) {
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Optimal), "Optimal");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Feasible), "Feasible");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Infeasible),
+            "Infeasible");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Timeout), "Timeout");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Unknown), "Unknown");
+  EXPECT_THROW(std::ignore =
+                   solution_status_to_string(static_cast<SolutionStatus>(255)),
+               std::invalid_argument);
 }
 
 TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {

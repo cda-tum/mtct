@@ -1,6 +1,7 @@
 #include <cstdlib>
 #define TEST_FRIENDS true
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "EOMHelper.hpp"
 #include "TestingWarning.hpp"
@@ -250,23 +251,6 @@ void check_trajectory(
 }
 
 // Only usable within this translation unit.
-[[nodiscard]] std::string to_string(cda_rail::SolutionStatus status) {
-  switch (status) {
-  case cda_rail::SolutionStatus::Optimal:
-    return "Optimal";
-  case cda_rail::SolutionStatus::Feasible:
-    return "Feasible";
-  case cda_rail::SolutionStatus::Infeasible:
-    return "Infeasible";
-  case cda_rail::SolutionStatus::Timeout:
-    return "Timeout";
-  case cda_rail::SolutionStatus::Unknown:
-    return "Unknown";
-  }
-  return "Unknown";
-}
-
-// Only usable within this translation unit.
 template <typename SolutionType>
 void check_objective_if_optimal_or_warn(const SolutionType& solution,
                                         const std::string&  instance_name,
@@ -285,9 +269,54 @@ void check_objective_if_optimal_or_warn(const SolutionType& solution,
 
   cda_rail::test::TestingWarning::add_warning(
       "Non-optimal solution status for instance " + instance_name + ": " +
-      to_string(status));
+      cda_rail::solution_status_to_string(status));
 }
 } // namespace
+
+TEST(GenPOMovingBlockMIPSolver, VelocityRefinementStrategyToString) {
+  EXPECT_EQ(cda_rail::solver::mip_based::velocity_refinement_strategy_to_string(
+                cda_rail::VelocityRefinementStrategy::None),
+            "None");
+  EXPECT_EQ(cda_rail::solver::mip_based::velocity_refinement_strategy_to_string(
+                cda_rail::VelocityRefinementStrategy::MinOneStep),
+            "MinOneStep");
+  EXPECT_THROW(
+      cda_rail::solver::mip_based::velocity_refinement_strategy_to_string(
+          static_cast<cda_rail::VelocityRefinementStrategy>(255)),
+      cda_rail::exceptions::ConsistencyException);
+}
+
+TEST(GenPOMovingBlockMIPSolver, LazyConstraintSelectionStrategyToString) {
+  using cda_rail::solver::mip_based::
+      lazy_constraint_selection_strategy_to_string;
+  using cda_rail::solver::mip_based::LazyConstraintSelectionStrategy;
+  EXPECT_EQ(lazy_constraint_selection_strategy_to_string(
+                LazyConstraintSelectionStrategy::OnlyViolated),
+            "OnlyViolated");
+  EXPECT_EQ(lazy_constraint_selection_strategy_to_string(
+                LazyConstraintSelectionStrategy::OnlyFirstFound),
+            "OnlyFirstFound");
+  EXPECT_EQ(lazy_constraint_selection_strategy_to_string(
+                LazyConstraintSelectionStrategy::AllChecked),
+            "AllChecked");
+  EXPECT_THROW(lazy_constraint_selection_strategy_to_string(
+                   static_cast<LazyConstraintSelectionStrategy>(255)),
+               cda_rail::exceptions::ConsistencyException);
+}
+
+TEST(GenPOMovingBlockMIPSolver, LazyTrainSelectionStrategyToString) {
+  using cda_rail::solver::mip_based::lazy_train_selection_strategy_to_string;
+  using cda_rail::solver::mip_based::LazyTrainSelectionStrategy;
+  EXPECT_EQ(lazy_train_selection_strategy_to_string(
+                LazyTrainSelectionStrategy::OnlyAdjacent),
+            "OnlyAdjacent");
+  EXPECT_EQ(
+      lazy_train_selection_strategy_to_string(LazyTrainSelectionStrategy::All),
+      "All");
+  EXPECT_THROW(lazy_train_selection_strategy_to_string(
+                   static_cast<LazyTrainSelectionStrategy>(255)),
+               cda_rail::exceptions::ConsistencyException);
+}
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
 
