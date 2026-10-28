@@ -66,7 +66,8 @@ enum : std::uint16_t { CycleLimit = 1000 };
  * passed its exit vertex, which is when its scheduled exit time and speed
  * apply. Until then, it occupies its last edge, beyond whose end the route
  * continues at the edge's speed limit. A train only waits within the network,
- * i.e., at the latest with its front at the exit vertex.
+ * i.e., at the latest with its front at the exit vertex, unless it is kept
+ * behind a solution, see set_position_bound.
  */
 class GreedySimulator : public GeneralSimulator {
 public:
@@ -183,6 +184,11 @@ public:
    * solution, whose trains are hence not overtaken. As long as a train is
    * restricted, it may wait without the simulation being considered
    * deadlocked.
+   *
+   * Since a train then leaves no earlier than the train of that solution, its
+   * exit time is not enforced by apply_exit_time. Hence, it may also leave the
+   * network as slowly as the train of the solution. It is still not counted
+   * as leaving before its exit time.
    *
    * @param bound The bound, see PositionBoundFunction.
    */

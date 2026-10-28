@@ -95,6 +95,49 @@ SolType following_trains_solution(
   sol.set_exit_times({100, 115});
   return sol;
 }
+
+// The one-edge instance with trains scheduled as slow_exit_solution operates
+// them: the first one enters at time 0 and leaves at 154, the second one, if
+// any, enters at 130 and leaves at 240.
+instances::GeneralPerformanceOptimizationInstance
+slow_exit_instance(size_t num_trains) {
+  Network    network;
+  const auto v0   = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1   = network.add_vertex("v1", VertexType::TTD, 0);
+  const auto edge = network.add_edge(v0, v1, 1000, 10, true);
+
+  instances::GeneralPerformanceOptimizationInstance instance(network);
+  instance.add_train("Train1", 100, 10, 1, 1, true, 0, 10, v0, 154, 10, v1, 1);
+  if (num_trains > 1) {
+    instance.add_train("Train2", 100, 10, 1, 1, true, 130, 10, v0, 240, 10, v1,
+                       1);
+  }
+  for (const auto& train : instance.get_const_train_list()) {
+    instance.add_empty_route(train.get_name());
+    instance.push_back_edge_to_route(train.get_name(), edge);
+  }
+  return instance;
+}
+
+// The first train drives at 10 m/s until 950 m, brakes to 2 m/s by 998 m at
+// time 103, and then crawls out of the network, so that its front reaches the
+// exit vertex at 104 and its rear passes it at 154. Its rear hence passes
+// 950 m at 129. The second train, if any, enters at 130 and drives at 10 m/s
+// until its rear passes the exit vertex at 240.
+template <typename SolType>
+SolType slow_exit_solution(
+    const instances::GeneralPerformanceOptimizationInstance& instance) {
+  SolType sol(instance, SolutionStatus::Feasible, 0, true);
+  add_samples(sol, "Train1",
+              {{0, 0, 10}, {95, 950, 10}, {103, 998, 2}, {154, 1100, 2}});
+  if (instance.get_const_train_list().size() > 1) {
+    add_samples(sol, "Train2", {{130, 0, 10}, {240, 1100, 10}});
+    sol.set_exit_times({154, 240});
+  } else {
+    sol.set_exit_times({154});
+  }
+  return sol;
+}
 } // namespace
 
 TEST(SolutionEvaluation, PositionBoundHoldsTrainBack) {
@@ -218,6 +261,79 @@ TEST(SolutionEvaluation, SlowSolutionIsNotOvertaken) {
   // between at 10 m/s, so that it leaves at 112.5.
   ASSERT_TRUE(evaluation.greedy.success);
   EXPECT_NEAR(evaluation.greedy.exit_times.at(0), 112.5, 1);
+}
+
+TEST(SolutionEvaluation, SlowExitIsReplayed) {
+  // The solution lets the train crawl out of the network at 2 m/s, so that it
+  // leaves exactly at its exit time. Kept behind it, the train does the same,
+  // and it cannot leave any earlier than the train of the solution anyway.
+  const auto instance = slow_exit_instance(1);
+  auto       sol =
+      slow_exit_solution<instances::SolGeneralPerformanceOptimizationInstance>(
+          instance);
+
+  for (const double dt : {1.0, 15.0}) {
+    sol.evaluate(dt);
+    ASSERT_TRUE(sol.get_evaluation().has_value()) << "dt " << dt;
+    const auto& trajectory = sol.get_evaluation()->trajectory;
+    ASSERT_TRUE(trajectory.success) << "dt " << dt;
+    EXPECT_NEAR(trajectory.exit_times.at(0), 154, GRB_EPS) << "dt " << dt;
+
+    // Greedily, the train would leave at 110. In order not to leave before
+    // its exit time, it waits at the exit vertex instead and then leaves
+    // exactly at its exit time.
+    const auto& greedy = sol.get_evaluation()->greedy;
+    ASSERT_TRUE(greedy.success) << "dt " << dt;
+    EXPECT_NEAR(greedy.exit_times.at(0), 154, GRB_EPS) << "dt " << dt;
+  }
+}
+
+TEST(SolutionEvaluation, SlowExitDoesNotDelayFollowingTrain) {
+  // With a VSS border at 950 m, the second train can only enter once the rear
+  // of the first one has passed it, which it does at 129 when crawling out as
+  // in the solution. Both trains hence leave as scheduled.
+  const auto instance = slow_exit_instance(2);
+  auto       sol      = slow_exit_solution<
+      instances::SolVSSGeneralPerformanceOptimizationInstance>(instance);
+  sol.add_vss_pos(0, 950);
+
+  sol.evaluate(1.0);
+  ASSERT_TRUE(sol.get_evaluation().has_value());
+  const auto& trajectory = sol.get_evaluation()->trajectory;
+  ASSERT_TRUE(trajectory.success);
+  EXPECT_NEAR(trajectory.exit_times.at(0), 154, GRB_EPS);
+  EXPECT_NEAR(trajectory.exit_times.at(1), 240, GRB_EPS);
+
+  // Greedily, the first train waits at the exit vertex until 139, from where
+  // it accelerates, so that it leaves exactly at its exit time. Its rear hence
+  // passes the border only at 149, when the second train enters, 19 s later
+  // than in the solution.
+  const auto& greedy = sol.get_evaluation()->greedy;
+  ASSERT_TRUE(greedy.success);
+  EXPECT_NEAR(greedy.exit_times.at(0), 154, GRB_EPS);
+  EXPECT_NEAR(greedy.exit_times.at(1), 259, GRB_EPS);
+}
+
+TEST(SolutionEvaluation, InfeasibleEarlyExitIsNotCounted) {
+  // This solution is infeasible: its train leaves at 110, although it may not
+  // leave before its exit time of 154. The evaluation does not enforce the
+  // exit time, since it assumes every train of a solution to be feasible on
+  // its own. Hence, the simulated train follows the solution, and its rear
+  // passes the exit vertex at 110 as well. It then waits there and is only
+  // counted as leaving at 154, so that the infeasible solution does not get a
+  // negative delay.
+  const auto instance = slow_exit_instance(1);
+  instances::SolGeneralPerformanceOptimizationInstance sol(
+      instance, SolutionStatus::Feasible, 0, true);
+  add_samples(sol, "Train1", {{0, 0, 10}, {110, 1100, 10}});
+  sol.set_exit_times({110});
+
+  sol.evaluate(1.0);
+  ASSERT_TRUE(sol.get_evaluation().has_value());
+  const auto& trajectory = sol.get_evaluation()->trajectory;
+  ASSERT_TRUE(trajectory.success);
+  EXPECT_NEAR(trajectory.exit_times.at(0), 154, GRB_EPS);
+  EXPECT_NEAR(trajectory.exit_delays.at(0), 0, GRB_EPS);
 }
 
 TEST(SolutionEvaluation, StationDelay) {

@@ -931,12 +931,14 @@ public:
    * This is done twice, see SolutionEvaluation. In the first simulation,
    * neither the front nor the braking point of a train may get ahead of the
    * train of this solution at the same time, so that the timing of this
-   * solution is not overtaken. Between two samples of this solution, its
-   * trajectory is approximated by a constant line speed, bounded by what the
-   * next sample fixes exactly. In the second simulation, the trains are only
-   * bound by the decisions, as in the A* search. In both, trains may enter
-   * later than scheduled, which then shows up as delay. The objective is that
-   * of the instance evaluated at the simulated times.
+   * solution is not overtaken. A train hence leaves no earlier than in this
+   * solution, so that its exit time is not enforced separately, and it may
+   * leave the network as slowly as in this solution. Between two samples of
+   * this solution, its trajectory is approximated by a constant line speed,
+   * bounded by what the next sample fixes exactly. In the second simulation,
+   * the trains are only bound by the decisions, as in the A* search. In both,
+   * trains may enter later than scheduled, which then shows up as delay. The
+   * objective is that of the instance evaluated at the simulated times.
    *
    * @param dt Time step of the simulation in seconds.
    * @throws cda_rail::exceptions::ConsistencyException If there is no solution
