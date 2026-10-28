@@ -135,6 +135,8 @@ An exported solution can be evaluated by `--evaluate`.
 This simulates the solution in full detail and adds the resulting delays to `solution_data.json`, so that solutions obtained with different levels of detail can be compared.
 The simulation is done twice.
 The first one follows the original trajectories as closely as possible.
+A trajectory that does not respect the acceleration and deceleration of its train cannot always be followed.
+For these trains, which are listed in `trains_violating_dynamics`, the first simulation additionally enforces the exit time.
 The second one only keeps the routes, train orders, and stops of the solution and lets the trains drive greedily as fast as possible.
 The time step of the simulation is given by `--evaluation-dt` and defaults to the time step of the solver.
 The moving block MILP has no time step, so it has to be given there.

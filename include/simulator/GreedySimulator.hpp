@@ -66,7 +66,8 @@ enum : std::uint16_t { CycleLimit = 1000 };
  * passed its exit vertex, which is when its scheduled exit time and speed
  * apply. Until then, it occupies its last edge, beyond whose end the route
  * continues at the edge's speed limit. A train only waits within the network,
- * i.e., at the latest with its front at the exit vertex.
+ * i.e., at the latest with its front at the exit vertex, unless it is kept
+ * behind a solution, see set_position_bound.
  */
 class GreedySimulator : public GeneralSimulator {
 public:
@@ -184,10 +185,22 @@ public:
    * restricted, it may wait without the simulation being considered
    * deadlocked.
    *
+   * A train whose bound follows its dynamics, i.e., never asks it to brake
+   * harder than it can, can always stay behind the bound. It hence leaves no
+   * earlier than the train of that solution, so that its exit time is not
+   * enforced by apply_exit_time, and it may leave the network as slowly as the
+   * train of the solution. Any other train might not be able to stop at its
+   * exit vertex in time when following its bound, which apply_exit_time
+   * foresees. No train is counted as leaving before its exit time.
+   *
    * @param bound The bound, see PositionBoundFunction.
+   * @param trains_with_feasible_bound The trains whose bound follows their
+   *        dynamics.
    */
-  void set_position_bound(PositionBoundFunction bound) {
-    m_position_bound = std::move(bound);
+  void set_position_bound(PositionBoundFunction bound,
+                          index_set trains_with_feasible_bound = {}) {
+    m_position_bound             = std::move(bound);
+    m_trains_with_feasible_bound = std::move(trains_with_feasible_bound);
   }
 
   // ------------------
@@ -648,6 +661,8 @@ private:
 
   /** @brief See set_position_bound; empty if the trains are free. */
   PositionBoundFunction m_position_bound;
+  /** @brief See set_position_bound. */
+  index_set m_trains_with_feasible_bound;
 };
 
 } // namespace cda_rail::simulator

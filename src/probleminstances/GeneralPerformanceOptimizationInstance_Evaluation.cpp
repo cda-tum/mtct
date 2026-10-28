@@ -55,6 +55,43 @@ double pos_at_first_sample_from(
       "Train " + tr_name + " has no position after time " + std::to_string(t));
 }
 
+// The distance that a train covers at least within time tau before it has
+// speed v, since its acceleration a is limited.
+double min_distance_until_speed(double v, double a, double tau) {
+  return v <= a * tau ? (v * v) / (2 * a) : (v * tau) - (a * tau * tau / 2);
+}
+
+// Whether the trajectory of a train in the solution follows its dynamics,
+// i.e., whether the train can get from every sample to the next one with its
+// acceleration and deceleration. Its speed has to be possible within the
+// distance in between, which has to be at least min_distance_until_speed
+// within the time in between. Otherwise, the bound obtained from the next
+// sample lies behind the previous one. The positions may be off by the
+// precision to which the solver rounded them. Kept behind such a trajectory,
+// the train can always stop where the train of the solution can.
+bool trajectory_follows_dynamics(
+    const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
+    const cda_rail::Train& train) {
+  const auto& tr_name = train.get_name();
+  const auto  times   = sol.get_train_times(tr_name);
+  for (size_t i = 1; i < times.size(); ++i) {
+    const auto t_1  = times.at(i - 1);
+    const auto t_2  = times.at(i);
+    const auto v_2  = sol.get_train_speed(tr_name, t_2);
+    const auto dist = sol.get_train_pos(tr_name, t_2) -
+                      sol.get_train_pos(tr_name, t_1) +
+                      cda_rail::ROUNDING_PRECISION;
+    if (!cda_rail::possible_by_eom(sol.get_train_speed(tr_name, t_1), v_2,
+                                   train.get_acceleration(),
+                                   train.get_deceleration(), dist) ||
+        dist < min_distance_until_speed(v_2, train.get_acceleration(),
+                                        t_2 - t_1)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Trains ordered by the time of their event.
 cda_rail::index_vector
 sorted_trains(std::vector<std::pair<double, size_t>> events) {
@@ -209,6 +246,18 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
     }
   }
 
+  // A train whose trajectory follows its dynamics can always be kept behind
+  // it, so that it leaves no earlier than in this solution
+  cda_rail::index_set    trains_following_dynamics;
+  cda_rail::index_vector trains_violating_dynamics;
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    if (trajectory_follows_dynamics(*this, train_list.get_train(tr))) {
+      trains_following_dynamics.insert(tr);
+    } else {
+      trains_violating_dynamics.emplace_back(tr);
+    }
+  }
+
   simulator::GreedySimulator simulator(
       setup.instance, setup.ttd_sections, std::move(train_edges),
       std::move(ttd_orders), std::move(vertex_orders),
@@ -232,19 +281,16 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
         const auto t_sample = std::clamp(t, times.front(), times.back());
 
         // The train is known exactly at the next sample. To have its speed
-        // there, it has to cover at least the following distance until then,
-        // since its acceleration is limited. Its braking point never decreases.
+        // there, it has to cover at least min_distance_until_speed until then.
+        // Its braking point never decreases.
         [[maybe_unused]] const auto [edge, prev_t, next_t] =
             get_edge_and_time_bounds(tr_name, t_sample);
         const auto next_pos = get_train_pos(tr_name, next_t);
         const auto next_vel = get_train_speed(tr_name, next_t);
         const auto a        = train.get_acceleration();
-        const auto tau      = next_t - t_sample;
-        const auto min_dist = next_vel <= a * tau
-                                  ? (next_vel * next_vel) / (2 * a)
-                                  : (next_vel * tau) - (a * tau * tau / 2);
         simulator::GreedySimulator::PositionBound bound{
-            .front = next_pos - min_dist,
+            .front = next_pos -
+                     min_distance_until_speed(next_vel, a, next_t - t_sample),
             .braking_point =
                 next_pos +
                 braking_distance(next_vel, train.get_deceleration())};
@@ -267,7 +313,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
                                               train.get_deceleration()));
         }
         return bound;
-      });
+      },
+      std::move(trains_following_dynamics));
   const auto trajectory_result =
       simulator.simulate(dt, true, true, false, true);
   // Afterwards, only the decisions of this solution are fixed, as in the A*
@@ -278,7 +325,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
   m_evaluation = SolutionEvaluation{
       .dt         = dt,
       .trajectory = simulated_delays(setup.instance, trajectory_result),
-      .greedy     = simulated_delays(setup.instance, greedy_result)};
+      .greedy     = simulated_delays(setup.instance, greedy_result),
+      .trains_violating_dynamics = std::move(trains_violating_dynamics)};
 }
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::EvaluationSetup
@@ -324,12 +372,17 @@ nlohmann::json cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   auto const& train_list = get_instance()->get_const_train_list();
+  auto        trains_violating_dynamics = nlohmann::json::array();
+  for (const auto tr : m_evaluation->trains_violating_dynamics) {
+    trains_violating_dynamics.emplace_back(train_list.get_train(tr).get_name());
+  }
   // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
   data["evaluation"] = {
       {"dt", m_evaluation->dt},
       {"trajectory",
        simulated_delays_to_json(m_evaluation->trajectory, train_list)},
-      {"greedy", simulated_delays_to_json(m_evaluation->greedy, train_list)}};
+      {"greedy", simulated_delays_to_json(m_evaluation->greedy, train_list)},
+      {"trains_violating_dynamics", trains_violating_dynamics}};
   // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
   return data;
 }
@@ -350,5 +403,11 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       .trajectory = simulated_delays_from_json(evaluation_json.at("trajectory"),
                                                train_list),
       .greedy =
-          simulated_delays_from_json(evaluation_json.at("greedy"), train_list)};
+          simulated_delays_from_json(evaluation_json.at("greedy"), train_list),
+      .trains_violating_dynamics = {}};
+  for (const auto& tr_name : evaluation_json.at("trains_violating_dynamics")
+                                 .get<std::vector<std::string>>()) {
+    m_evaluation->trains_violating_dynamics.emplace_back(
+        train_list.get_train_index(tr_name));
+  }
 }

@@ -556,12 +556,17 @@ struct SimulatedDelays {
  *
  * The decisions are simulated twice with the same time step: once keeping
  * every train behind its trajectory in the solution, and once greedily, i.e.,
- * with only the decisions fixed, as in the A* search.
+ * with only the decisions fixed, as in the A* search. The trains whose
+ * trajectory does not follow their acceleration and deceleration might not be
+ * able to stop in time behind it. Hence, the first simulation enforces their
+ * exit times as the second one does, whereas it relies on the trajectories of
+ * the other trains to leave no earlier than their exit times.
  */
 struct SolutionEvaluation {
   double          dt{};
   SimulatedDelays trajectory;
   SimulatedDelays greedy;
+  index_vector    trains_violating_dynamics;
 };
 
 /**
@@ -931,12 +936,16 @@ public:
    * This is done twice, see SolutionEvaluation. In the first simulation,
    * neither the front nor the braking point of a train may get ahead of the
    * train of this solution at the same time, so that the timing of this
-   * solution is not overtaken. Between two samples of this solution, its
+   * solution is not overtaken. If the trajectory of a train follows its
+   * acceleration and deceleration, up to the precision to which positions are
+   * rounded, the train hence leaves no earlier than in this solution. Its exit
+   * time is then not enforced separately, so that it may leave the network as
+   * slowly as in this solution. Between two samples of this solution, its
    * trajectory is approximated by a constant line speed, bounded by what the
-   * next sample fixes exactly. In the second simulation, the trains are only
-   * bound by the decisions, as in the A* search. In both, trains may enter
-   * later than scheduled, which then shows up as delay. The objective is that
-   * of the instance evaluated at the simulated times.
+   * next sample fixes exactly. In the second simulation,
+   * the trains are only bound by the decisions, as in the A* search. In both,
+   * trains may enter later than scheduled, which then shows up as delay. The
+   * objective is that of the instance evaluated at the simulated times.
    *
    * @param dt Time step of the simulation in seconds.
    * @throws cda_rail::exceptions::ConsistencyException If there is no solution
