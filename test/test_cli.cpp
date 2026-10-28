@@ -898,6 +898,31 @@ TEST_F(CliTest, LogAnEvaluationEndingInADeadlock) {
   EXPECT_NO_THROW(cda_rail::cli::log_solution_evaluation(solution));
 }
 
+TEST_F(CliTest, LogAnEvaluationWithATrainViolatingItsDynamics) {
+  // As in a model without train dynamics, the solution lets the train stop
+  // from 20 m/s within 50 m, although it needs 200 m. The evaluation hence
+  // lists the train as violating its dynamics, which is logged as well.
+  cda_rail::cli::Session session{directory};
+  build_solvable_instance(session);
+
+  cda_rail::instances::SolGeneralPerformanceOptimizationInstance solution(
+      session.const_instance(), cda_rail::SolutionStatus::Feasible, 0, true);
+  for (const auto& [t, pos, vel] :
+       std::vector<std::tuple<double, double, double>>{
+           {0, 0, 0}, {20, 200, 20}, {30, 250, 0}, {195, 1050, 0}}) {
+    solution.add_train_pos("ICE1", t, pos);
+    solution.add_train_speed("ICE1", t, vel);
+  }
+  solution.set_exit_times({195});
+  solution.evaluate(1);
+  ASSERT_TRUE(solution.get_evaluation().has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
+  EXPECT_EQ(solution.get_evaluation()->trains_violating_dynamics,
+            cda_rail::index_vector{0});
+  // NOLINTEND(bugprone-unchecked-optional-access)
+  EXPECT_NO_THROW(cda_rail::cli::log_solution_evaluation(solution));
+}
+
 TEST_F(CliTest, HelpListsTheWholeCommandTree) {
   cda_rail::cli::Session session{directory};
   const auto             help = run_capturing(session, "help");
