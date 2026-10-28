@@ -1,3 +1,4 @@
+#include "CustomExceptions.hpp"
 #include "GeneralHelper.hpp"
 #include "VSSModel.hpp"
 #include "simulator/GeneralSimulator.hpp"
@@ -6,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -139,6 +141,42 @@ TEST(VSSModel, Functions) {
   EXPECT_EQ(cda_rail::vss::UNIFORM.get_name(), "Uniform");
   EXPECT_EQ(cda_rail::vss::CHEBYSHEV.get_name(), "Chebyshev");
 }
+
+// The enums have a fixed underlying type, so a value without an enumerator is
+// well-defined; it is exactly what the conversions have to reject.
+// NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+
+TEST(VSSModel, ModelTypeToString) {
+  EXPECT_EQ(
+      cda_rail::vss::model_type_to_string(cda_rail::vss::ModelType::Discrete),
+      "Discrete");
+  EXPECT_EQ(
+      cda_rail::vss::model_type_to_string(cda_rail::vss::ModelType::Continuous),
+      "Continuous");
+  EXPECT_EQ(
+      cda_rail::vss::model_type_to_string(cda_rail::vss::ModelType::Inferred),
+      "Inferred");
+  EXPECT_EQ(cda_rail::vss::model_type_to_string(
+                cda_rail::vss::ModelType::InferredAlt),
+            "InferredAlt");
+  EXPECT_THROW(std::ignore = cda_rail::vss::model_type_to_string(
+                   static_cast<cda_rail::vss::ModelType>(255)),
+               std::invalid_argument);
+}
+
+TEST(GeneralSimulator, SimulatorTypeToString) {
+  EXPECT_EQ(cda_rail::simulator::simulator_type_to_string(
+                cda_rail::simulator::SimulatorType::Greedy),
+            "Greedy");
+  EXPECT_EQ(cda_rail::simulator::simulator_type_to_string(
+                cda_rail::simulator::SimulatorType::EventBased),
+            "EventBased");
+  EXPECT_THROW(cda_rail::simulator::simulator_type_to_string(
+                   static_cast<cda_rail::simulator::SimulatorType>(255)),
+               cda_rail::exceptions::ConsistencyException);
+}
+
+// NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 TEST(Helper, GreedySimulatorStateHash) {
   cda_rail::simulator::SimulatorState state1;

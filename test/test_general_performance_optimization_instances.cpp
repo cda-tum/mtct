@@ -4,11 +4,15 @@
 #include "EOMHelper.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
+#include "nlohmann/json.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 
 #include "gtest/gtest.h"
 #include <cmath>
 #include <filesystem>
+#include <fstream>
+#include <stdexcept>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -878,6 +882,26 @@ TEST(GeneralPerformanceOptimizationInstances,
   auto sol2_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
   sol2_read.load_solution("./tmp", "test-sol-instance-2");
+
+  // The status is exported by its name, independent of the values of
+  // SolutionStatus. Hence, a number is no valid status.
+  {
+    const std::filesystem::path data_path =
+        "./tmp/solutions/test-sol-instance-1/UnnamedSubdirectory/"
+        "UnnamedInstance/solution_data.json";
+    std::ifstream  data_file(data_path);
+    nlohmann::json data = nlohmann::json::parse(data_file);
+    data_file.close();
+    EXPECT_EQ(data.at("status").get<std::string>(), "Optimal");
+    data["status"] = 0;
+    std::ofstream(data_path) << data;
+    auto sol_numeric_status =
+        cda_rail::instances::SolGeneralPerformanceOptimizationInstance(
+            instance);
+    EXPECT_THROW(
+        sol_numeric_status.load_solution("./tmp", "test-sol-instance-1"),
+        cda_rail::exceptions::ImportException);
+  }
   std::filesystem::remove_all("./tmp");
 
   EXPECT_TRUE(sol1_read.check_consistency());
@@ -925,6 +949,24 @@ TEST(GeneralPerformanceOptimizationInstances,
                 {"v1"}, {"v2"}));
   EXPECT_FALSE(sol2_read.get_instance()->get_const_routes().has_route("tr2"));
 }
+
+// The enum has a fixed underlying type, so a value without an enumerator is
+// well-defined; it is exactly what the conversion has to reject.
+// NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+
+TEST(GeneralPerformanceOptimizationInstances, SolutionStatusToString) {
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Optimal), "Optimal");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Feasible), "Feasible");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Infeasible),
+            "Infeasible");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Timeout), "Timeout");
+  EXPECT_EQ(solution_status_to_string(SolutionStatus::Unknown), "Unknown");
+  EXPECT_THROW(std::ignore =
+                   solution_status_to_string(static_cast<SolutionStatus>(255)),
+               std::invalid_argument);
+}
+
+// NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;

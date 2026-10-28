@@ -3806,6 +3806,119 @@ SIMULATOR_TEST(ExitNotBeforeScheduledExitTime) {
   }
 }
 
+// A train of 202 m enters at its maximal speed of 33.3 m/s, 1000 m before its
+// exit vertex, and has to leave with the given exit speed, i.e., with speed 0
+// it stops with its rear at the exit vertex and its front at 1202. An exit time
+// of 0 does not restrict it. Since a train can only stop at the end of a time
+// step of 15, it then leaves later than computed in continuous time.
+template <typename TypeParam>
+cda_rail::simulator::SimulatorResults simulate_exit(double exit_time,
+                                                    double exit_speed) {
+  Network    network;
+  const auto v0    = network.add_vertex("v0", VertexType::TTD, 0);
+  const auto v1    = network.add_vertex("v1", VertexType::TTD, 0);
+  const auto v0_v1 = network.add_edge(v0, v1, 1000, 33.3, true);
+  Timetable  timetable;
+  const auto tr1 =
+      timetable.add_train("Train1", 202, 33.3, 1, 0.9, true, 0, 33.3, v0,
+                          exit_time, exit_speed, v1, network);
+  RouteMap                                                    routes;
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, routes);
+
+  TypeParam simulator(instance, {});
+  simulator.set_train_edges_of_tr(tr1, {v0_v1});
+  simulator.set_vertex_orders_of_vertex(v0, {tr1});
+  simulator.set_vertex_orders_of_vertex(v1, {tr1});
+  return simulator.simulate(15.0, false, true, true);
+}
+
+// Whether the train stands somewhere before it leaves, and whether it does so
+// at the exit vertex at 1000 or with its front beyond it, i.e., outside the
+// network. Leaving with speed 0 at 1202 is not standing.
+struct ExitStandstills {
+  bool stood           = false;
+  bool stood_at_vertex = false;
+  bool stood_outside   = false;
+};
+
+ExitStandstills
+standstills_before_exit(const cda_rail::simulator::SimulatorResults& sim_res) {
+  ExitStandstills standstills;
+  for (const auto& [t, pos_vel] : sim_res.train_trajectories.at(0)) {
+    if (pos_vel.vel >= cda_rail::V_MIN ||
+        pos_vel.pos > 1202 - cda_rail::GRB_EPS) {
+      continue;
+    }
+    standstills.stood = true;
+    standstills.stood_at_vertex =
+        standstills.stood_at_vertex ||
+        std::abs(pos_vel.pos - 1000) < cda_rail::GRB_EPS;
+    standstills.stood_outside =
+        standstills.stood_outside || pos_vel.pos > 1000 + cda_rail::GRB_EPS;
+  }
+  return standstills;
+}
+
+SIMULATOR_TEST(ExitJustInTime) {
+  // The exit time is exactly when the train leaves anyway
+  for (const double exit_speed : {0.0, 10.0}) {
+    const auto unrestricted =
+        simulate_exit<TypeParam>(0, exit_speed).exit_times.at(0);
+    const auto sim_res = simulate_exit<TypeParam>(unrestricted, exit_speed);
+    ASSERT_TRUE(sim_res.success) << "exit speed " << exit_speed;
+    EXPECT_APPROX_EQ_6(sim_res.exit_times.at(0), unrestricted)
+        << "exit speed " << exit_speed;
+    EXPECT_FALSE(standstills_before_exit(sim_res).stood)
+        << "exit speed " << exit_speed;
+  }
+}
+
+SIMULATOR_TEST(ExitSlowingDown) {
+  // If the train would leave too early, it slows down or, if that is not
+  // enough, waits within the network, so that it leaves exactly at its exit
+  // time. It never stands with its front beyond the exit vertex. One time step
+  // later, stopping at the exit vertex is too late, hence, the train only slows
+  // down.
+  for (const double exit_speed : {0.0, 10.0}) {
+    const auto unrestricted =
+        simulate_exit<TypeParam>(0, exit_speed).exit_times.at(0);
+    for (int steps = 1; steps <= 30; ++steps) {
+      const double delay = 15.0 * steps;
+      const auto   sim_res =
+          simulate_exit<TypeParam>(unrestricted + delay, exit_speed);
+      ASSERT_TRUE(sim_res.success)
+          << "exit speed " << exit_speed << ", delay " << delay;
+      EXPECT_APPROX_EQ_6(sim_res.exit_times.at(0), unrestricted + delay)
+          << "exit speed " << exit_speed << ", delay " << delay;
+      const auto standstills = standstills_before_exit(sim_res);
+      EXPECT_FALSE(standstills.stood_outside)
+          << "exit speed " << exit_speed << ", delay " << delay;
+      if (steps == 1) {
+        EXPECT_FALSE(standstills.stood)
+            << "exit speed " << exit_speed << ", delay " << delay;
+      }
+    }
+  }
+}
+
+SIMULATOR_TEST(ExitWaiting) {
+  // Much too early, the train waits within the network, i.e., with its front at
+  // the exit vertex, and leaves exactly at its exit time
+  for (const double exit_speed : {0.0, 10.0}) {
+    const auto unrestricted =
+        simulate_exit<TypeParam>(0, exit_speed).exit_times.at(0);
+    const auto sim_res =
+        simulate_exit<TypeParam>(unrestricted + 2000, exit_speed);
+    ASSERT_TRUE(sim_res.success) << "exit speed " << exit_speed;
+    EXPECT_APPROX_EQ_6(sim_res.exit_times.at(0), unrestricted + 2000)
+        << "exit speed " << exit_speed;
+    const auto standstills = standstills_before_exit(sim_res);
+    EXPECT_TRUE(standstills.stood_at_vertex) << "exit speed " << exit_speed;
+    EXPECT_FALSE(standstills.stood_outside) << "exit speed " << exit_speed;
+  }
+}
+
 SIMULATOR_TEST(DesiredOrderInstanceSolution) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);

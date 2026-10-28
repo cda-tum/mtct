@@ -447,7 +447,7 @@ nlohmann::json
 cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
     const {
   nlohmann::json data;
-  data["status"] = static_cast<int>(
+  data["status"] = solution_status_to_string(
       m_status);       // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["obj"] = m_obj; // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
   data["lb"]  = m_lb;  // NOLINT(*-pro-bounds-avoid-unchecked-container-access)
@@ -458,7 +458,24 @@ cda_rail::instances::SolGeneralProblemInstance::get_general_solution_data()
 
 void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
     const nlohmann::json& data) {
-  this->m_status  = static_cast<SolutionStatus>(data.at("status").get<int>());
+  // The status is identified by its name only, so that exported solutions do
+  // not depend on the values of SolutionStatus
+  const auto& status_json = data.at("status");
+  const auto  status = status_json.is_string() ? status_json.get<std::string>()
+                                               : status_json.dump();
+  bool        known  = false;
+  for (const auto candidate :
+       {SolutionStatus::Optimal, SolutionStatus::Feasible,
+        SolutionStatus::Infeasible, SolutionStatus::Timeout,
+        SolutionStatus::Unknown}) {
+    if (solution_status_to_string(candidate) == status) {
+      this->m_status = candidate;
+      known          = true;
+    }
+  }
+  if (!known) {
+    throw exceptions::ImportException("solution status " + status);
+  }
   this->m_obj     = data.at("obj").get<double>();
   this->m_lb      = data.at("lb").get<double>();
   this->m_has_sol = data.at("has_solution").get<bool>();

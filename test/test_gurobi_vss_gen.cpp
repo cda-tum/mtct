@@ -1,3 +1,4 @@
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/Train.hpp"
@@ -233,6 +234,40 @@ void check_schedule_within_dt_and_order(
   }
 }
 } // namespace
+
+// The enums have a fixed underlying type, so a value without an enumerator is
+// well-defined; it is exactly what the conversions have to reject.
+// NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+
+TEST(VSSGenSolver, UpdateStrategyToString) {
+  EXPECT_EQ(cda_rail::solver::mip_based::update_strategy_to_string(
+                cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed),
+            "Fixed");
+  EXPECT_EQ(cda_rail::solver::mip_based::update_strategy_to_string(
+                cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative),
+            "Relative");
+  EXPECT_THROW(
+      cda_rail::solver::mip_based::update_strategy_to_string(
+          static_cast<cda_rail::solver::mip_based::UpdateStrategyVSSGen>(255)),
+      cda_rail::exceptions::ConsistencyException);
+}
+
+TEST(VSSGenSolver, OptimalityStrategyToString) {
+  EXPECT_EQ(cda_rail::solver::mip_based::optimality_strategy_to_string(
+                cda_rail::OptimalityStrategy::Optimal),
+            "Optimal");
+  EXPECT_EQ(cda_rail::solver::mip_based::optimality_strategy_to_string(
+                cda_rail::OptimalityStrategy::TradeOff),
+            "TradeOff");
+  EXPECT_EQ(cda_rail::solver::mip_based::optimality_strategy_to_string(
+                cda_rail::OptimalityStrategy::Feasible),
+            "Feasible");
+  EXPECT_THROW(cda_rail::solver::mip_based::optimality_strategy_to_string(
+                   static_cast<cda_rail::OptimalityStrategy>(255)),
+               cda_rail::exceptions::ConsistencyException);
+}
+
+// NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 TEST(VSSGenSolver, GurobiVSSDiscretizeInstanceWithoutChange) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(

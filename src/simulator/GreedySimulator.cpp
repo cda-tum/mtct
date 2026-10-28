@@ -1170,6 +1170,13 @@ cda_rail::simulator::GreedySimulator::apply_exit_time(
     if (s <= 0) {
       return current_time;
     }
+    if (v_end < V_MIN) {
+      // Leaving below V_MIN, the train comes to a standstill with its rear at
+      // the exit vertex, which the simulation only reaches at the end of a
+      // time step, i.e., possibly later than computed below. Hence, the
+      // simulation itself is used.
+      return earliest_exit(tr, train, pos_1, v_1, current_time, dt);
+    }
     if (v_1 * v_1 >= (2 * d * s) + (v_end * v_end)) {
       return current_time + ((v_1 - std::sqrt((v_1 * v_1) - (2 * d * s))) / d);
     }
@@ -1250,7 +1257,7 @@ cda_rail::simulator::GreedySimulator::apply_exit_time(
 
   if (std::abs(pos - exit_vertex_pos) <= GRB_EPS && v_0 < V_MIN &&
       current_time + GRB_EPS < exit_time &&
-      earliest_exit_from_standstill(tr, train, pos, current_time, dt) <=
+      earliest_exit(tr, train, pos, 0, current_time, dt) <=
           exit_time + GRB_EPS) {
     // The train waits at the exit vertex as long as it can still leave in time
     // afterwards
@@ -1272,13 +1279,13 @@ cda_rail::simulator::GreedySimulator::apply_exit_time(
   // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
-double cda_rail::simulator::GreedySimulator::earliest_exit_from_standstill(
-    size_t tr, const cda_rail::Train& train, double pos, double start_time,
-    double dt) const {
+double cda_rail::simulator::GreedySimulator::earliest_exit(
+    size_t tr, const cda_rail::Train& train, double pos, double v_0,
+    double start_time, double dt) const {
   // The train moves as in simulate, where a time after its exit time lifts
   // the restrictions of apply_exit_time
   const auto exit_pos = train_edge_length(tr) + train.get_length();
-  double     v        = 0;
+  double     v        = v_0;
   double     t        = start_time;
   while (pos < exit_pos - GRB_EPS) {
     t += dt;
