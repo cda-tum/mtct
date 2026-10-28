@@ -55,25 +55,37 @@ double pos_at_first_sample_from(
       "Train " + tr_name + " has no position after time " + std::to_string(t));
 }
 
+// The distance that a train covers at least within time tau before it has
+// speed v, since its acceleration a is limited.
+double min_distance_until_speed(double v, double a, double tau) {
+  return v <= a * tau ? (v * v) / (2 * a) : (v * tau) - (a * tau * tau / 2);
+}
+
 // Whether the trajectory of a train in the solution follows its dynamics,
 // i.e., whether the train can get from every sample to the next one with its
-// acceleration and deceleration. The positions may be off by the precision to
-// which the solver rounded them. Kept behind such a trajectory, the train can
-// always stop where the train of the solution can.
+// acceleration and deceleration. Its speed has to be possible within the
+// distance in between, which has to be at least min_distance_until_speed
+// within the time in between. Otherwise, the bound obtained from the next
+// sample lies behind the previous one. The positions may be off by the
+// precision to which the solver rounded them. Kept behind such a trajectory,
+// the train can always stop where the train of the solution can.
 bool trajectory_follows_dynamics(
     const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
     const cda_rail::Train& train) {
   const auto& tr_name = train.get_name();
   const auto  times   = sol.get_train_times(tr_name);
   for (size_t i = 1; i < times.size(); ++i) {
-    const auto t_1 = times.at(i - 1);
-    const auto t_2 = times.at(i);
-    if (!cda_rail::possible_by_eom(
-            sol.get_train_speed(tr_name, t_1),
-            sol.get_train_speed(tr_name, t_2), train.get_acceleration(),
-            train.get_deceleration(),
-            sol.get_train_pos(tr_name, t_2) - sol.get_train_pos(tr_name, t_1) +
-                cda_rail::ROUNDING_PRECISION)) {
+    const auto t_1  = times.at(i - 1);
+    const auto t_2  = times.at(i);
+    const auto v_2  = sol.get_train_speed(tr_name, t_2);
+    const auto dist = sol.get_train_pos(tr_name, t_2) -
+                      sol.get_train_pos(tr_name, t_1) +
+                      cda_rail::ROUNDING_PRECISION;
+    if (!cda_rail::possible_by_eom(sol.get_train_speed(tr_name, t_1), v_2,
+                                   train.get_acceleration(),
+                                   train.get_deceleration(), dist) ||
+        dist < min_distance_until_speed(v_2, train.get_acceleration(),
+                                        t_2 - t_1)) {
       return false;
     }
   }
@@ -269,19 +281,16 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
         const auto t_sample = std::clamp(t, times.front(), times.back());
 
         // The train is known exactly at the next sample. To have its speed
-        // there, it has to cover at least the following distance until then,
-        // since its acceleration is limited. Its braking point never decreases.
+        // there, it has to cover at least min_distance_until_speed until then.
+        // Its braking point never decreases.
         [[maybe_unused]] const auto [edge, prev_t, next_t] =
             get_edge_and_time_bounds(tr_name, t_sample);
         const auto next_pos = get_train_pos(tr_name, next_t);
         const auto next_vel = get_train_speed(tr_name, next_t);
         const auto a        = train.get_acceleration();
-        const auto tau      = next_t - t_sample;
-        const auto min_dist = next_vel <= a * tau
-                                  ? (next_vel * next_vel) / (2 * a)
-                                  : (next_vel * tau) - (a * tau * tau / 2);
         simulator::GreedySimulator::PositionBound bound{
-            .front = next_pos - min_dist,
+            .front = next_pos -
+                     min_distance_until_speed(next_vel, a, next_t - t_sample),
             .braking_point =
                 next_pos +
                 braking_distance(next_vel, train.get_deceleration())};

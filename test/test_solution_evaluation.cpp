@@ -389,6 +389,30 @@ TEST(SolutionEvaluation, StopBeyondDynamicsBeforeExit) {
             cda_rail::index_vector{0});
 }
 
+TEST(SolutionEvaluation, WaitAtFullSpeedBeyondDynamics) {
+  // As in a model without train dynamics, the solution lets the train wait at
+  // 960 m from 96 to 140 while keeping its speed of 10 m/s. Keeping its speed
+  // needs no distance, but having 10 m/s at 140 needs at least 50 m before, so
+  // that this does not follow the train's dynamics. Kept behind the solution,
+  // the train could hence no longer stop at the exit vertex, and its exit time
+  // is enforced. It waits until the solution moves on and passes the exit
+  // vertex at 144, from where it accelerates and leaves at 159.
+  const auto instance = slow_exit_instance(1);
+  instances::SolGeneralPerformanceOptimizationInstance sol(
+      instance, SolutionStatus::Feasible, 0, true);
+  add_samples(sol, "Train1",
+              {{0, 0, 10}, {96, 960, 10}, {140, 960, 10}, {154, 1100, 10}});
+  sol.set_exit_times({154});
+
+  sol.evaluate(1.0);
+  ASSERT_TRUE(sol.get_evaluation().has_value());
+  EXPECT_EQ(sol.get_evaluation()->trains_violating_dynamics,
+            cda_rail::index_vector{0});
+  const auto& trajectory = sol.get_evaluation()->trajectory;
+  ASSERT_TRUE(trajectory.success);
+  EXPECT_NEAR(trajectory.exit_times.at(0), 159, 1);
+}
+
 TEST(SolutionEvaluation, StationDelay) {
   // The train arrives at the station at 55, i.e., 15 s after its service
   // should have started, and the solution lets it stand there until 120
@@ -610,7 +634,8 @@ TEST(SolutionEvaluation, StoredMovingBlockSolutions) {
   // delay a following train by a few seconds. Since every train of these
   // solutions leaves exactly when scheduled, i.e., without any slack, this can
   // delay the train itself by another second, as can stopping when its rear
-  // passes the exit vertex, which only happens at the end of a time step.
+  // passes the exit vertex, which only happens at the end of a time step. Every
+  // trajectory follows the train's dynamics.
   for (const auto* instance_name :
        {"HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "Overtake",
         "SimpleNetwork", "SimpleStation", "SingleTrack",
@@ -623,6 +648,8 @@ TEST(SolutionEvaluation, StoredMovingBlockSolutions) {
 
     sol.evaluate(1.0);
     ASSERT_TRUE(sol.get_evaluation().has_value()) << instance_name;
+    EXPECT_TRUE(sol.get_evaluation()->trains_violating_dynamics.empty())
+        << instance_name;
     ASSERT_TRUE(sol.get_evaluation()->greedy.success) << instance_name;
     const auto& evaluation = sol.get_evaluation()->trajectory;
     ASSERT_TRUE(evaluation.success) << instance_name;
