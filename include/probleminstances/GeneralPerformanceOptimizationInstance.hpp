@@ -556,12 +556,17 @@ struct SimulatedDelays {
  *
  * The decisions are simulated twice with the same time step: once keeping
  * every train behind its trajectory in the solution, and once greedily, i.e.,
- * with only the decisions fixed, as in the A* search.
+ * with only the decisions fixed, as in the A* search. The trains whose
+ * trajectory does not follow their acceleration and deceleration might not be
+ * able to stop in time behind it. Hence, the first simulation enforces their
+ * exit times as the second one does, whereas it relies on the trajectories of
+ * the other trains to leave no earlier than their exit times.
  */
 struct SolutionEvaluation {
   double          dt{};
   SimulatedDelays trajectory;
   SimulatedDelays greedy;
+  index_vector    trains_violating_dynamics;
 };
 
 /**

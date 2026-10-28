@@ -286,6 +286,16 @@ void cda_rail::cli::log_solution_evaluation(
   }
   const auto& train_list = solution.get_instance()->get_const_train_list();
   PLOGI << "Evaluation with time step (dt) " << evaluation->dt;
+  if (!evaluation->trains_violating_dynamics.empty()) {
+    std::string trains;
+    for (const auto tr : evaluation->trains_violating_dynamics) {
+      trains = concatenate_string_views({trains, trains.empty() ? "" : ", ",
+                                         train_list.get_train(tr).get_name()});
+    }
+    PLOGI << "  Trajectories violating the train dynamics, whose exit times "
+             "are hence enforced: "
+          << trains;
+  }
   log_simulated_delays("Behind the solution's trajectory",
                        evaluation->trajectory, train_list);
   log_simulated_delays("Greedy", evaluation->greedy, train_list);

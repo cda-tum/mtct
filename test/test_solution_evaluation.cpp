@@ -275,6 +275,9 @@ TEST(SolutionEvaluation, SlowExitIsReplayed) {
   for (const double dt : {1.0, 15.0}) {
     sol.evaluate(dt);
     ASSERT_TRUE(sol.get_evaluation().has_value()) << "dt " << dt;
+    // Braking fully from 10 m/s to 2 m/s within 48 m follows the dynamics
+    EXPECT_TRUE(sol.get_evaluation()->trains_violating_dynamics.empty())
+        << "dt " << dt;
     const auto& trajectory = sol.get_evaluation()->trajectory;
     ASSERT_TRUE(trajectory.success) << "dt " << dt;
     EXPECT_NEAR(trajectory.exit_times.at(0), 154, GRB_EPS) << "dt " << dt;
@@ -343,7 +346,9 @@ TEST(SolutionEvaluation, StopBeyondDynamicsBeforeExit) {
   // solution, the train could no longer stop at the exit vertex but only 10 m
   // beyond it, from where it would leave late. Since its trajectory does not
   // follow its dynamics, its exit time is enforced instead. The train hence
-  // brakes in time to wait at the exit vertex and leaves at its exit time.
+  // brakes in time to wait at the exit vertex and leaves at its exit time. The
+  // train is listed as violating its dynamics, also once exported and
+  // imported again.
   const auto instance = slow_exit_instance(1);
   instances::SolGeneralPerformanceOptimizationInstance sol(
       instance, SolutionStatus::Feasible, 0, true);
@@ -358,9 +363,30 @@ TEST(SolutionEvaluation, StopBeyondDynamicsBeforeExit) {
 
   sol.evaluate(1.0);
   ASSERT_TRUE(sol.get_evaluation().has_value());
+  EXPECT_EQ(sol.get_evaluation()->trains_violating_dynamics,
+            cda_rail::index_vector{0});
   const auto& trajectory = sol.get_evaluation()->trajectory;
   ASSERT_TRUE(trajectory.success);
   EXPECT_NEAR(trajectory.exit_times.at(0), 154, GRB_EPS);
+
+  sol.export_solution("./tmp-solution-evaluation-dynamics", "test-evaluation");
+  {
+    std::ifstream  file("./tmp-solution-evaluation-dynamics/solutions/"
+                        "test-evaluation/UnnamedSubdirectory/"
+                        "UnnamedInstance/solution_data.json");
+    nlohmann::json data = nlohmann::json::parse(file);
+    EXPECT_EQ(data.at("evaluation")
+                  .at("trains_violating_dynamics")
+                  .get<std::vector<std::string>>(),
+              std::vector<std::string>{"Train1"});
+  }
+  instances::SolGeneralPerformanceOptimizationInstance sol_read(instance);
+  sol_read.load_solution("./tmp-solution-evaluation-dynamics",
+                         "test-evaluation");
+  std::filesystem::remove_all("./tmp-solution-evaluation-dynamics");
+  ASSERT_TRUE(sol_read.get_evaluation().has_value());
+  EXPECT_EQ(sol_read.get_evaluation()->trains_violating_dynamics,
+            cda_rail::index_vector{0});
 }
 
 TEST(SolutionEvaluation, StationDelay) {
@@ -498,6 +524,9 @@ TEST(SolutionEvaluation, ExportAndImport) {
     EXPECT_TRUE(evaluation.at("greedy").at("success").get<bool>());
     EXPECT_EQ(evaluation.at("greedy").at("obj").get<double>(),
               sol.get_evaluation()->greedy.obj);
+    // The trajectory follows the train's dynamics
+    EXPECT_TRUE(evaluation.at("trains_violating_dynamics").is_array());
+    EXPECT_TRUE(evaluation.at("trains_violating_dynamics").empty());
     EXPECT_EQ(evaluation.at("trajectory")
                   .at("trains")
                   .at("Train1")
