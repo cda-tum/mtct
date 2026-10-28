@@ -1114,9 +1114,10 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
                                         train.get_deceleration(), dt);
     }
 
-    // A train kept behind the train of a solution leaves no earlier than that
-    // one, see set_position_bound
-    if (!m_position_bound && pos < exit_pos - GRB_EPS) {
+    // A train kept behind a bound that follows its dynamics leaves no earlier
+    // than the train of the solution, see set_position_bound
+    if (!m_trains_with_feasible_bound.contains(tr) &&
+        pos < exit_pos - GRB_EPS) {
       retval = apply_exit_time(tr, train, pos, v_0, retval, current_time, dt);
     }
   }

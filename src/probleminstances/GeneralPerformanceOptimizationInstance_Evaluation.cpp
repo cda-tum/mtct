@@ -55,6 +55,31 @@ double pos_at_first_sample_from(
       "Train " + tr_name + " has no position after time " + std::to_string(t));
 }
 
+// Whether the trajectory of a train in the solution follows its dynamics,
+// i.e., whether the train can get from every sample to the next one with its
+// acceleration and deceleration. The positions may be off by the precision to
+// which the solver rounded them. Kept behind such a trajectory, the train can
+// always stop where the train of the solution can.
+bool trajectory_follows_dynamics(
+    const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
+    const cda_rail::Train& train) {
+  const auto& tr_name = train.get_name();
+  const auto  times   = sol.get_train_times(tr_name);
+  for (size_t i = 1; i < times.size(); ++i) {
+    const auto t_1 = times.at(i - 1);
+    const auto t_2 = times.at(i);
+    if (!cda_rail::possible_by_eom(
+            sol.get_train_speed(tr_name, t_1),
+            sol.get_train_speed(tr_name, t_2), train.get_acceleration(),
+            train.get_deceleration(),
+            sol.get_train_pos(tr_name, t_2) - sol.get_train_pos(tr_name, t_1) +
+                cda_rail::ROUNDING_PRECISION)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Trains ordered by the time of their event.
 cda_rail::index_vector
 sorted_trains(std::vector<std::pair<double, size_t>> events) {
@@ -209,6 +234,15 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
     }
   }
 
+  // A train whose trajectory follows its dynamics can always be kept behind
+  // it, so that it leaves no earlier than in this solution
+  cda_rail::index_set trains_following_dynamics;
+  for (size_t tr = 0; tr < num_tr; ++tr) {
+    if (trajectory_follows_dynamics(*this, train_list.get_train(tr))) {
+      trains_following_dynamics.insert(tr);
+    }
+  }
+
   simulator::GreedySimulator simulator(
       setup.instance, setup.ttd_sections, std::move(train_edges),
       std::move(ttd_orders), std::move(vertex_orders),
@@ -267,7 +301,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
                                               train.get_deceleration()));
         }
         return bound;
-      });
+      },
+      std::move(trains_following_dynamics));
   const auto trajectory_result =
       simulator.simulate(dt, true, true, false, true);
   // Afterwards, only the decisions of this solution are fixed, as in the A*

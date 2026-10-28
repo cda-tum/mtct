@@ -316,12 +316,12 @@ TEST(SolutionEvaluation, SlowExitDoesNotDelayFollowingTrain) {
 
 TEST(SolutionEvaluation, InfeasibleEarlyExitIsNotCounted) {
   // This solution is infeasible: its train leaves at 110, although it may not
-  // leave before its exit time of 154. The evaluation does not enforce the
-  // exit time, since it assumes every train of a solution to be feasible on
-  // its own. Hence, the simulated train follows the solution, and its rear
-  // passes the exit vertex at 110 as well. It then waits there and is only
-  // counted as leaving at 154, so that the infeasible solution does not get a
-  // negative delay.
+  // leave before its exit time of 154. Since the train follows its dynamics,
+  // the evaluation does not enforce its exit time but relies on the solution
+  // to respect it. Hence, the simulated train follows the solution, and its
+  // rear passes the exit vertex at 110 as well. It then waits there and is
+  // only counted as leaving at 154, so that the infeasible solution does not
+  // get a negative delay.
   const auto instance = slow_exit_instance(1);
   instances::SolGeneralPerformanceOptimizationInstance sol(
       instance, SolutionStatus::Feasible, 0, true);
@@ -334,6 +334,33 @@ TEST(SolutionEvaluation, InfeasibleEarlyExitIsNotCounted) {
   ASSERT_TRUE(trajectory.success);
   EXPECT_NEAR(trajectory.exit_times.at(0), 154, GRB_EPS);
   EXPECT_NEAR(trajectory.exit_delays.at(0), 0, GRB_EPS);
+}
+
+TEST(SolutionEvaluation, StopBeyondDynamicsBeforeExit) {
+  // As in a model without train dynamics, the solution lets the train stop at
+  // the exit vertex within 40 m from 10 m/s, although it needs 50 m. It then
+  // waits there until 139 and leaves at its exit time. Kept behind the
+  // solution, the train could no longer stop at the exit vertex but only 10 m
+  // beyond it, from where it would leave late. Since its trajectory does not
+  // follow its dynamics, its exit time is enforced instead. The train hence
+  // brakes in time to wait at the exit vertex and leaves at its exit time.
+  const auto instance = slow_exit_instance(1);
+  instances::SolGeneralPerformanceOptimizationInstance sol(
+      instance, SolutionStatus::Feasible, 0, true);
+  add_samples(sol, "Train1",
+              {{0, 0, 10},
+               {96, 960, 10},
+               {100, 1000, 0},
+               {139, 1000, 0},
+               {149, 1050, 10},
+               {154, 1100, 10}});
+  sol.set_exit_times({154});
+
+  sol.evaluate(1.0);
+  ASSERT_TRUE(sol.get_evaluation().has_value());
+  const auto& trajectory = sol.get_evaluation()->trajectory;
+  ASSERT_TRUE(trajectory.success);
+  EXPECT_NEAR(trajectory.exit_times.at(0), 154, GRB_EPS);
 }
 
 TEST(SolutionEvaluation, StationDelay) {
