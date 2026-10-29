@@ -413,8 +413,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                 "_" + std::to_string(t) + "_" + std::to_string(e));
 
         // e_lda = 0 if not first edge, i.e.,
-        // e_lda <= e_len * (1 - sum_inedges x) + e_len * (1-x)
-        rhs = 2 - m_vars["x"](tr, t, e);
+        // e_lda <= e_len * (1 - sum_inedges x)
+        // No big-M term in x is needed: if x = 0, then e_lda = 0 follows from
+        // e_lda <= e_mu <= e_len * x, and the rhs is non-negative because
+        // sum_inedges x <= x_v <= 1.
+        rhs = 1;
         for (const auto& e2 : in_edges) {
           rhs -= m_vars["x"](tr, t, e2);
         }
