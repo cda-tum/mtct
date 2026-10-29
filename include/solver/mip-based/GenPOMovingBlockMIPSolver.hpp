@@ -221,9 +221,6 @@ private:
   // Earliest service delay of a scheduled stop, by train and stop. All zero if
   // ModelDetailMovingBlock::use_minimum_time_bounds is not set.
   std::vector<std::vector<double>> m_minimum_service_delays;
-  // The edges a train may use, by train: its route if routes are fixed,
-  // otherwise every edge on some path from its entry to its exit vertex.
-  std::vector<cda_rail::index_set> m_edges_used_by_train;
 
   /**
    * @brief Stores the given settings and derives everything the model needs.
@@ -251,23 +248,6 @@ private:
                     latest_exit_time(tr));
   };
 
-  /** @brief The edges a train may use, see m_edges_used_by_train. */
-  [[nodiscard]] const cda_rail::index_set&
-  edges_used_by_train(size_t tr) const {
-    return m_edges_used_by_train.at(tr);
-  };
-  /** @brief The vertices of the edges a train may use. */
-  [[nodiscard]] cda_rail::index_set vertices_used_by_train(size_t tr) const;
-  /** @brief The TTD sections containing an edge a train may use. */
-  [[nodiscard]] cda_rail::index_set sections_used_by_train(size_t tr) const;
-  /** @brief The trains that may use an edge. */
-  [[nodiscard]] cda_rail::index_set trains_on_edge(size_t e) const;
-  /** @brief The trains that may use an edge of a section. */
-  [[nodiscard]] cda_rail::index_set
-  trains_in_section(const cda_rail::index_set& section) const;
-
-  /** @brief Computes the edges every train may use. */
-  void fill_edges_used_by_train();
   /** @brief Computes the bounds of the timing variables. */
   void fill_minimum_time_bounds();
   /** @brief Computes where every train can serve every one of its stops. */

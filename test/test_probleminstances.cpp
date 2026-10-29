@@ -1954,15 +1954,11 @@ TEST(ProblemInstanceWithSchedulesAndRoutes, Helper) {
   EXPECT_FALSE(instance.has_route_for_every_train());
 
   EXPECT_ANY_THROW((void)instance.edges_used_by_train("tr1", true, true));
+  // Without a route, tr1 can use every edge on its way from v0 to v5a, but not
+  // the branch towards v5b
+  cda_rail::index_set const expected_tr1_free_edges{e01, e12, e23a, e34a, e45a};
   auto const tr1_edges = instance.edges_used_by_train("tr1", true, false);
-  EXPECT_EQ(tr1_edges.size(), instance.get_const_network().number_of_edges());
-  for (size_t e_idx = 0; e_idx < instance.get_const_network().number_of_edges();
-       ++e_idx) {
-    EXPECT_TRUE(tr1_edges.contains(e_idx))
-        << "Edge " << e_idx << " ("
-        << instance.get_const_network().get_edge_name(e_idx)
-        << ") not found in tr_edges";
-  }
+  EXPECT_EQ(tr1_edges, expected_tr1_free_edges);
 
   instance.add_empty_route("tr1");
   instance.push_back_edge_to_route("tr1", {"v0", "v1"});
@@ -1978,15 +1974,13 @@ TEST(ProblemInstanceWithSchedulesAndRoutes, Helper) {
   EXPECT_EQ(tr1_edges_2, expected_tr1_edges_2);
 
   auto const tr1_edges_2b = instance.edges_used_by_train("tr1", false);
-  EXPECT_EQ(tr1_edges_2b.size(),
-            instance.get_const_network().number_of_edges());
-  for (size_t e_idx = 0; e_idx < instance.get_const_network().number_of_edges();
-       ++e_idx) {
-    EXPECT_TRUE(tr1_edges_2b.contains(e_idx))
-        << "Edge " << e_idx << " ("
-        << instance.get_const_network().get_edge_name(e_idx)
-        << ") not found in tr_edges";
-  }
+  EXPECT_EQ(tr1_edges_2b, expected_tr1_free_edges);
+
+  // With free routes, both trains can use e12, but only tr2 can use e23b
+  EXPECT_EQ(instance.all_trains_on_edge(e12, false),
+            cda_rail::index_set({tr1, tr2}));
+  EXPECT_EQ(instance.all_trains_on_edge(e23b, false),
+            cda_rail::index_set({tr2}));
 
   auto const tr1_sections_2 = instance.sections_used_by_train(
       "tr1", {{e12, e23a, e23b}, {e34b}}, true, true);

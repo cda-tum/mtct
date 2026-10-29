@@ -73,11 +73,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     m_vars["stopped"] = MultiArray<GRBVar>(num_tr, num_t);
   }
 
+  // With free routes, the model covers every edge, but a train can only use
+  // the edges on its way from its entry to its exit vertex.
+  cda_rail::index_set all_edges;
+  all_edges.reserve(num_edges);
+  for (size_t e = 0; e < num_edges; ++e) {
+    all_edges.insert(e);
+  }
+
   auto train_list = m_instance.get_const_train_list();
   for (size_t i = 0; i < num_tr; ++i) {
     auto max_speed =
         m_instance.get_const_train_list().get_train(i).get_max_speed();
-    auto tr_name = train_list.get_train(i).get_name();
+    auto       tr_name  = train_list.get_train(i).get_name();
+    const auto tr_edges = m_instance.edges_used_by_train(tr_name, fix_routes);
     for (size_t t = train_interval[i].first; t <= train_interval[i].second + 1;
          ++t) {
       m_vars["v"](i, t) = m_model->addVar(
@@ -86,8 +95,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
     for (size_t t = train_interval[i].first; t <= train_interval[i].second;
          ++t) {
-      for (auto const edge_id :
-           m_instance.edges_used_by_train(tr_name, fix_routes)) {
+      for (auto const edge_id : fix_routes ? tr_edges : all_edges) {
         const auto& edge = m_instance.get_editable_network().get_edge(edge_id);
         const auto& edge_name =
             "[" +
@@ -96,7 +104,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             m_instance.get_editable_network().get_vertex(edge.target).name +
             "]";
         m_vars["x"](i, t, edge_id) = m_model->addVar(
-            0, 1, 0, GRB_BINARY,
+            0, tr_edges.contains(edge_id) ? 1 : 0, 0, GRB_BINARY,
             "x_" + tr_name + "_" + std::to_string(static_cast<double>(t) * dt) +
                 "_" + edge_name);
       }

@@ -178,7 +178,8 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
   const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
   const auto  delta_consider =
       m_instance.get_const_network().neighboring_edges(vertex_id);
-  const auto             edges_used_by_td = edges_used_by_train(tr);
+  const auto edges_used_by_td =
+      m_instance.edges_used_by_train(tr, m_model_detail.fix_routes, false);
   cda_rail::index_vector edges_to_consider;
   for (const auto& edge_id : delta_consider) {
     if (std::ranges::contains(edges_used_by_td, edge_id)) {
