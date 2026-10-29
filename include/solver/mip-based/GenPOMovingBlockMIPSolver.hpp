@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <map>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -98,7 +100,9 @@ struct ModelDetailMovingBlock {
  *
  * `OnlyViolated` adds every constraint that the incumbent violates,
  * `OnlyFirstFound` stops after the first of them, and `AllChecked` adds every
- * constraint it looked at, whether it was violated or not.
+ * constraint it looked at, whether it was violated or not. With every
+ * strategy, a constraint that was already added is only added again if the
+ * incumbent violates it.
  */
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
   OnlyViolated   = 0,
@@ -378,7 +382,51 @@ private:
 
   class LazyCallback : public MessageCallback {
   private:
+    /** @brief A lazy constraint lhs >= rhs. */
+    struct LazyConstraint {
+      GRBLinExpr lhs;
+      GRBLinExpr rhs;
+    };
+
+    /** @brief The rule by which lazy constraints are created. */
+    enum class LazyConstraintKind : std::uint8_t {
+      VertexHeadway  = 0,
+      EdgeHeadway    = 1,
+      TtdHeadway     = 2,
+      ReverseEdge    = 3,
+      SimplifiedEdge = 4,
+      SimplifiedTtd  = 5,
+    };
+
     GenPOMovingBlockMIPSolver* solver;
+    // The lazy constraints added so far, by a key that identifies how they
+    // were created, see add_lazy_constraints().
+    std::map<std::vector<size_t>, std::vector<LazyConstraint>>
+        m_added_lazy_constraints;
+    // Gurobi's feasibility tolerance, with which a constraint that was added
+    // before counts as violated.
+    double m_feasibility_tolerance = 0;
+
+    /**
+     * @brief Adds lazy constraints unless they were added before.
+     *
+     * Constraints that were added before are only added again if the current
+     * solution violates them, which Gurobi does not rule out. Either way, a
+     * solution that violates one of the constraints is rejected, exactly as if
+     * all of them were added again.
+     *
+     * @param kind The rule by which the constraints are created
+     * @param key Every index that determines the constraints for this rule,
+     *        i.e., equal keys always lead to equal constraints
+     * @param create Creates the constraints, only called for a new key
+     */
+    void add_lazy_constraints(
+        LazyConstraintKind kind, std::vector<size_t> key,
+        const std::function<std::vector<LazyConstraint>()>& create);
+    /** @brief The value of an expression in the current solution. */
+    [[nodiscard]] double get_solution_value(const GRBLinExpr& expr);
+    /** @brief The index of a velocity among those of a train at a vertex. */
+    [[nodiscard]] size_t velocity_index(size_t tr, size_t v, double vel) const;
 
     /**
      * @brief The routes of the current solution.
