@@ -2894,7 +2894,7 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
               vel_source, vel_target, tr_object.get_acceleration(),
               tr_object.get_deceleration(), e_obj.length)) {
         auto hw_tmp     = headway(tr_object, e_obj, vel_source, vel_target,
-                                  v_source_index == entry_node);
+                                  v_source == entry_node);
         auto hw_tmp_ttd = min_time_to_push_ma_fully_backward(
             vel_source, tr_object.get_acceleration(),
             tr_object.get_deceleration());
