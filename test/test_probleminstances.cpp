@@ -1960,6 +1960,11 @@ TEST(ProblemInstanceWithSchedulesAndRoutes, Helper) {
   auto const tr1_edges = instance.edges_used_by_train("tr1", true, false);
   EXPECT_EQ(tr1_edges, expected_tr1_free_edges);
 
+  // Neither train has a route yet, so both count as being on the edges they
+  // can use, which only for tr2 includes e23b
+  EXPECT_EQ(instance.trains_on_edge(e23b, true, {tr1, tr2}, false),
+            cda_rail::index_set({tr2}));
+
   instance.add_empty_route("tr1");
   instance.push_back_edge_to_route("tr1", {"v0", "v1"});
   instance.push_back_edge_to_route("tr1", {"v1", "v2"});
