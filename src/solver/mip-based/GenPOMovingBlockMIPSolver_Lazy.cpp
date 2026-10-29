@@ -32,7 +32,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       MessageCallback::callback();
     } else if (where == GRB_CB_MIPSOL) {
       m_feasibility_tolerance =
-          solver->m_model->get(GRB_DoubleParam_FeasibilityTol);
+          solver->m_model.value().get(GRB_DoubleParam_FeasibilityTol);
       const auto routes                = get_routes();
       const auto train_velocities      = get_train_velocities(routes);
       const auto train_orders_on_edges = get_train_orders_on_edges(routes);
@@ -70,10 +70,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   }
 }
 
+template <typename CreateConstraints>
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
-    add_lazy_constraints(
-        LazyConstraintKind kind, std::vector<size_t> key,
-        const std::function<std::vector<LazyConstraint>()>& create) {
+    add_lazy_constraints(LazyConstraintKind kind, std::vector<size_t> key,
+                         const CreateConstraints& create) {
   key.insert(key.begin(), static_cast<size_t>(kind));
   if (const auto it = m_added_lazy_constraints.find(key);
       it != m_added_lazy_constraints.end()) {

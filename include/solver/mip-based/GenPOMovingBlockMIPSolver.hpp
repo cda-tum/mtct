@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <map>
 #include <string>
 #include <tuple>
@@ -398,11 +397,12 @@ private:
      * @param kind The rule by which the constraints are created
      * @param key Every index that determines the constraints for this rule,
      *        i.e., equal keys always lead to equal constraints
-     * @param create Creates the constraints, only called for a new key
+     * @param create Creates the constraints as a std::vector<LazyConstraint>,
+     *        only called for a new key
      */
-    void add_lazy_constraints(
-        LazyConstraintKind kind, std::vector<size_t> key,
-        const std::function<std::vector<LazyConstraint>()>& create);
+    template <typename CreateConstraints>
+    void add_lazy_constraints(LazyConstraintKind kind, std::vector<size_t> key,
+                              const CreateConstraints& create);
     /** @brief The value of an expression in the current solution. */
     [[nodiscard]] double get_solution_value(const GRBLinExpr& expr);
     /** @brief The index of a velocity among those of a train at a vertex. */
