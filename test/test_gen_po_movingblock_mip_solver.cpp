@@ -518,13 +518,12 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
                             v8, {{e_7_8}})) != tr_1_2_data.end());
 
   // tr_2_1_data
-  // Expect the following pairs:
+  // Train 2 has no route, but on its way from v8 to v1 it can only use the
+  // tracks towards v1. Expect the following pairs:
   // - v_41 with edge e_51_41
-  // - v_51 with e_61_51 or e_41_51
-  // - v_61 with e_51_61
+  // - v_51 with e_61_51
   // - v42 with e_62_42
-  // - v62 with e_42_62
-  EXPECT_EQ(tr_2_1_data.size(), 5);
+  EXPECT_EQ(tr_2_1_data.size(), 3);
 
   std::unordered_map<size_t, size_t> tr_2_1_stop_map;
   for (size_t i = 0; i < tr_2_1_data.size(); ++i) {
@@ -532,9 +531,9 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   }
   EXPECT_EQ(tr_2_1_stop_map.count(v41), 1);
   EXPECT_EQ(tr_2_1_stop_map.count(v51), 1);
-  EXPECT_EQ(tr_2_1_stop_map.count(v61), 1);
+  EXPECT_EQ(tr_2_1_stop_map.count(v61), 0);
   EXPECT_EQ(tr_2_1_stop_map.count(v42), 1);
-  EXPECT_EQ(tr_2_1_stop_map.count(v62), 1);
+  EXPECT_EQ(tr_2_1_stop_map.count(v62), 0);
 
   const auto& [tr_2_1_data_v21_v, tr_2_1_data_v21_p] =
       tr_2_1_data.at(tr_2_1_stop_map.at(v41));
@@ -547,21 +546,10 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   const auto& [tr_2_1_data_v51_v, tr_2_1_data_v51_p] =
       tr_2_1_data.at(tr_2_1_stop_map.at(v51));
   EXPECT_EQ(tr_2_1_data_v51_v, v51);
-  EXPECT_EQ(tr_2_1_data_v51_p.size(), 2);
+  EXPECT_EQ(tr_2_1_data_v51_p.size(), 1);
   EXPECT_TRUE(std::find(tr_2_1_data_v51_p.begin(), tr_2_1_data_v51_p.end(),
                         std::vector<size_t>{e_61_51}) !=
               tr_2_1_data_v51_p.end());
-  EXPECT_TRUE(std::find(tr_2_1_data_v51_p.begin(), tr_2_1_data_v51_p.end(),
-                        std::vector<size_t>{e_41_51}) !=
-              tr_2_1_data_v51_p.end());
-
-  const auto& [tr_2_1_data_v61_v, tr_2_1_data_v61_p] =
-      tr_2_1_data.at(tr_2_1_stop_map.at(v61));
-  EXPECT_EQ(tr_2_1_data_v61_v, v61);
-  EXPECT_EQ(tr_2_1_data_v61_p.size(), 1);
-  EXPECT_TRUE(std::find(tr_2_1_data_v61_p.begin(), tr_2_1_data_v61_p.end(),
-                        std::vector<size_t>{e_51_61}) !=
-              tr_2_1_data_v61_p.end());
 
   const auto& [tr_2_1_data_v42_v, tr_2_1_data_v42_p] =
       tr_2_1_data.at(tr_2_1_stop_map.at(v42));
@@ -570,14 +558,6 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_TRUE(std::find(tr_2_1_data_v42_p.begin(), tr_2_1_data_v42_p.end(),
                         std::vector<size_t>{e_62_42}) !=
               tr_2_1_data_v42_p.end());
-
-  const auto& [tr_2_1_data_v62_v, tr_2_1_data_v62_p] =
-      tr_2_1_data.at(tr_2_1_stop_map.at(v62));
-  EXPECT_EQ(tr_2_1_data_v62_v, v62);
-  EXPECT_EQ(tr_2_1_data_v62_p.size(), 1);
-  EXPECT_TRUE(std::find(tr_2_1_data_v62_p.begin(), tr_2_1_data_v62_p.end(),
-                        std::vector<size_t>{e_42_62}) !=
-              tr_2_1_data_v62_p.end());
 
   // Test if velocity data was set correctly
   const auto& vel_data = solver.m_velocity_extensions;

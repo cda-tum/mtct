@@ -269,6 +269,40 @@ cda_rail::Network::get_successors_helper(size_t index) const {
   return m_successors.at(index);
 }
 
+cda_rail::index_set
+cda_rail::Network::edges_on_paths_between_helper(size_t source,
+                                                 size_t target) const {
+  // An edge lies on such a path if it can be reached from source and target
+  // can be reached from it, in both cases following valid successors only.
+  const auto reachable_edges = [this](const cda_rail::index_set& start_edges,
+                                      bool                       forward) {
+    cda_rail::index_set visited = start_edges;
+    std::vector<size_t> to_visit(start_edges.begin(), start_edges.end());
+    while (!to_visit.empty()) {
+      const auto e = to_visit.back();
+      to_visit.pop_back();
+      for (const auto e_next :
+           forward ? get_successors(e) : get_predecessors(e)) {
+        if (visited.insert(e_next).second) {
+          to_visit.push_back(e_next);
+        }
+      }
+    }
+    return visited;
+  };
+
+  const auto from_source = reachable_edges(out_edges(source), true);
+  const auto to_target   = reachable_edges(in_edges(target), false);
+
+  cda_rail::index_set result;
+  for (const auto e : from_source) {
+    if (to_target.contains(e)) {
+      result.insert(e);
+    }
+  }
+  return result;
+}
+
 cda_rail::index_set cda_rail::Network::neighbors_helper(size_t v_index) const {
   if (!has_vertex(v_index)) {
     throw exceptions::VertexNotExistentException(v_index);
