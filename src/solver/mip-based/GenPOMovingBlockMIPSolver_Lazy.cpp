@@ -23,7 +23,7 @@
 
 using std::size_t;
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     callback() {
@@ -32,7 +32,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       MessageCallback::callback();
     } else if (where == GRB_CB_MIPSOL) {
       m_feasibility_tolerance =
-          solver->m_model.value().get(GRB_DoubleParam_FeasibilityTol);
+          solver->m_model->get(GRB_DoubleParam_FeasibilityTol);
       const auto routes                = get_routes();
       const auto train_velocities      = get_train_velocities(routes);
       const auto train_orders_on_edges = get_train_orders_on_edges(routes);
@@ -1006,7 +1006,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 LazyConstraintKind::ReverseEdge,
                 {idx, std::min(tr1, tr2), std::max(tr1, tr2),
                  tr1 < tr2 ? tr1_edge : tr2_edge},
-                [&]() {
+                [&, tr1 = tr1, tr2 = tr2]() {
                   // NOLINTNEXTLINE(misc-const-correctness)
                   GRBLinExpr lhs1 =
                       solver->m_vars["reverse_order"](tr1, tr2, idx) +
@@ -1236,4 +1236,4 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   return violated_constraint_found;
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
