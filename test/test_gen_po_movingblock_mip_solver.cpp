@@ -2223,6 +2223,79 @@ TEST(GenPOMovingBlockMIPSolver, MinimumTimeBoundsDoNotChangeOptimum) {
   check_schedule(instance, sol_without, "MinimumTimeBounds");
 }
 
+TEST(GenPOMovingBlockMIPSolver, MinimumTimeBoundsAtVertexBeforeOrAfterStop) {
+  // Station S has a track on each of two routes from v0 to v5. On the shorter
+  // route, the train passes v1 on its way to S, on the longer one only after
+  // it stopped at S. Hence, the minimum time bound at v1 must not assume that
+  // v1 is passed after the stop, which would cut off the optimal route.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4      = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v5      = network.add_vertex("v5", cda_rail::VertexType::TTD);
+  const auto v6      = network.add_vertex("v6", cda_rail::VertexType::TTD);
+
+  // Shorter route v0, v1, v2, v3 (stop), v5
+  const auto e01 = network.add_edge(v0, v1, 100, 10);
+  const auto e12 = network.add_edge(v1, v2, 100, 10);
+  const auto e23 = network.add_edge(v2, v3, 100, 10);
+  const auto e35 = network.add_edge(v3, v5, 100, 10);
+  // Longer route v0, v4, v6 (stop), v1, v2, v3, v5
+  const auto e04 = network.add_edge(v0, v4, 150, 10);
+  const auto e46 = network.add_edge(v4, v6, 100, 10);
+  const auto e61 = network.add_edge(v6, v1, 100, 10);
+
+  network.add_successor(e01, e12);
+  network.add_successor(e61, e12);
+  network.add_successor(e12, e23);
+  network.add_successor(e23, e35);
+  network.add_successor(e04, e46);
+  network.add_successor(e46, e61);
+
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v5, 1);
+
+  instance.add_empty_station("S");
+  instance.add_track_to_station("S", e23);
+  instance.add_track_to_station("S", e46);
+  instance.insert_stop("Tr1", "S", 0, 30);
+
+  const cda_rail::solver::mip_based::SolverStrategyMovingBlock strategy{
+      .abs_mip_gap = 1e-4};
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_with(instance);
+  const auto                                             sol_with =
+      solver_with.solve({.use_minimum_time_bounds = true}, strategy, {}, 100);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_without(
+      instance);
+  const auto sol_without = solver_without.solve(
+      {.use_minimum_time_bounds = false}, strategy, {}, 100);
+
+  ASSERT_TRUE(sol_with.has_solution());
+  ASSERT_TRUE(sol_without.has_solution());
+  EXPECT_EQ(sol_with.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_without.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_APPROX_EQ(sol_with.get_obj(), sol_without.get_obj());
+
+  // The optimal route passes v1 before the stop
+  const auto& route_edges =
+      sol_without.get_const_solution_routes().get_route("Tr1").get_edges();
+  EXPECT_TRUE(std::ranges::contains(route_edges, e01));
+
+  check_trajectory(instance, sol_with,
+                   "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_schedule(instance, sol_with,
+                 "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_trajectory(instance, sol_without,
+                   "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_schedule(instance, sol_without,
+                 "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+}
+
 TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 

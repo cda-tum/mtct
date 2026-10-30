@@ -764,6 +764,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         std::max(m_minimum_exit_times.at(tr),
                  running_times.exit_arrival + m_minimum_clearing_times.at(tr));
 
+    // Without stops, the only leg starts at the entry vertex, which the bounds
+    // above already cover.
+    if (num_stops == 0) {
+      continue;
+    }
+
     // Every vertex is passed on a leg between two consecutive stops, where the
     // first leg starts at the entry vertex and the last one ends at the exit
     // vertex. On the leg after a stop, the front arrives at the earliest when
