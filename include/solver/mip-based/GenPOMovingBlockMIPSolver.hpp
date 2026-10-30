@@ -239,6 +239,11 @@ private:
   [[nodiscard]] double minimum_arrival_time(size_t tr, size_t v) const {
     return m_minimum_arrival_times.at(tr).at(v);
   };
+  /**
+   * @brief The earliest time the front of a train can arrive at one of the
+   *        possible vertices of a stop, at most its latest exit time.
+   */
+  [[nodiscard]] double minimum_stop_arrival_time(size_t tr, size_t stop) const;
   // Between the front and the rear of a train passing a vertex, the train
   // covers its own length, which takes at least its length divided by its
   // maximal speed.

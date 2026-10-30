@@ -358,7 +358,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         max_num_stops, m_instance.get_const_schedule(tr).get_stops().size());
   }
   m_vars["stop"] = MultiArray<GRBVar>(m_num_tr, max_num_stops, m_num_vertices);
-  m_vars["service_delay"] = MultiArray<GRBVar>(m_num_tr, max_num_stops);
+  m_vars["t_stop_arrival"] = MultiArray<GRBVar>(m_num_tr, max_num_stops);
+  m_vars["service_delay"]  = MultiArray<GRBVar>(m_num_tr, max_num_stops);
 
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_name =
@@ -377,6 +378,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             "stop_" + sanitize(tr_name) + "_" + sanitize(stop_name) + "_" +
                 sanitize(m_instance.get_const_network().get_vertex(v).name));
       }
+      m_vars["t_stop_arrival"](tr, stop) = m_model->addVar(
+          std::min(minimum_stop_arrival_time(tr, stop), max_time), max_time,
+          0.0, GRB_CONTINUOUS,
+          "t_stop_arrival_" + sanitize(tr_name) + "_" + sanitize(stop_name));
       const auto max_delay = std::min(max_time - stop_obj.get_service_time(),
                                       m_model_detail.max_station_delay);
       m_vars["service_delay"](tr, stop) = m_model->addVar(
@@ -676,6 +681,15 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::latest_exit_time(
     size_t tr) const {
   auto const& exit_time = m_instance.get_const_schedule(tr).get_exit_time();
   return exit_time + m_model_detail.max_exit_delay;
+}
+
+double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    minimum_stop_arrival_time(size_t tr, size_t stop) const {
+  double min_time = latest_exit_time(tr);
+  for (const auto v : m_tr_stop_data.at(tr).at(stop) | std::views::keys) {
+    min_time = std::min(min_time, minimum_arrival_time(tr, v));
+  }
+  return min_time;
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -1752,25 +1766,32 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 sanitize(stop_station_name) + "_vertex_" +
                 sanitize(m_instance.get_const_network().get_vertex(v).name));
 
-        // Add station delay for objective use (only lb, since objective pushes
-        // down)
+        // If stopped at v, the front arrives at the stop when it arrives at v
         if (m_solver_strategy.use_indicator_constraints) {
           m_model->addGenConstrIndicator(
               m_vars["stop"](tr, stop, v), 1,
-              m_vars["service_delay"](tr, stop) >=
-                  m_vars["t_front_arrival"](tr, v) -
-                      stop_object.get_service_time(),
-              "service_delay_" + sanitize(tr_object.get_name()) + "_" +
+              m_vars["t_stop_arrival"](tr, stop) ==
+                  m_vars["t_front_arrival"](tr, v),
+              "stop_arrival_" + sanitize(tr_object.get_name()) + "_" +
                   sanitize(stop_station_name) + "_vertex_" +
                   sanitize(m_instance.get_const_network().get_vertex(v).name));
         } else {
+          // Both big-M values are the largest difference between the two
+          // arrival times that their bounds allow
           m_model->addConstr(
-              m_vars["service_delay"](tr, stop) +
-                      (max_tr_t - stop_object.get_service_time()) *
+              m_vars["t_stop_arrival"](tr, stop) +
+                      (max_tr_t - minimum_stop_arrival_time(tr, stop)) *
                           (1 - m_vars["stop"](tr, stop, v)) >=
-                  m_vars["t_front_arrival"](tr, v) -
-                      stop_object.get_service_time(),
-              "service_delay_" + sanitize(tr_object.get_name()) + "_" +
+                  m_vars["t_front_arrival"](tr, v),
+              "stop_arrival_lb_" + sanitize(tr_object.get_name()) + "_" +
+                  sanitize(stop_station_name) + "_vertex_" +
+                  sanitize(m_instance.get_const_network().get_vertex(v).name));
+          m_model->addConstr(
+              m_vars["t_stop_arrival"](tr, stop) <=
+                  m_vars["t_front_arrival"](tr, v) +
+                      (max_tr_t - minimum_arrival_time(tr, v)) *
+                          (1 - m_vars["stop"](tr, stop, v)),
+              "stop_arrival_ub_" + sanitize(tr_object.get_name()) + "_" +
                   sanitize(stop_station_name) + "_vertex_" +
                   sanitize(m_instance.get_const_network().get_vertex(v).name));
         }
@@ -1817,29 +1838,27 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               sanitize(
                   m_instance.get_const_train_list().get_train(tr).get_name()) +
               "_" + sanitize(stop_station_name));
+
+      // Add station delay for objective use (only lb, since objective pushes
+      // down)
+      m_model->addConstr(m_vars["service_delay"](tr, stop) >=
+                             m_vars["t_stop_arrival"](tr, stop) -
+                                 stop_object.get_service_time(),
+                         "service_delay_" + sanitize(tr_object.get_name()) +
+                             "_" + sanitize(stop_station_name));
     }
 
     // Stops are served in the order of the schedule, i.e., the front only
-    // arrives at the vertex of a stop after it left the vertex of the previous
-    // stop.
+    // arrives at a stop after it served the previous one. If the route passes
+    // the stops in this order, this already follows from the running times.
     for (size_t stop = 0; stop + 1 < tr_stops.size(); stop++) {
-      const auto& station_name      = tr_stops.at(stop).get_station().name;
-      const auto& next_station_name = tr_stops.at(stop + 1).get_station().name;
-      for (const auto v : m_tr_stop_data.at(tr).at(stop) | std::views::keys) {
-        for (const auto w :
-             m_tr_stop_data.at(tr).at(stop + 1) | std::views::keys) {
-          m_model->addConstr(
-              m_vars["t_front_arrival"](tr, w) +
-                      max_tr_t * (2 - m_vars["stop"](tr, stop, v) -
-                                  m_vars["stop"](tr, stop + 1, w)) >=
-                  m_vars["t_front_departure"](tr, v),
-              "stop_order_" + sanitize(tr_object.get_name()) + "_" +
-                  sanitize(station_name) + "_vertex_" +
-                  sanitize(m_instance.get_const_network().get_vertex(v).name) +
-                  "_" + sanitize(next_station_name) + "_vertex_" +
-                  sanitize(m_instance.get_const_network().get_vertex(w).name));
-        }
-      }
+      m_model->addConstr(
+          m_vars["t_stop_arrival"](tr, stop + 1) >=
+              m_vars["t_stop_arrival"](tr, stop) +
+                  tr_stops.at(stop).get_service_duration(),
+          "stop_order_" + sanitize(tr_object.get_name()) + "_" +
+              sanitize(tr_stops.at(stop).get_station().name) + "_" +
+              sanitize(tr_stops.at(stop + 1).get_station().name));
     }
 
     // Initial
