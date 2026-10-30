@@ -767,6 +767,43 @@ TEST(VSSGenSolver, GurobiVSSGenTimFixed) {
   check_schedule_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
+TEST(VSSGenSolver, GurobiVSSGenPostprocessTrainsNotOnEveryEdge) {
+  // The trains follow different routes, so a train does not have border
+  // variables on every edge with a used VSS. Postprocessing must not read them.
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "Stammstrecke4Trains", "atmos2023", "data");
+
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
+  solution_settings.postprocess = true;
+
+  const auto obj_val = solver.solve({15, true, true, false}, {}, {},
+                                    solution_settings, 120, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 6);
+
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
+}
+
+TEST(VSSGenSolver, GurobiVSSGenPostprocessNoTim) {
+  // A train without TIM has no rear border variables. Postprocessing must not
+  // read them.
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "SimpleStation", "atmos2023", "data");
+  solver.editable_instance().editable_train("tr1").set_no_tim();
+
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
+  solution_settings.postprocess = true;
+
+  const auto obj_val =
+      solver.solve({15, false}, {}, {}, solution_settings, 280, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
+}
+
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");

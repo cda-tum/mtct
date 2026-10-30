@@ -235,42 +235,43 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         }
         b_used = false;
         for (size_t tr = 0; tr < num_tr; ++tr) {
+          // A train only has border variables on the edges it can use, and
+          // rear ones only if it has a TIM
+          const auto tr_on_e =
+              !m_instance.trains_on_edge(e_index, fix_routes, {tr}).empty();
+          const auto tr_on_reverse_edge =
+              reverse_edge_index.has_value() &&
+              !m_instance
+                   .trains_on_edge(reverse_edge_index.value(), fix_routes, {tr})
+                   .empty();
+          const auto tr_has_tim =
+              m_instance.get_const_train_list().get_train(tr).has_tim();
           for (size_t t = train_interval.at(tr).first;
                t <= train_interval.at(tr).second; ++t) {
             const auto front1 =
+                tr_on_e &&
                 m_vars.at("b_front")
-                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
-                    .get(GRB_DoubleAttr_X) > 0.5;
+                        .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                        .get(GRB_DoubleAttr_X) > 0.5;
             const auto rear1 =
+                tr_on_e && tr_has_tim &&
                 m_vars.at("b_rear")
-                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
-                    .get(GRB_DoubleAttr_X) > 0.5;
-            const auto front2 =
-                (reverse_edge_index.has_value() &&
-                 !m_instance
-                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
-                                      {tr})
-                      .empty())
-                    ? m_vars.at("b_front")
-                              .at(tr, t,
-                                  breakable_edge_indices.at(
-                                      reverse_edge_index.value()),
-                                  vss)
-                              .get(GRB_DoubleAttr_X) > 0.5
-                    : false;
-            const auto rear2 =
-                (reverse_edge_index.has_value() &&
-                 !m_instance
-                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
-                                      {tr})
-                      .empty())
-                    ? m_vars.at("b_rear")
-                              .at(tr, t,
-                                  breakable_edge_indices.at(
-                                      reverse_edge_index.value()),
-                                  vss)
-                              .get(GRB_DoubleAttr_X) > 0.5
-                    : false;
+                        .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                        .get(GRB_DoubleAttr_X) > 0.5;
+            const auto front2 = tr_on_reverse_edge &&
+                                m_vars.at("b_front")
+                                        .at(tr, t,
+                                            breakable_edge_indices.at(
+                                                reverse_edge_index.value()),
+                                            vss)
+                                        .get(GRB_DoubleAttr_X) > 0.5;
+            const auto rear2  = tr_on_reverse_edge && tr_has_tim &&
+                                m_vars.at("b_rear")
+                                        .at(tr, t,
+                                            breakable_edge_indices.at(
+                                                reverse_edge_index.value()),
+                                            vss)
+                                        .get(GRB_DoubleAttr_X) > 0.5;
             if (front1 || rear1 || front2 || rear2) {
               b_used = true;
               break;
