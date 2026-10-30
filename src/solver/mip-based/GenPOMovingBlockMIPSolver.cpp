@@ -717,6 +717,42 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
   auto const& network = m_instance.get_const_network();
 
+  // The predecessors of all edges, following valid successors without turning
+  // around as the shortest path searches do
+  std::vector<cda_rail::index_vector> predecessors(network.number_of_edges());
+  for (size_t e = 0; e < network.number_of_edges(); e++) {
+    auto const& edge = network.get_edge(e);
+    for (auto const e_next : network.get_successors(e)) {
+      auto const& next_edge = network.get_edge(e_next);
+      if (next_edge.source != edge.target || next_edge.target != edge.source) {
+        predecessors.at(e_next).push_back(e);
+      }
+    }
+  }
+  // Whether the given end vertices can be reached from a vertex, i.e., if it
+  // is one of them or one of its outgoing edges leads to one of the given end
+  // edges into them
+  auto const end_reachable_from = [&](cda_rail::index_set const& end_vertices,
+                                      cda_rail::index_set const& end_edges) {
+    std::vector<bool> reachable(m_num_vertices, false);
+    for (auto const v : end_vertices) {
+      reachable.at(v) = true;
+    }
+    cda_rail::index_set visited = end_edges;
+    std::vector<size_t> to_visit(end_edges.begin(), end_edges.end());
+    while (!to_visit.empty()) {
+      auto const e = to_visit.back();
+      to_visit.pop_back();
+      reachable.at(network.get_edge(e).source) = true;
+      for (auto const e_prev : predecessors.at(e)) {
+        if (visited.insert(e_prev).second) {
+          to_visit.push_back(e_prev);
+        }
+      }
+    }
+    return reachable;
+  };
+
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     auto const& schedule  = m_instance.get_const_schedule(tr);
     auto const& tr_object = m_instance.get_const_train_list().get_train(tr);
@@ -819,31 +855,20 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           stop_tracks.at(stop), false, true, tr_object.get_max_speed()));
     }
 
+    // The vertices from which the stop at the end of a leg, or the exit vertex
+    // for the last leg, can still be reached
+    std::vector<std::vector<bool>> leg_end_reachable;
+    leg_end_reachable.reserve(num_stops + 1);
+    for (size_t stop = 0; stop < num_stops; stop++) {
+      leg_end_reachable.emplace_back(
+          end_reachable_from(stop_vertices.at(stop), stop_tracks.at(stop)));
+    }
     auto const exit_vertex = schedule.get_exit_vertex();
+    leg_end_reachable.emplace_back(
+        end_reachable_from({exit_vertex}, network.in_edges(exit_vertex)));
+
     for (auto const v : m_instance.vertices_used_by_train(
              tr, m_model_detail.fix_routes, false)) {
-      auto const                out_edges = network.out_edges(v);
-      cda_rail::index_set const out_edge_set(out_edges.begin(),
-                                             out_edges.end());
-      // Whether the stop at the end of a leg, or the exit vertex for the last
-      // leg, can still be reached from v
-      auto const leg_end_reachable = [&](size_t leg) {
-        if (leg < num_stops) {
-          return stop_vertices.at(leg).contains(v) ||
-                 (!out_edge_set.empty() &&
-                  network
-                      .shortest_path_length_between_edge_sets(
-                          out_edge_set, stop_tracks.at(leg), true)
-                      .has_value());
-        }
-        return v == exit_vertex ||
-               (!out_edge_set.empty() &&
-                network
-                    .shortest_path_length_between_edge_and_vertex_set(
-                        out_edge_set, {exit_vertex}, true)
-                    .has_value());
-      };
-
       double leg_minimum = INF;
       for (size_t leg = 0; leg <= num_stops; leg++) {
         double arrival = INF;
@@ -861,7 +886,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           arrival =
               earliest_departures.at(leg - 1) + leg_times.at(leg - 1).at(v);
         }
-        if (arrival < leg_minimum && leg_end_reachable(leg)) {
+        if (arrival < leg_minimum && leg_end_reachable.at(leg).at(v)) {
           leg_minimum = arrival;
         }
       }
