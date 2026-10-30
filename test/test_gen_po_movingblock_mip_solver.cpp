@@ -2352,4 +2352,68 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
                  "PreventOvertakingWhileStopping (late entry, no lazy)", 0.0);
 }
 
+TEST(GenPOMovingBlockMIPSolver, StopsAreServedInScheduleOrder) {
+  // A single track from left to right passes station S2 before station S1, so
+  // the train can only serve its stops in the order S2, S1.
+  const auto create_instance = [](double s1_service_time,
+                                  double s2_service_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+    const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+    const auto v4      = network.add_vertex("v4", cda_rail::VertexType::TTD);
+    const auto v5      = network.add_vertex("v5", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 100, 10);
+    const auto e12 = network.add_edge(v1, v2, 100, 10);
+    const auto e23 = network.add_edge(v2, v3, 100, 10);
+    const auto e34 = network.add_edge(v3, v4, 100, 10);
+    const auto e45 = network.add_edge(v4, v5, 100, 10);
+
+    network.add_successor(e01, e12);
+    network.add_successor(e12, e23);
+    network.add_successor(e23, e34);
+    network.add_successor(e34, e45);
+
+    instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v5, 1);
+
+    instance.add_empty_station("S1");
+    instance.add_track_to_station("S1", e34);
+    instance.add_empty_station("S2");
+    instance.add_track_to_station("S2", e12);
+    instance.insert_stop("Tr1", "S1", s1_service_time, 30);
+    instance.insert_stop("Tr1", "S2", s2_service_time, 30);
+
+    return instance;
+  };
+
+  // The schedule demands S1 before S2, which the track does not allow
+  const auto wrong_order_instance = create_instance(0, 60);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver wrong_order_solver(
+      wrong_order_instance);
+  const auto wrong_order_sol = wrong_order_solver.solve({}, {}, {}, 100);
+
+  EXPECT_FALSE(wrong_order_sol.has_solution())
+      << "Expected no solution if the stops can only be served out of order";
+  EXPECT_EQ(wrong_order_sol.get_status(), cda_rail::SolutionStatus::Infeasible)
+      << "Expected infeasibility if the stops can only be served out of order";
+
+  // The same track with the stops scheduled in the order of the track
+  const auto right_order_instance = create_instance(60, 0);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver right_order_solver(
+      right_order_instance);
+  const auto right_order_sol = right_order_solver.solve({}, {}, {}, 100);
+
+  ASSERT_TRUE(right_order_sol.has_solution())
+      << "Expected a solution if the stops can be served in order";
+  EXPECT_EQ(right_order_sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  check_trajectory(right_order_instance, right_order_sol,
+                   "StopsAreServedInScheduleOrder");
+  check_schedule(right_order_instance, right_order_sol,
+                 "StopsAreServedInScheduleOrder");
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

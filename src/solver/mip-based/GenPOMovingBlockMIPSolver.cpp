@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <numeric>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -685,7 +686,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   // its own and the respective edge's speed limit and hence ignore
   // acceleration; conflicts with other trains are ignored as well; and no
   // restriction to the edges of a fixed route is applied. All three make the
-  // bounds optimistic, so no feasible schedule is cut off.
+  // bounds optimistic, so no feasible schedule is cut off. The stops are
+  // served in the order of the schedule, which create_stopping_constraints()
+  // enforces.
   //
   // Every arrival time is capped at the time horizon of its train. The cap
   // only weakens the bound, and it keeps the invariant that
@@ -760,6 +763,94 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     m_minimum_exit_times.at(tr) =
         std::max(m_minimum_exit_times.at(tr),
                  running_times.exit_arrival + m_minimum_clearing_times.at(tr));
+
+    // Every vertex is passed on a leg between two consecutive stops, where the
+    // first leg starts at the entry vertex and the last one ends at the exit
+    // vertex. On the leg after a stop, the front arrives at the earliest when
+    // the train leaves the stop as early as possible and runs to the vertex as
+    // quickly as possible. A vertex can lie on several legs, e.g., if it can be
+    // passed both on the way to a station and after it, so only the minimum
+    // over all of them bounds its arrival. A leg is only left out if the
+    // vertex cannot be reached from the stop at its start or the stop at its
+    // end cannot be reached from the vertex. The latter is checked from every
+    // outgoing edge of the vertex, irrespective of how the train arrived.
+    auto const&                      stops = schedule.get_stops();
+    std::vector<cda_rail::index_set> stop_tracks(num_stops);
+    std::vector<cda_rail::index_set> stop_vertices(num_stops);
+    std::vector<double>              earliest_departures(num_stops);
+    for (size_t stop = 0; stop < num_stops; stop++) {
+      for (auto const track :
+           m_instance.get_stop_tracks(tr, stops.at(stop).get_station().name) |
+               std::views::keys) {
+        stop_tracks.at(stop).insert(track);
+        stop_vertices.at(stop).insert(network.get_edge(track).target);
+      }
+      earliest_departures.at(stop) =
+          std::max(running_times.stop_arrivals.at(stop) +
+                       stops.at(stop).get_service_duration(),
+                   stops.at(stop).get_earliest_departure());
+    }
+    // Running times from the vertices of every stop, at which the respective
+    // leg starts
+    std::vector<std::vector<double>> leg_times;
+    leg_times.reserve(num_stops);
+    for (size_t stop = 0; stop < num_stops; stop++) {
+      leg_times.emplace_back(network.shortest_path_lengths_to_all_vertices(
+          stop_tracks.at(stop), false, true, tr_object.get_max_speed()));
+    }
+
+    auto const exit_vertex = schedule.get_exit_vertex();
+    for (auto const v : m_instance.vertices_used_by_train(
+             tr, m_model_detail.fix_routes, false)) {
+      auto const                out_edges = network.out_edges(v);
+      cda_rail::index_set const out_edge_set(out_edges.begin(),
+                                             out_edges.end());
+      // Whether the stop at the end of a leg, or the exit vertex for the last
+      // leg, can still be reached from v
+      auto const leg_end_reachable = [&](size_t leg) {
+        if (leg < num_stops) {
+          return stop_vertices.at(leg).contains(v) ||
+                 (!out_edge_set.empty() &&
+                  network
+                      .shortest_path_length_between_edge_sets(
+                          out_edge_set, stop_tracks.at(leg), true)
+                      .has_value());
+        }
+        return v == exit_vertex ||
+               (!out_edge_set.empty() &&
+                network
+                    .shortest_path_length_between_edge_and_vertex_set(
+                        out_edge_set, {exit_vertex}, true)
+                    .has_value());
+      };
+
+      double leg_minimum = INF;
+      for (size_t leg = 0; leg <= num_stops; leg++) {
+        double arrival = INF;
+        if (leg == 0) {
+          if (v == schedule.get_entry_vertex()) {
+            arrival = schedule.get_entry_time();
+          } else if (vertex_times.at(v) < INF) {
+            arrival = schedule.get_entry_time() + vertex_times.at(v);
+          }
+        } else if (stop_vertices.at(leg - 1).contains(v)) {
+          // The train only passes a vertex of the previous station on this
+          // leg if it stopped at another one
+          arrival = earliest_departures.at(leg - 1);
+        } else if (leg_times.at(leg - 1).at(v) < INF) {
+          arrival =
+              earliest_departures.at(leg - 1) + leg_times.at(leg - 1).at(v);
+        }
+        if (arrival < leg_minimum && leg_end_reachable(leg)) {
+          leg_minimum = arrival;
+        }
+      }
+      if (leg_minimum < INF) {
+        m_minimum_arrival_times.at(tr).at(v) = std::min(
+            std::max(m_minimum_arrival_times.at(tr).at(v), leg_minimum),
+            horizon);
+      }
+    }
   }
 }
 
@@ -1720,6 +1811,29 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               sanitize(
                   m_instance.get_const_train_list().get_train(tr).get_name()) +
               "_" + sanitize(stop_station_name));
+    }
+
+    // Stops are served in the order of the schedule, i.e., the front only
+    // arrives at the vertex of a stop after it left the vertex of the previous
+    // stop.
+    for (size_t stop = 0; stop + 1 < tr_stops.size(); stop++) {
+      const auto& station_name      = tr_stops.at(stop).get_station().name;
+      const auto& next_station_name = tr_stops.at(stop + 1).get_station().name;
+      for (const auto v : m_tr_stop_data.at(tr).at(stop) | std::views::keys) {
+        for (const auto w :
+             m_tr_stop_data.at(tr).at(stop + 1) | std::views::keys) {
+          m_model->addConstr(
+              m_vars["t_front_arrival"](tr, w) +
+                      max_tr_t * (2 - m_vars["stop"](tr, stop, v) -
+                                  m_vars["stop"](tr, stop + 1, w)) >=
+                  m_vars["t_front_departure"](tr, v),
+              "stop_order_" + sanitize(tr_object.get_name()) + "_" +
+                  sanitize(station_name) + "_vertex_" +
+                  sanitize(m_instance.get_const_network().get_vertex(v).name) +
+                  "_" + sanitize(next_station_name) + "_vertex_" +
+                  sanitize(m_instance.get_const_network().get_vertex(w).name));
+        }
+      }
     }
 
     // Initial

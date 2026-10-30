@@ -84,7 +84,8 @@ struct ModelDetailMovingBlock {
   bool allow_late_entry                      = false;
   // Bound every timing variable by the earliest time at which the
   // corresponding event can happen, i.e. by the minimal running time the train
-  // needs to get there. Without these bounds the only lower bound on the
+  // needs to get there, including the stops it has to serve on the way.
+  // Without these bounds the only lower bound on the
   // objective is the scheduled timetable, and since everything that forces a
   // train to travel at all is a big-M constraint, the LP relaxation is then
   // free of any running time. Disabling this is only useful to measure the
