@@ -558,6 +558,15 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
           const auto obd = bd - p_tmp_len;
           assert(obd >= 0);
 
+          // If the moving authority ends exactly at the section, e.g., because
+          // the train stops at v_idx, it only reaches into the section once
+          // the front leaves v_idx.
+          const bool  ma_ends_at_ttd = obd < GRB_EPS;
+          const auto& tr_ttd_t_var =
+              ma_ends_at_ttd ? solver->m_vars["t_front_departure"](tr, v_idx)
+                             : tr_t_var;
+          const auto tr_ttd_t_var_value = getSolution(tr_ttd_t_var);
+
           double                t_reduction = 0;
           std::optional<double> t_addition;
 
@@ -593,7 +602,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             if (prev_ma_pos > pos + p_tmp_len) {
               skip = true;
               // obd is too long and relevant vertex is earlier
-            } else {
+            } else if (!ma_ends_at_ttd) {
               t_reduction = cda_rail::min_time_from_rear_to_ma_point(
                   prev_vel.value(), vel, V_MIN, prev_max_speed,
                   tr_object.get_acceleration(), tr_object.get_deceleration(),
@@ -649,7 +658,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                  LazyConstraintSelectionStrategy::AllChecked);
             const auto& other_tr_t_variable =
                 solver->m_vars["t_ttd_departure"](other_tr, ttd_index);
-            if (!add_constr && tr_t_var_value - t_reduction <
+            if (!add_constr && tr_ttd_t_var_value - t_reduction <
                                    getSolution(other_tr_t_variable)) {
               add_constr = true;
             }
@@ -691,7 +700,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   if (prev_edge_index.has_value()) {
                     assert(prev_vel.has_value());
                     lhs.emplace_back(
-                        tr_t_var - t_reduction +
+                        tr_ttd_t_var - t_reduction +
                         t_bound_tmp *
                             (static_cast<double>(p_tmp.size()) -
                              edge_tmp_path_expr + 1 -
@@ -710,7 +719,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   } else {
                     // Entry node
                     assert(v_idx == entry);
-                    lhs.emplace_back(tr_t_var - t_reduction +
+                    lhs.emplace_back(tr_ttd_t_var - t_reduction +
                                      t_bound_tmp *
                                          (static_cast<double>(p_tmp.size()) -
                                           edge_tmp_path_expr));

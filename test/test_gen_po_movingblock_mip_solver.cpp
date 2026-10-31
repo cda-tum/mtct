@@ -2515,6 +2515,25 @@ TEST(GenPOMovingBlockMIPSolver, UnreachableExitIsInfeasible) {
   }
 }
 
+namespace {
+// The ways to model the TTD headways, each with whether the headway
+// constraints are simplified
+std::vector<std::tuple<std::string, bool,
+                       cda_rail::solver::mip_based::SolverStrategyMovingBlock>>
+ttd_headway_strategies() {
+  return {
+      {"Lazy", false, {.abs_mip_gap = 0.01}},
+      {"LazyWithReverseHeadways",
+       false,
+       {.include_reverse_headways           = true,
+        .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
+            LazyConstraintSelectionStrategy::AllChecked,
+        .abs_mip_gap = 0.01}},
+      {"LazySimplified", true, {.abs_mip_gap = 0.01}},
+      {"NoLazy", false, {.use_lazy_constraints = false, .abs_mip_gap = 0.01}}};
+}
+} // namespace
+
 TEST(GenPOMovingBlockMIPSolver, CrossingTtdSectionIsUsedByOneTrainAtATime) {
   // Two lines cross at m, so the four edges around m form one TTD section,
   // which only one train can occupy at a time, whichever way the headways are
@@ -2548,19 +2567,7 @@ TEST(GenPOMovingBlockMIPSolver, CrossingTtdSectionIsUsedByOneTrainAtATime) {
   }
 
   for (const auto& [label, simplify_headway_constraints, solver_strategy] :
-       {std::tuple<std::string, bool,
-                   cda_rail::solver::mip_based::SolverStrategyMovingBlock>{
-            "Lazy", false, {.abs_mip_gap = 0.01}},
-        {"LazyWithReverseHeadways",
-         false,
-         {.include_reverse_headways           = true,
-          .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
-              LazyConstraintSelectionStrategy::AllChecked,
-          .abs_mip_gap = 0.01}},
-        {"LazySimplified", true, {.abs_mip_gap = 0.01}},
-        {"NoLazy",
-         false,
-         {.use_lazy_constraints = false, .abs_mip_gap = 0.01}}}) {
+       ttd_headway_strategies()) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.simplify_headway_constraints = simplify_headway_constraints},
@@ -2571,6 +2578,55 @@ TEST(GenPOMovingBlockMIPSolver, CrossingTtdSectionIsUsedByOneTrainAtATime) {
     EXPECT_GE(sol.get_obj(), 103 - 1e-3) << label;
     check_trajectory(instance, sol,
                      "CrossingTtdSectionIsUsedByOneTrainAtATime");
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, TrainWaitingAtTtdBorderDoesNotOccupySection) {
+  // As above, two lines cross at m, but TrB enters at standstill at c, directly
+  // in front of the TTD section. TrA cannot wait: it needs 41 s through the
+  // network at its maximal speed of 10 m/s and has to leave it after 42 s.
+  // Hence, TrA passes the section first and its rear leaves it after 31 s.
+  // Until then, TrB waits at c, which does not occupy the section, because its
+  // moving authority ends at c.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto a0      = network.add_vertex("a0", cda_rail::VertexType::TTD);
+  const auto a       = network.add_vertex("a", cda_rail::VertexType::TTD);
+  const auto m       = network.add_vertex("m", cda_rail::VertexType::NoBorder);
+  const auto b       = network.add_vertex("b", cda_rail::VertexType::TTD);
+  const auto b0      = network.add_vertex("b0", cda_rail::VertexType::TTD);
+  const auto c       = network.add_vertex("c", cda_rail::VertexType::TTD);
+  const auto d       = network.add_vertex("d", cda_rail::VertexType::TTD);
+  const auto d0      = network.add_vertex("d0", cda_rail::VertexType::TTD);
+  const auto a0_a    = network.add_edge(a0, a, 100, 10, false);
+  const auto a_m     = network.add_edge(a, m, 100, 10, false);
+  const auto m_b     = network.add_edge(m, b, 100, 10, false);
+  const auto b_b0    = network.add_edge(b, b0, 100, 10, false);
+  const auto c_m     = network.add_edge(c, m, 100, 10, false);
+  const auto m_d     = network.add_edge(m, d, 100, 10, false);
+  const auto d_d0    = network.add_edge(d, d0, 100, 10, false);
+  network.add_successor(a0_a, a_m);
+  network.add_successor(a_m, m_b);
+  network.add_successor(m_b, b_b0);
+  network.add_successor(c_m, m_d);
+  network.add_successor(m_d, d_d0);
+
+  instance.add_train("TrA", 10, 10, 2, 2, true, 0, 10, a0, 42, 10, b0, 1);
+  instance.add_train("TrB", 10, 10, 2, 2, true, 0, 0, c, 100, 10, d0, 1);
+
+  for (const auto& [label, simplify_headway_constraints, solver_strategy] :
+       ttd_headway_strategies()) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {.simplify_headway_constraints = simplify_headway_constraints,
+         .max_exit_delay               = 0},
+        solver_strategy, {}, 100);
+
+    ASSERT_TRUE(sol.has_solution()) << label;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal) << label;
+    check_trajectory(instance, sol,
+                     "TrainWaitingAtTtdBorderDoesNotOccupySection");
   }
 }
 
