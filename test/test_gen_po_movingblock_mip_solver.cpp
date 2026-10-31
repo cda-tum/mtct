@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <limits>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -2511,6 +2512,65 @@ TEST(GenPOMovingBlockMIPSolver, UnreachableExitIsInfeasible) {
     EXPECT_FALSE(sol.has_solution()) << "fix_routes = " << fix_routes;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Infeasible)
         << "fix_routes = " << fix_routes;
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, CrossingTtdSectionIsUsedByOneTrainAtATime) {
+  // Two lines cross at m, so the four edges around m form one TTD section,
+  // which only one train can occupy at a time, whichever way the headways are
+  // modelled. Both trains are 10 m long and
+  // enter at time 0 with their maximal speed of 10 m/s, 100 m before the
+  // section, where they can wait. Hence, each leaves the network after 41 s at
+  // the earliest. The rear of the first train to pass leaves the section after
+  // 31 s at the earliest, and only then the other one can enter it, after which
+  // it needs another 31 s to leave the network. Hence, the exit times sum up to
+  // at least 41 + 31 + 31 = 103 s.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto m       = network.add_vertex("m", cda_rail::VertexType::NoBorder);
+  for (const auto& [from, to] :
+       {std::pair<std::string, std::string>{"a", "b"}, {"c", "d"}}) {
+    const auto v_entry =
+        network.add_vertex(from + "0", cda_rail::VertexType::TTD);
+    const auto v_from = network.add_vertex(from, cda_rail::VertexType::TTD);
+    const auto v_to   = network.add_vertex(to, cda_rail::VertexType::TTD);
+    const auto v_exit = network.add_vertex(to + "0", cda_rail::VertexType::TTD);
+    const auto e_entry = network.add_edge(v_entry, v_from, 100, 10, false);
+    const auto e_in    = network.add_edge(v_from, m, 100, 10, false);
+    const auto e_out   = network.add_edge(m, v_to, 100, 10, false);
+    const auto e_exit  = network.add_edge(v_to, v_exit, 100, 10, false);
+    network.add_successor(e_entry, e_in);
+    network.add_successor(e_in, e_out);
+    network.add_successor(e_out, e_exit);
+    instance.add_train("Tr" + from, 10, 10, 2, 2, true, 0, 10, v_entry, 0, 10,
+                       v_exit, 1);
+  }
+
+  for (const auto& [label, simplify_headway_constraints, solver_strategy] :
+       {std::tuple<std::string, bool,
+                   cda_rail::solver::mip_based::SolverStrategyMovingBlock>{
+            "Lazy", false, {.abs_mip_gap = 0.01}},
+        {"LazyWithReverseHeadways",
+         false,
+         {.include_reverse_headways           = true,
+          .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
+              LazyConstraintSelectionStrategy::AllChecked,
+          .abs_mip_gap = 0.01}},
+        {"LazySimplified", true, {.abs_mip_gap = 0.01}},
+        {"NoLazy",
+         false,
+         {.use_lazy_constraints = false, .abs_mip_gap = 0.01}}}) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {.simplify_headway_constraints = simplify_headway_constraints},
+        solver_strategy, {}, 100);
+
+    ASSERT_TRUE(sol.has_solution()) << label;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal) << label;
+    EXPECT_GE(sol.get_obj(), 103 - 1e-3) << label;
+    check_trajectory(instance, sol,
+                     "CrossingTtdSectionIsUsedByOneTrainAtATime");
   }
 }
 

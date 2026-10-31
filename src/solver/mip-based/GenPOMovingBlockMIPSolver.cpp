@@ -2177,10 +2177,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                                    .get_edge(edge_index)
                                                    .length;
                                 });
-            GRBLinExpr edge_tmp_path_expr = 0;
-            for (const auto& e_tmp : p_tmp) {
-              edge_tmp_path_expr += m_vars["x"](tr, e_tmp);
-            }
+            // Only if the train leaves v with velocity vel and follows p into
+            // the section, its moving authority reaches into it
+            const auto p_to_ttd = cda_rail::index_vector(
+                p.begin(),
+                p.begin() + static_cast<std::ptrdiff_t>(e_index) + 1);
+            const GRBLinExpr edge_tmp_path_expr =
+                get_edge_path_expr(tr, p_to_ttd, vel);
+            const auto edge_tmp_path_size =
+                static_cast<double>(p_to_ttd.size());
 
             std::optional<GRBVar> edge_tmp_binary{};
             if (m_solver_strategy.use_indicator_constraints) {
@@ -2195,8 +2200,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
               m_model->addConstr(
                   edge_tmp_binary.value() >=
-                      edge_tmp_path_expr - static_cast<double>(p_tmp.size()) +
-                          1,
+                      edge_tmp_path_expr - edge_tmp_path_size + 1,
                   "headway_ttd_" + std::to_string(ttd_index) +
                       "_path_binary_helper_" + sanitize(tr_object.get_name()) +
                       "_" +
@@ -2243,7 +2247,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                         std::to_string(vel) + "_" + std::to_string(p_index));
               }
 
-              GRBLinExpr lhs_from_rear = m_vars["t_front_arrival"](tr, v);
+              // If the moving authority ends exactly at the section, e.g.,
+              // because the train stops at v, it only reaches into the section
+              // once the front leaves v.
+              GRBLinExpr lhs_from_rear =
+                  obd < GRB_EPS ? m_vars["t_front_departure"](tr, v)
+                                : m_vars["t_front_arrival"](tr, v);
 
               bool is_relevant = obd < GRB_EPS;
 
@@ -2361,7 +2370,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                               m_vars["t_front_departure"](tr, v_before_v) +
                               std::min(max_from_front, t_bound_tmp) +
                               t_bound_tmp *
-                                  (static_cast<double>(p_tmp.size()) + 1 -
+                                  (edge_tmp_path_size + 1 -
                                    m_vars["y"](tr, e_before_v, v_before_v_index,
                                                v_source_index) -
                                    edge_tmp_path_expr) +
@@ -2410,8 +2419,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 } else {
                   m_model->addConstr(
                       lhs_from_rear +
-                              t_bound_tmp * (static_cast<double>(p_tmp.size()) -
-                                             edge_tmp_path_expr) +
+                              t_bound_tmp *
+                                  (edge_tmp_path_size - edge_tmp_path_expr) +
                               t_bound_tmp * (1 - m_vars["order_ttd"](
                                                      tr, tr2, ttd_index)) >=
                           m_vars["t_ttd_departure"](tr2, ttd_index),
@@ -2651,7 +2660,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 "_" + std::to_string(i));
         m_model->addConstr(
             m_vars["order_ttd"](tr, tr2, i) + m_vars["order_ttd"](tr2, tr, i) >=
-                m_vars["x_ttd"](tr, i) - m_vars["x_ttd"](tr2, i) - 1,
+                m_vars["x_ttd"](tr, i) + m_vars["x_ttd"](tr2, i) - 1,
             "ttd_order_2_" + sanitize(tr_name) + "_" + sanitize(tr2_name) +
                 "_" + std::to_string(i));
 

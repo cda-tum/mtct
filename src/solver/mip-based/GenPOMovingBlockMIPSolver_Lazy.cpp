@@ -631,9 +631,12 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                          static_cast<int>(tr_index_tmp)) > 1) {
               continue;
             }
+            // If tr_other follows tr, it is irrelevant for the ma of tr. This
+            // is decided by the order variable, which activates the constraint,
+            // since the departure times can be equal.
             if (!solver->m_solver_strategy.include_reverse_headways &&
-                tr_other_idx > tr_index_tmp) {
-              // In this case tr_other follows tr, which is irrelevant for tr ma
+                getSolution(solver->m_vars["order_ttd"](
+                    tr, rel_tr_order_ttd.at(tr_other_idx), ttd_index)) < 0.5) {
               continue;
             }
             other_trains_ttd.insert(rel_tr_order_ttd.at(tr_other_idx));
@@ -1183,9 +1186,12 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                          static_cast<int>(tr_index_ttd)) > 1) {
               continue;
             }
+            // If tr_other follows tr, it is irrelevant for the ma of tr. This
+            // is decided by the order variable, which activates the constraint,
+            // since the departure times can be equal.
             if (!solver->m_solver_strategy.include_reverse_headways &&
-                tr_other_idx_ttd > tr_index_ttd) {
-              // In this case tr_other follows tr, which is irrelevant for tr ma
+                getSolution(solver->m_vars["order_ttd"](
+                    tr, tr_order_ttd.at(tr_other_idx_ttd), ttd_index)) < 0.5) {
               continue;
             }
             other_trains_ttd.insert(tr_order_ttd.at(tr_other_idx_ttd));
