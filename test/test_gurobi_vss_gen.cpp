@@ -804,6 +804,52 @@ TEST(VSSGenSolver, GurobiVSSGenPostprocessNoTim) {
   check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
 }
 
+TEST(VSSGenSolver, GurobiVSSGenPostprocessFreeRoutesEdgeOutsidePath) {
+  // Two trains follow each other on a single track, which hence has to be
+  // separated by two borders, see GurobiVSSGenVSSDiscreteFree. The first train
+  // runs on another track and cannot use the separated one, hence it has no
+  // border variables on it. Postprocessing must not read them.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 300, 10, true, 100);
+  instance.get_editable_network().add_edge({"v2"}, {"v3"}, 300, 10, false);
+
+  instance.add_train("Train0", 50, 10, 10, 10, true, 0, 10, {"v2"}, 35, 10,
+                     {"v3"});
+  instance.add_train("Train1", 50, 10, 10, 10, true, 0, 10, {"v0"}, 35, 10,
+                     {"v1"});
+  instance.add_train("Train2", 50, 10, 10, 10, true, 20, 10, {"v0"}, 55, 10,
+                     {"v1"});
+  // Even with free routes, the solver looks up the unbreakable sections on the
+  // routes of the trains.
+  instance.add_empty_route("Train0");
+  instance.push_back_edge_to_route("Train0", {"v2", "v3"});
+  for (const auto& tr_name : {"Train1", "Train2"}) {
+    instance.add_empty_route(tr_name);
+    instance.push_back_edge_to_route(tr_name, {"v0", "v1"});
+  }
+
+  EXPECT_FALSE(instance.edges_used_by_train("Train0", false)
+                   .contains(instance.get_const_network().get_edge_index(
+                       {"v0"}, {"v1"})));
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
+  solution_settings.postprocess = true;
+
+  const auto obj_val =
+      solver.solve({5, false}, {}, {}, solution_settings, 300, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 2);
+
+  check_schedule_within_dt_and_order(obj_val, 5, "obj_val");
+}
+
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");

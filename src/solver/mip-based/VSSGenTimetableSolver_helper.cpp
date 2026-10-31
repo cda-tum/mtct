@@ -185,6 +185,16 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     obj = extract_discretized_vss_positions(sol_obj);
   }
 
+  // A train only has border variables on the edges it can use, which
+  // postprocessing needs to know
+  std::vector<cda_rail::index_set> tr_edges;
+  if (postprocess) {
+    tr_edges.reserve(num_tr);
+    for (size_t tr = 0; tr < num_tr; ++tr) {
+      tr_edges.emplace_back(m_instance.edges_used_by_train(tr, fix_routes));
+    }
+  }
+
   // relevant_edges is only filled for the non-discretized models, hence the
   // following loop is skipped in the discretized case handled above.
   for (size_t r_e_index = 0; r_e_index < relevant_edges.size(); ++r_e_index) {
@@ -235,15 +245,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         }
         b_used = false;
         for (size_t tr = 0; tr < num_tr; ++tr) {
-          // A train only has border variables on the edges it can use, and
-          // rear ones only if it has a TIM
-          const auto tr_on_e =
-              !m_instance.trains_on_edge(e_index, fix_routes, {tr}).empty();
+          // Rear border variables only exist if the train has a TIM
+          const auto tr_on_e = tr_edges.at(tr).contains(e_index);
           const auto tr_on_reverse_edge =
               reverse_edge_index.has_value() &&
-              !m_instance
-                   .trains_on_edge(reverse_edge_index.value(), fix_routes, {tr})
-                   .empty();
+              tr_edges.at(tr).contains(reverse_edge_index.value());
           const auto tr_has_tim =
               m_instance.get_const_train_list().get_train(tr).has_tim();
           for (size_t t = train_interval.at(tr).first;
