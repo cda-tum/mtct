@@ -957,7 +957,11 @@ TEST(VSSGenSolver, GurobiVSSGenFreeRoutesIgnoreRoutes) {
               .get_route(tr_name)
               .contains_edge(siding);
         });
-    EXPECT_LE(num_trains_on_siding, 1) << label;
+    if (model_type.get_model_type() == cda_rail::vss::ModelType::Continuous) {
+      EXPECT_EQ(num_trains_on_siding, 1) << label;
+    } else {
+      EXPECT_LE(num_trains_on_siding, 1) << label;
+    }
 
     check_schedule_within_dt_and_order(obj_val_free, 5, label);
   }
