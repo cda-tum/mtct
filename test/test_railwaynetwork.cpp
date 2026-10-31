@@ -12,6 +12,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -993,6 +994,58 @@ TEST(RailwayNetwork, NetworkPredecessor) {
   EXPECT_EQ(predecessors_4_5.size(), 1);
   EXPECT_TRUE(predecessors_4_5.contains(e_3_4))
       << "e_3_4 is not a predecessor of e_4_5";
+}
+
+TEST(RailwayNetwork, NetworkEdgesOnPathsBetween) {
+  cda_rail::Network network;
+
+  const auto v_0 = network.add_vertex("v0", cda_rail::VertexType::NoBorder);
+  const auto v_1 = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
+  const auto v_2 = network.add_vertex("v2", cda_rail::VertexType::NoBorder);
+  const auto v_3 = network.add_vertex("v3", cda_rail::VertexType::NoBorder);
+  const auto v_4 = network.add_vertex("v4", cda_rail::VertexType::NoBorder);
+  const auto v_5 = network.add_vertex("v5", cda_rail::VertexType::NoBorder);
+
+  const auto e_0_1 = network.add_edge(v_0, v_1, 100, 10);
+  const auto e_1_2 = network.add_edge(v_1, v_2, 50, 10);
+  const auto e_2_3 = network.add_edge(v_2, v_3, 50, 10);
+  const auto e_3_2 = network.add_edge(v_3, v_2, 50, 10);
+  const auto e_3_4 = network.add_edge(v_3, v_4, 100, 10);
+  const auto e_4_3 = network.add_edge(v_4, v_3, 100, 10);
+  const auto e_1_3 = network.add_edge(v_1, v_3, 100, 10);
+  const auto e_3_0 = network.add_edge(v_3, v_0, 400, 10);
+  const auto e_4_5 = network.add_edge(v_4, v_5, 10, 10);
+
+  network.add_successor(e_0_1, e_1_2);
+  network.add_successor(e_0_1, e_1_3);
+  network.add_successor(e_1_2, e_2_3);
+  network.add_successor(e_2_3, e_3_4);
+  network.add_successor(e_1_3, e_3_4);
+  network.add_successor(e_4_3, e_3_2);
+  network.add_successor(e_1_3, e_3_0);
+  network.add_successor(e_2_3, e_3_0);
+  network.add_successor(e_3_0, e_0_1);
+  network.add_successor(e_3_4, e_4_5);
+
+  // e_3_2 and e_4_3 cannot be reached from v0, but every other edge leads to
+  // v5, including the cycle back to v0
+  EXPECT_EQ(
+      network.edges_on_paths_between(v_0, v_5),
+      cda_rail::index_set({e_0_1, e_1_2, e_1_3, e_2_3, e_3_4, e_3_0, e_4_5}));
+  EXPECT_EQ(network.edges_on_paths_between(std::string_view{"v0"},
+                                           std::string_view{"v5"}),
+            network.edges_on_paths_between(v_0, v_5));
+
+  // From v4, v2 is only reached via e_4_3 and e_3_2, whereas e_4_5 leads to
+  // v5, from which no edge continues
+  EXPECT_EQ(network.edges_on_paths_between(v_4, v_2),
+            cda_rail::index_set({e_4_3, e_3_2}));
+
+  // No edge leaves v5
+  EXPECT_TRUE(network.edges_on_paths_between(v_5, v_0).empty());
+
+  EXPECT_THROW((void)network.edges_on_paths_between(v_0, 100),
+               cda_rail::exceptions::VertexNotExistentException);
 }
 
 TEST(RailwayNetwork, NetworkForwardPathsFromVertex) {

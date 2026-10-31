@@ -767,6 +767,206 @@ TEST(VSSGenSolver, GurobiVSSGenTimFixed) {
   check_schedule_within_dt_and_order(obj_val_2, 15, "obj_val_2");
 }
 
+TEST(VSSGenSolver, GurobiVSSGenPostprocessTrainsNotOnEveryEdge) {
+  // The trains follow different routes, so a train does not have border
+  // variables on every edge with a used VSS. Postprocessing must not read them.
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "Stammstrecke4Trains", "atmos2023", "data");
+
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
+  solution_settings.postprocess = true;
+
+  const auto obj_val = solver.solve({15, true, true, false}, {}, {},
+                                    solution_settings, 120, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 6);
+
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
+}
+
+TEST(VSSGenSolver, GurobiVSSGenPostprocessNoTim) {
+  // A train without TIM has no rear border variables. Postprocessing must not
+  // read them.
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
+      "SimpleStation", "atmos2023", "data");
+  solver.editable_instance().editable_train("tr1").set_no_tim();
+
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
+  solution_settings.postprocess = true;
+
+  const auto obj_val =
+      solver.solve({15, false}, {}, {}, solution_settings, 280, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 1);
+
+  check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
+}
+
+TEST(VSSGenSolver, GurobiVSSGenPostprocessFreeRoutesEdgeOutsidePath) {
+  // Two trains follow each other on a single track, which hence has to be
+  // separated by two borders, see GurobiVSSGenVSSDiscreteFree. The first train
+  // runs on another track and cannot use the separated one, hence it has no
+  // border variables on it. Postprocessing must not read them.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  instance.get_editable_network().add_vertex("v0", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v2", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_vertex("v3", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 300, 10, true, 100);
+  instance.get_editable_network().add_edge({"v2"}, {"v3"}, 300, 10, false);
+
+  instance.add_train("Train0", 50, 10, 10, 10, true, 0, 10, {"v2"}, 35, 10,
+                     {"v3"});
+  instance.add_train("Train1", 50, 10, 10, 10, true, 0, 10, {"v0"}, 35, 10,
+                     {"v1"});
+  instance.add_train("Train2", 50, 10, 10, 10, true, 20, 10, {"v0"}, 55, 10,
+                     {"v1"});
+
+  EXPECT_FALSE(instance.edges_used_by_train("Train0", false)
+                   .contains(instance.get_const_network().get_edge_index(
+                       {"v0"}, {"v1"})));
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
+  solution_settings.postprocess = true;
+
+  const auto obj_val =
+      solver.solve({5, false}, {}, {}, solution_settings, 300, true);
+
+  EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val.get_obj(), 2);
+
+  check_schedule_within_dt_and_order(obj_val, 5, "obj_val");
+}
+
+namespace {
+// Only usable within this translation unit.
+// Three trains pass from v1 to v2, 10 s apart, either on a breakable main track
+// or on an unbreakable siding. Every train has its own entry and exit track.
+// The routes of all trains use the main track or all use the siding.
+cda_rail::instances::GeneralPerformanceOptimizationInstance
+create_siding_instance(bool routes_on_siding) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto& network = instance.get_editable_network();
+  network.add_vertex("v1", cda_rail::VertexType::TTD);
+  network.add_vertex("v2", cda_rail::VertexType::TTD);
+  network.add_vertex("va", cda_rail::VertexType::NoBorder);
+  network.add_edge({"v1"}, {"v2"}, 300, 10, true, 100);
+  network.add_edge({"v1"}, {"va"}, 150, 10, false);
+  network.add_edge({"va"}, {"v2"}, 150, 10, false);
+  network.add_successor({"v1", "va"}, {"va", "v2"});
+
+  const std::vector<std::string> tr_names{"Train1", "Train2", "Train3"};
+  for (size_t tr = 0; tr < tr_names.size(); ++tr) {
+    const auto& tr_name = tr_names.at(tr);
+    const auto  entry   = "entry_" + tr_name;
+    const auto  exit    = "exit_" + tr_name;
+    network.add_vertex(entry, cda_rail::VertexType::TTD);
+    network.add_vertex(exit, cda_rail::VertexType::TTD);
+    network.add_edge({entry}, {"v1"}, 50, 10, false);
+    network.add_edge({"v2"}, {exit}, 50, 10, false);
+    network.add_successor({entry, "v1"}, {"v1", "v2"});
+    network.add_successor({entry, "v1"}, {"v1", "va"});
+    network.add_successor({"v1", "v2"}, {"v2", exit});
+    network.add_successor({"va", "v2"}, {"v2", exit});
+
+    const auto entry_time = 10.0 * static_cast<double>(tr);
+    instance.add_train(tr_name, 50, 10, 10, 10, true, entry_time, 10, {entry},
+                       entry_time + 45, 10, {exit});
+    instance.add_empty_route(tr_name);
+    instance.push_back_edge_to_route(tr_name, {entry, "v1"});
+    if (routes_on_siding) {
+      instance.push_back_edge_to_route(tr_name, {"v1", "va"});
+      instance.push_back_edge_to_route(tr_name, {"va", "v2"});
+    } else {
+      instance.push_back_edge_to_route(tr_name, {"v1", "v2"});
+    }
+    instance.push_back_edge_to_route(tr_name, {"v2", exit});
+  }
+
+  return instance;
+}
+} // namespace
+
+TEST(VSSGenSolver, GurobiVSSGenFreeRoutesUnbreakableSiding) {
+  // The routes all use the main track, on which the trains cannot follow each
+  // other that closely, see GurobiVSSGenVSSDiscreteFree. With free routes, the
+  // siding is an unbreakable section, which only one train can use at a time.
+  // Hence, the middle train takes it and the other two are separated by two
+  // borders on the main track.
+  const auto instance = create_siding_instance(false);
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  const auto obj_val_fixed = solver.solve({5, true}, {}, {}, {}, 120, true);
+
+  EXPECT_EQ(obj_val_fixed.get_status(), cda_rail::SolutionStatus::Infeasible);
+
+  const auto obj_val_free = solver.solve({5, false}, {}, {}, {}, 120, true);
+
+  EXPECT_EQ(obj_val_free.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_free.get_obj(), 2);
+
+  const std::vector<std::string> tr_names{"Train1", "Train2", "Train3"};
+  const auto                     siding =
+      instance.get_const_network().get_edge_index({"v1"}, {"va"});
+  for (const auto& tr_name : tr_names) {
+    EXPECT_EQ(obj_val_free.get_const_solution_routes()
+                  .get_route(tr_name)
+                  .contains_edge(siding),
+              tr_name == "Train2")
+        << tr_name;
+  }
+
+  check_schedule_within_dt_and_order(obj_val_free, 5, "obj_val_free");
+}
+
+TEST(VSSGenSolver, GurobiVSSGenFreeRoutesIgnoreRoutes) {
+  // The routes all use the siding, which only one train can use at a time, so
+  // the instance is infeasible with fixed routes. With free routes, the routes
+  // do not matter, in the continuous as well as in the discrete model, so the
+  // borders are the same as in GurobiVSSGenFreeRoutesUnbreakableSiding.
+  const auto instance = create_siding_instance(true);
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  const auto obj_val_fixed = solver.solve({5, true}, {}, {}, {}, 120, true);
+
+  EXPECT_EQ(obj_val_fixed.get_status(), cda_rail::SolutionStatus::Infeasible);
+
+  const std::vector<std::string> tr_names{"Train1", "Train2", "Train3"};
+  const auto                     siding =
+      instance.get_const_network().get_edge_index({"v1"}, {"va"});
+  for (const auto& model_type :
+       {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+        cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                             {cda_rail::vss::UNIFORM})}) {
+    const auto label =
+        cda_rail::vss::model_type_to_string(model_type.get_model_type());
+    const auto obj_val_free =
+        solver.solve({5, false}, {model_type}, {}, {}, 120, true);
+
+    EXPECT_EQ(obj_val_free.get_status(), cda_rail::SolutionStatus::Optimal)
+        << label;
+    EXPECT_EQ(obj_val_free.get_obj(), 2) << label;
+
+    const auto num_trains_on_siding =
+        std::ranges::count_if(tr_names, [&](const auto& tr_name) {
+          return obj_val_free.get_const_solution_routes()
+              .get_route(tr_name)
+              .contains_edge(siding);
+        });
+    if (model_type.get_model_type() == cda_rail::vss::ModelType::Continuous) {
+      EXPECT_EQ(num_trains_on_siding, 1) << label;
+    } else {
+      EXPECT_LE(num_trains_on_siding, 1) << label;
+    }
+
+    check_schedule_within_dt_and_order(obj_val_free, 5, label);
+  }
+}
+
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");

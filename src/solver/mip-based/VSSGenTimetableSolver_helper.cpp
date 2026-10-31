@@ -35,22 +35,13 @@ cda_rail::index_vector
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
     size_t train_index) const {
   cda_rail::index_vector indices;
-  const auto&            tr_name =
-      m_instance.get_const_train_list().get_train(train_index).get_name();
-  const auto& tr_route =
-      m_instance.get_const_routes().get_route(tr_name).get_edges();
+  // Without fixed routes, these are all edges the train can use
+  const auto tr_edges = m_instance.edges_used_by_train(train_index, fix_routes);
   for (size_t i = 0; i < unbreakable_sections.size(); ++i) {
-    bool edge_found = false;
-    // If unbreakable_section[i] (of type vector) and tr_route (of type vector)
-    // overlap (have a common element), add i to indices
-    for (size_t j0 = 0; j0 < unbreakable_sections[i].size() && !edge_found;
-         ++j0) {
-      for (size_t j1 = 0; j1 < tr_route.size() && !edge_found; ++j1) {
-        if (unbreakable_sections[i][j0] == tr_route[j1]) {
-          indices.push_back(i);
-          edge_found = true;
-        }
-      }
+    if (std::ranges::any_of(unbreakable_sections[i], [&tr_edges](size_t e) {
+          return tr_edges.contains(e);
+        })) {
+      indices.push_back(i);
     }
   }
 
@@ -185,6 +176,16 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     obj = extract_discretized_vss_positions(sol_obj);
   }
 
+  // A train only has border variables on the edges it can use, which
+  // postprocessing needs to know
+  std::vector<cda_rail::index_set> tr_edges;
+  if (postprocess) {
+    tr_edges.reserve(num_tr);
+    for (size_t tr = 0; tr < num_tr; ++tr) {
+      tr_edges.emplace_back(m_instance.edges_used_by_train(tr, fix_routes));
+    }
+  }
+
   // relevant_edges is only filled for the non-discretized models, hence the
   // following loop is skipped in the discretized case handled above.
   for (size_t r_e_index = 0; r_e_index < relevant_edges.size(); ++r_e_index) {
@@ -235,42 +236,39 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         }
         b_used = false;
         for (size_t tr = 0; tr < num_tr; ++tr) {
+          // Rear border variables only exist if the train has a TIM
+          const auto tr_on_e = tr_edges.at(tr).contains(e_index);
+          const auto tr_on_reverse_edge =
+              reverse_edge_index.has_value() &&
+              tr_edges.at(tr).contains(reverse_edge_index.value());
+          const auto tr_has_tim =
+              m_instance.get_const_train_list().get_train(tr).has_tim();
           for (size_t t = train_interval.at(tr).first;
                t <= train_interval.at(tr).second; ++t) {
             const auto front1 =
+                tr_on_e &&
                 m_vars.at("b_front")
-                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
-                    .get(GRB_DoubleAttr_X) > 0.5;
+                        .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                        .get(GRB_DoubleAttr_X) > 0.5;
             const auto rear1 =
+                tr_on_e && tr_has_tim &&
                 m_vars.at("b_rear")
-                    .at(tr, t, breakable_edge_indices.at(e_index), vss)
-                    .get(GRB_DoubleAttr_X) > 0.5;
-            const auto front2 =
-                (reverse_edge_index.has_value() &&
-                 !m_instance
-                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
-                                      {tr})
-                      .empty())
-                    ? m_vars.at("b_front")
-                              .at(tr, t,
-                                  breakable_edge_indices.at(
-                                      reverse_edge_index.value()),
-                                  vss)
-                              .get(GRB_DoubleAttr_X) > 0.5
-                    : false;
-            const auto rear2 =
-                (reverse_edge_index.has_value() &&
-                 !m_instance
-                      .trains_on_edge(reverse_edge_index.value(), fix_routes,
-                                      {tr})
-                      .empty())
-                    ? m_vars.at("b_rear")
-                              .at(tr, t,
-                                  breakable_edge_indices.at(
-                                      reverse_edge_index.value()),
-                                  vss)
-                              .get(GRB_DoubleAttr_X) > 0.5
-                    : false;
+                        .at(tr, t, breakable_edge_indices.at(e_index), vss)
+                        .get(GRB_DoubleAttr_X) > 0.5;
+            const auto front2 = tr_on_reverse_edge &&
+                                m_vars.at("b_front")
+                                        .at(tr, t,
+                                            breakable_edge_indices.at(
+                                                reverse_edge_index.value()),
+                                            vss)
+                                        .get(GRB_DoubleAttr_X) > 0.5;
+            const auto rear2  = tr_on_reverse_edge && tr_has_tim &&
+                                m_vars.at("b_rear")
+                                        .at(tr, t,
+                                            breakable_edge_indices.at(
+                                                reverse_edge_index.value()),
+                                            vss)
+                                        .get(GRB_DoubleAttr_X) > 0.5;
             if (front1 || rear1 || front2 || rear2) {
               b_used = true;
               break;

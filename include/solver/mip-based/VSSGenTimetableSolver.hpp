@@ -311,7 +311,9 @@ private:
   get_further_data(const SolutionSettingsVSSGen& solution_settings,
                    int                           time_limit) const;
   /**
-   * @brief The unbreakable sections traversed by a train.
+   * @brief The unbreakable sections a train can traverse, i.e., those on its
+   *        route or, without fixed routes, on some path from its entry to its
+   *        exit vertex.
    *
    * @param train_index Index of the train
    * @return Indices of the unbreakable sections

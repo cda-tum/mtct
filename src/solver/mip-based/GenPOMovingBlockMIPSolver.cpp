@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <numeric>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -56,6 +57,28 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   const instances::GeneralPerformanceOptimizationInstance old_instance =
       m_instance;
   this->m_instance.discretize_stops();
+
+  // A train that cannot reach its exit vertex from its entry vertex cannot use
+  // any edge. Hence, it has no variables, and the instance is infeasible.
+  for (size_t tr = 0; tr < m_instance.get_const_train_list().size(); tr++) {
+    if (m_instance.edges_used_by_train(tr, model_detail_input.fix_routes, false)
+            .empty()) {
+      PLOGI << "Train "
+            << m_instance.get_const_train_list().get_train(tr).get_name()
+            << " cannot reach its exit vertex, hence the instance is "
+               "infeasible";
+      instances::SolGeneralPerformanceOptimizationInstance solution(
+          old_instance);
+      solution.set_status(SolutionStatus::Infeasible);
+      export_general_solution(
+          solution, solution_settings_input,
+          get_further_data(model_detail_input, solver_strategy_input,
+                           solution_settings_input, time_limit));
+      cleanup();
+      this->m_instance = old_instance;
+      return solution;
+    }
+  }
 
   this->initialize_variables(solution_settings_input, solver_strategy_input,
                              model_detail_input);
@@ -183,46 +206,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     m_model->write((path / (m_solution_settings.model_name + ".mps")).string());
   }
 
-  export_general_solution(
-      solution, m_solution_settings,
-      {
-          .bool_data =
-              {{"fix_routes", model_detail_input.fix_routes},
-               {"simplify_headway_constraints",
-                model_detail_input.simplify_headway_constraints},
-               {"strengthen_vertex_headway_constraints",
-                model_detail_input.strengthen_vertex_headway_constraints},
-               {"allow_late_entry", model_detail_input.allow_late_entry},
-               {"use_minimum_time_bounds",
-                model_detail_input.use_minimum_time_bounds},
-               {"use_indicator_constraints",
-                solver_strategy_input.use_indicator_constraints},
-               {"use_lazy_constraints",
-                solver_strategy_input.use_lazy_constraints},
-               {"include_reverse_headways",
-                solver_strategy_input.include_reverse_headways},
-               {"include_higher_velocities_in_edge_expr",
-                solver_strategy_input.include_higher_velocities_in_edge_expr}},
-          .integer_data = {{"time_limit", time_limit}},
-          .double_data = {{"max_velocity_delta",
-                           model_detail_input.max_velocity_delta},
-                          {"max_exit_delay", model_detail_input.max_exit_delay},
-                          {"max_station_delay",
-                           model_detail_input.max_station_delay},
-                          {"abs_mip_gap", solver_strategy_input.abs_mip_gap}},
-          .string_data =
-              {{"velocity_refinement_strategy",
-                velocity_refinement_strategy_to_string(
-                    model_detail_input.velocity_refinement_strategy)},
-               {"lazy_constraint_selection_strategy",
-                lazy_constraint_selection_strategy_to_string(
-                    solver_strategy_input.lazy_constraint_selection_strategy)},
-               {"lazy_train_selection_strategy",
-                lazy_train_selection_strategy_to_string(
-                    solver_strategy_input.lazy_train_selection_strategy)},
-               {"parameter_identifier",
-                m_solution_settings.parameter_identifier.value_or("")}},
-      });
+  export_general_solution(solution, m_solution_settings,
+                          get_further_data(model_detail_input,
+                                           solver_strategy_input,
+                                           m_solution_settings, time_limit));
 
   cleanup();
 
@@ -357,7 +344,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         max_num_stops, m_instance.get_const_schedule(tr).get_stops().size());
   }
   m_vars["stop"] = MultiArray<GRBVar>(m_num_tr, max_num_stops, m_num_vertices);
-  m_vars["service_delay"] = MultiArray<GRBVar>(m_num_tr, max_num_stops);
+  m_vars["t_stop_arrival"] = MultiArray<GRBVar>(m_num_tr, max_num_stops);
+  m_vars["service_delay"]  = MultiArray<GRBVar>(m_num_tr, max_num_stops);
 
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_name =
@@ -376,6 +364,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             "stop_" + sanitize(tr_name) + "_" + sanitize(stop_name) + "_" +
                 sanitize(m_instance.get_const_network().get_vertex(v).name));
       }
+      m_vars["t_stop_arrival"](tr, stop) = m_model->addVar(
+          std::min(minimum_stop_arrival_time(tr, stop), max_time), max_time,
+          0.0, GRB_CONTINUOUS,
+          "t_stop_arrival_" + sanitize(tr_name) + "_" + sanitize(stop_name));
       const auto max_delay = std::min(max_time - stop_obj.get_service_time(),
                                       m_model_detail.max_station_delay);
       m_vars["service_delay"](tr, stop) = m_model->addVar(
@@ -671,10 +663,60 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   this->fill_velocity_extensions();
   this->fill_relevant_reverse_edges();
 }
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::FurtherData
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
+    const ModelDetailMovingBlock&      model_detail,
+    const SolverStrategyMovingBlock&   solver_strategy,
+    const SolutionSettingsMovingBlock& solution_settings, int time_limit) {
+  return {
+      .bool_data = {{"fix_routes", model_detail.fix_routes},
+                    {"simplify_headway_constraints",
+                     model_detail.simplify_headway_constraints},
+                    {"strengthen_vertex_headway_constraints",
+                     model_detail.strengthen_vertex_headway_constraints},
+                    {"allow_late_entry", model_detail.allow_late_entry},
+                    {"use_minimum_time_bounds",
+                     model_detail.use_minimum_time_bounds},
+                    {"use_indicator_constraints",
+                     solver_strategy.use_indicator_constraints},
+                    {"use_lazy_constraints",
+                     solver_strategy.use_lazy_constraints},
+                    {"include_reverse_headways",
+                     solver_strategy.include_reverse_headways},
+                    {"include_higher_velocities_in_edge_expr",
+                     solver_strategy.include_higher_velocities_in_edge_expr}},
+      .integer_data = {{"time_limit", time_limit}},
+      .double_data  = {{"max_velocity_delta", model_detail.max_velocity_delta},
+                       {"max_exit_delay", model_detail.max_exit_delay},
+                       {"max_station_delay", model_detail.max_station_delay},
+                       {"abs_mip_gap", solver_strategy.abs_mip_gap}},
+      .string_data = {{"velocity_refinement_strategy",
+                       velocity_refinement_strategy_to_string(
+                           model_detail.velocity_refinement_strategy)},
+                      {"lazy_constraint_selection_strategy",
+                       lazy_constraint_selection_strategy_to_string(
+                           solver_strategy.lazy_constraint_selection_strategy)},
+                      {"lazy_train_selection_strategy",
+                       lazy_train_selection_strategy_to_string(
+                           solver_strategy.lazy_train_selection_strategy)},
+                      {"parameter_identifier",
+                       solution_settings.parameter_identifier.value_or("")}},
+  };
+}
+
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::latest_exit_time(
     size_t tr) const {
   auto const& exit_time = m_instance.get_const_schedule(tr).get_exit_time();
   return exit_time + m_model_detail.max_exit_delay;
+}
+
+double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    minimum_stop_arrival_time(size_t tr, size_t stop) const {
+  double min_time = latest_exit_time(tr);
+  for (const auto v : m_tr_stop_data.at(tr).at(stop) | std::views::keys) {
+    min_time = std::min(min_time, minimum_arrival_time(tr, v));
+  }
+  return min_time;
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -685,7 +727,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   // its own and the respective edge's speed limit and hence ignore
   // acceleration; conflicts with other trains are ignored as well; and no
   // restriction to the edges of a fixed route is applied. All three make the
-  // bounds optimistic, so no feasible schedule is cut off.
+  // bounds optimistic, so no feasible schedule is cut off. The stops are
+  // served in the order of the schedule, which create_stopping_constraints()
+  // enforces.
   //
   // Every arrival time is capped at the time horizon of its train. The cap
   // only weakens the bound, and it keeps the invariant that
@@ -699,6 +743,42 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   m_minimum_service_delays.reserve(m_num_tr);
 
   auto const& network = m_instance.get_const_network();
+
+  // The predecessors of all edges, following valid successors without turning
+  // around as the shortest path searches do
+  std::vector<cda_rail::index_vector> predecessors(network.number_of_edges());
+  for (size_t e = 0; e < network.number_of_edges(); e++) {
+    auto const& edge = network.get_edge(e);
+    for (auto const e_next : network.get_successors(e)) {
+      auto const& next_edge = network.get_edge(e_next);
+      if (next_edge.source != edge.target || next_edge.target != edge.source) {
+        predecessors.at(e_next).push_back(e);
+      }
+    }
+  }
+  // Whether the given end vertices can be reached from a vertex, i.e., if it
+  // is one of them or one of its outgoing edges leads to one of the given end
+  // edges into them
+  auto const end_reachable_from = [&](cda_rail::index_set const& end_vertices,
+                                      cda_rail::index_set const& end_edges) {
+    std::vector<bool> reachable(m_num_vertices, false);
+    for (auto const v : end_vertices) {
+      reachable.at(v) = true;
+    }
+    cda_rail::index_set visited = end_edges;
+    std::vector<size_t> to_visit(end_edges.begin(), end_edges.end());
+    while (!to_visit.empty()) {
+      auto const e = to_visit.back();
+      to_visit.pop_back();
+      reachable.at(network.get_edge(e).source) = true;
+      for (auto const e_prev : predecessors.at(e)) {
+        if (visited.insert(e_prev).second) {
+          to_visit.push_back(e_prev);
+        }
+      }
+    }
+    return reachable;
+  };
 
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     auto const& schedule  = m_instance.get_const_schedule(tr);
@@ -760,6 +840,89 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     m_minimum_exit_times.at(tr) =
         std::max(m_minimum_exit_times.at(tr),
                  running_times.exit_arrival + m_minimum_clearing_times.at(tr));
+
+    // Without stops, the only leg starts at the entry vertex, which the bounds
+    // above already cover.
+    if (num_stops == 0) {
+      continue;
+    }
+
+    // Every vertex is passed on a leg between two consecutive stops, where the
+    // first leg starts at the entry vertex and the last one ends at the exit
+    // vertex. On the leg after a stop, the front arrives at the earliest when
+    // the train leaves the stop as early as possible and runs to the vertex as
+    // quickly as possible. A vertex can lie on several legs, e.g., if it can be
+    // passed both on the way to a station and after it, so only the minimum
+    // over all of them bounds its arrival. A leg is only left out if the
+    // vertex cannot be reached from the stop at its start or the stop at its
+    // end cannot be reached from the vertex. The latter is checked from every
+    // outgoing edge of the vertex, irrespective of how the train arrived.
+    auto const&                      stops = schedule.get_stops();
+    std::vector<cda_rail::index_set> stop_tracks(num_stops);
+    std::vector<cda_rail::index_set> stop_vertices(num_stops);
+    std::vector<double>              earliest_departures(num_stops);
+    for (size_t stop = 0; stop < num_stops; stop++) {
+      for (auto const track :
+           m_instance.get_stop_tracks(tr, stops.at(stop).get_station().name) |
+               std::views::keys) {
+        stop_tracks.at(stop).insert(track);
+        stop_vertices.at(stop).insert(network.get_edge(track).target);
+      }
+      earliest_departures.at(stop) =
+          std::max(running_times.stop_arrivals.at(stop) +
+                       stops.at(stop).get_service_duration(),
+                   stops.at(stop).get_earliest_departure());
+    }
+    // Running times from the vertices of every stop, at which the respective
+    // leg starts
+    std::vector<std::vector<double>> leg_times;
+    leg_times.reserve(num_stops);
+    for (size_t stop = 0; stop < num_stops; stop++) {
+      leg_times.emplace_back(network.shortest_path_lengths_to_all_vertices(
+          stop_tracks.at(stop), false, true, tr_object.get_max_speed()));
+    }
+
+    // The vertices from which the stop at the end of a leg, or the exit vertex
+    // for the last leg, can still be reached
+    std::vector<std::vector<bool>> leg_end_reachable;
+    leg_end_reachable.reserve(num_stops + 1);
+    for (size_t stop = 0; stop < num_stops; stop++) {
+      leg_end_reachable.emplace_back(
+          end_reachable_from(stop_vertices.at(stop), stop_tracks.at(stop)));
+    }
+    auto const exit_vertex = schedule.get_exit_vertex();
+    leg_end_reachable.emplace_back(
+        end_reachable_from({exit_vertex}, network.in_edges(exit_vertex)));
+
+    for (auto const v : m_instance.vertices_used_by_train(
+             tr, m_model_detail.fix_routes, false)) {
+      double leg_minimum = INF;
+      for (size_t leg = 0; leg <= num_stops; leg++) {
+        double arrival = INF;
+        if (leg == 0) {
+          if (v == schedule.get_entry_vertex()) {
+            arrival = schedule.get_entry_time();
+          } else if (vertex_times.at(v) < INF) {
+            arrival = schedule.get_entry_time() + vertex_times.at(v);
+          }
+        } else if (stop_vertices.at(leg - 1).contains(v)) {
+          // The train only passes a vertex of the previous station on this
+          // leg if it stopped at another one
+          arrival = earliest_departures.at(leg - 1);
+        } else if (leg_times.at(leg - 1).at(v) < INF) {
+          arrival =
+              earliest_departures.at(leg - 1) + leg_times.at(leg - 1).at(v);
+        }
+        if (arrival < leg_minimum && leg_end_reachable.at(leg).at(v)) {
+          leg_minimum = arrival;
+        }
+      }
+      if (leg_minimum < INF) {
+        m_minimum_arrival_times.at(tr).at(v) = std::min(
+            std::max(m_minimum_arrival_times.at(tr).at(v), leg_minimum),
+            horizon);
+      }
+    }
   }
 }
 
@@ -1655,25 +1818,32 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 sanitize(stop_station_name) + "_vertex_" +
                 sanitize(m_instance.get_const_network().get_vertex(v).name));
 
-        // Add station delay for objective use (only lb, since objective pushes
-        // down)
+        // If stopped at v, the front arrives at the stop when it arrives at v
         if (m_solver_strategy.use_indicator_constraints) {
           m_model->addGenConstrIndicator(
               m_vars["stop"](tr, stop, v), 1,
-              m_vars["service_delay"](tr, stop) >=
-                  m_vars["t_front_arrival"](tr, v) -
-                      stop_object.get_service_time(),
-              "service_delay_" + sanitize(tr_object.get_name()) + "_" +
+              m_vars["t_stop_arrival"](tr, stop) ==
+                  m_vars["t_front_arrival"](tr, v),
+              "stop_arrival_" + sanitize(tr_object.get_name()) + "_" +
                   sanitize(stop_station_name) + "_vertex_" +
                   sanitize(m_instance.get_const_network().get_vertex(v).name));
         } else {
+          // Both big-M values are the largest difference between the two
+          // arrival times that their bounds allow
           m_model->addConstr(
-              m_vars["service_delay"](tr, stop) +
-                      (max_tr_t - stop_object.get_service_time()) *
+              m_vars["t_stop_arrival"](tr, stop) +
+                      (max_tr_t - minimum_stop_arrival_time(tr, stop)) *
                           (1 - m_vars["stop"](tr, stop, v)) >=
-                  m_vars["t_front_arrival"](tr, v) -
-                      stop_object.get_service_time(),
-              "service_delay_" + sanitize(tr_object.get_name()) + "_" +
+                  m_vars["t_front_arrival"](tr, v),
+              "stop_arrival_lb_" + sanitize(tr_object.get_name()) + "_" +
+                  sanitize(stop_station_name) + "_vertex_" +
+                  sanitize(m_instance.get_const_network().get_vertex(v).name));
+          m_model->addConstr(
+              m_vars["t_stop_arrival"](tr, stop) <=
+                  m_vars["t_front_arrival"](tr, v) +
+                      (max_tr_t - minimum_arrival_time(tr, v)) *
+                          (1 - m_vars["stop"](tr, stop, v)),
+              "stop_arrival_ub_" + sanitize(tr_object.get_name()) + "_" +
                   sanitize(stop_station_name) + "_vertex_" +
                   sanitize(m_instance.get_const_network().get_vertex(v).name));
         }
@@ -1720,6 +1890,27 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
               sanitize(
                   m_instance.get_const_train_list().get_train(tr).get_name()) +
               "_" + sanitize(stop_station_name));
+
+      // Add station delay for objective use (only lb, since objective pushes
+      // down)
+      m_model->addConstr(m_vars["service_delay"](tr, stop) >=
+                             m_vars["t_stop_arrival"](tr, stop) -
+                                 stop_object.get_service_time(),
+                         "service_delay_" + sanitize(tr_object.get_name()) +
+                             "_" + sanitize(stop_station_name));
+    }
+
+    // Stops are served in the order of the schedule, i.e., the front only
+    // arrives at a stop after it served the previous one. If the route passes
+    // the stops in this order, this already follows from the running times.
+    for (size_t stop = 0; stop + 1 < tr_stops.size(); stop++) {
+      m_model->addConstr(
+          m_vars["t_stop_arrival"](tr, stop + 1) >=
+              m_vars["t_stop_arrival"](tr, stop) +
+                  tr_stops.at(stop).get_service_duration(),
+          "stop_order_" + sanitize(tr_object.get_name()) + "_" +
+              sanitize(tr_stops.at(stop).get_station().name) + "_" +
+              sanitize(tr_stops.at(stop + 1).get_station().name));
     }
 
     // Initial
@@ -1986,10 +2177,15 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                                                    .get_edge(edge_index)
                                                    .length;
                                 });
-            GRBLinExpr edge_tmp_path_expr = 0;
-            for (const auto& e_tmp : p_tmp) {
-              edge_tmp_path_expr += m_vars["x"](tr, e_tmp);
-            }
+            // Only if the train leaves v with velocity vel and follows p into
+            // the section, its moving authority reaches into it
+            const auto p_to_ttd = cda_rail::index_vector(
+                p.begin(),
+                p.begin() + static_cast<std::ptrdiff_t>(e_index) + 1);
+            const GRBLinExpr edge_tmp_path_expr =
+                get_edge_path_expr(tr, p_to_ttd, vel);
+            const auto edge_tmp_path_size =
+                static_cast<double>(p_to_ttd.size());
 
             std::optional<GRBVar> edge_tmp_binary{};
             if (m_solver_strategy.use_indicator_constraints) {
@@ -2004,8 +2200,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
 
               m_model->addConstr(
                   edge_tmp_binary.value() >=
-                      edge_tmp_path_expr - static_cast<double>(p_tmp.size()) +
-                          1,
+                      edge_tmp_path_expr - edge_tmp_path_size + 1,
                   "headway_ttd_" + std::to_string(ttd_index) +
                       "_path_binary_helper_" + sanitize(tr_object.get_name()) +
                       "_" +
@@ -2052,7 +2247,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                         std::to_string(vel) + "_" + std::to_string(p_index));
               }
 
-              GRBLinExpr lhs_from_rear = m_vars["t_front_arrival"](tr, v);
+              // If the moving authority ends exactly at the section, e.g.,
+              // because the train stops at v, it only reaches into the section
+              // once the front leaves v.
+              GRBLinExpr lhs_from_rear =
+                  obd < GRB_EPS ? m_vars["t_front_departure"](tr, v)
+                                : m_vars["t_front_arrival"](tr, v);
 
               bool is_relevant = obd < GRB_EPS;
 
@@ -2170,7 +2370,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                               m_vars["t_front_departure"](tr, v_before_v) +
                               std::min(max_from_front, t_bound_tmp) +
                               t_bound_tmp *
-                                  (static_cast<double>(p_tmp.size()) + 1 -
+                                  (edge_tmp_path_size + 1 -
                                    m_vars["y"](tr, e_before_v, v_before_v_index,
                                                v_source_index) -
                                    edge_tmp_path_expr) +
@@ -2219,8 +2419,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 } else {
                   m_model->addConstr(
                       lhs_from_rear +
-                              t_bound_tmp * (static_cast<double>(p_tmp.size()) -
-                                             edge_tmp_path_expr) +
+                              t_bound_tmp *
+                                  (edge_tmp_path_size - edge_tmp_path_expr) +
                               t_bound_tmp * (1 - m_vars["order_ttd"](
                                                      tr, tr2, ttd_index)) >=
                           m_vars["t_ttd_departure"](tr2, ttd_index),
@@ -2255,6 +2455,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
     const auto  t_bound   = latest_exit_time(tr);
+    const auto  entry = m_instance.get_const_schedule(tr).get_entry_vertex();
 
     for (const auto e : m_instance.edges_used_by_train(
              tr, this->m_model_detail.fix_routes, false)) {
@@ -2317,11 +2518,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto& ttd_section = m_ttd_sections.at(ttd_index);
         // If all of neighboring_edges are in ttd_section, then it is not an
         // entering edge Hence, if at least one neighboring edge is not in
-        // ttd_section, then we have an entering edge
-        const bool is_entering_edge = std::ranges::any_of(
-            neighboring_edges, [&ttd_section](const auto& e_tmp) {
-              return !std::ranges::contains(ttd_section, e_tmp);
-            });
+        // ttd_section, then we have an entering edge. Moreover, the train
+        // enters the section if it starts at its border.
+        const bool is_entering_edge =
+            v_source == entry ||
+            std::ranges::any_of(
+                neighboring_edges, [&ttd_section](const auto& e_tmp) {
+                  return !std::ranges::contains(ttd_section, e_tmp);
+                });
         if (is_entering_edge) {
           // We need a constraint for each other train in the TTD section
           const auto tr_on_ttd = m_instance.trains_in_section(
@@ -2460,7 +2664,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                 "_" + std::to_string(i));
         m_model->addConstr(
             m_vars["order_ttd"](tr, tr2, i) + m_vars["order_ttd"](tr2, tr, i) >=
-                m_vars["x_ttd"](tr, i) - m_vars["x_ttd"](tr2, i) - 1,
+                m_vars["x_ttd"](tr, i) + m_vars["x_ttd"](tr2, i) - 1,
             "ttd_order_2_" + sanitize(tr_name) + "_" + sanitize(tr2_name) +
                 "_" + std::to_string(i));
 
@@ -2894,7 +3098,7 @@ std::tuple<double, GRBLinExpr, double, GRBLinExpr> cda_rail::solver::mip_based::
               vel_source, vel_target, tr_object.get_acceleration(),
               tr_object.get_deceleration(), e_obj.length)) {
         auto hw_tmp     = headway(tr_object, e_obj, vel_source, vel_target,
-                                  v_source_index == entry_node);
+                                  v_source == entry_node);
         auto hw_tmp_ttd = min_time_to_push_ma_fully_backward(
             vel_source, tr_object.get_acceleration(),
             tr_object.get_deceleration());

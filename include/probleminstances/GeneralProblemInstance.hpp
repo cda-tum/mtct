@@ -509,6 +509,10 @@ public:
   /**
    * @brief Returns the edges used by a train.
    *
+   * Without a fixed route, these are all edges the train can use, i.e., all
+   * edges on some path from its entry to its exit vertex, see
+   * Network::edges_on_paths_between().
+   *
    * @param train_name Name of the train.
    * @param fixed_routes Whether to use fixed routes.
    * @param error_if_no_route Whether to throw if no route exists.
@@ -624,6 +628,9 @@ public:
   }
   /**
    * @brief Identifies which trains from a subset use the specified edge.
+   *
+   * A train without a fixed route uses the edge if it is among the edges it
+   * can use, see edges_used_by_train().
    *
    * @param route_map Route map to inspect.
    * @param edge_id Edge index.
