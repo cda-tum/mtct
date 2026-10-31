@@ -58,6 +58,28 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       m_instance;
   this->m_instance.discretize_stops();
 
+  // A train that cannot reach its exit vertex from its entry vertex cannot use
+  // any edge. Hence, it has no variables, and the instance is infeasible.
+  for (size_t tr = 0; tr < m_instance.get_const_train_list().size(); tr++) {
+    if (m_instance.edges_used_by_train(tr, model_detail_input.fix_routes, false)
+            .empty()) {
+      PLOGI << "Train "
+            << m_instance.get_const_train_list().get_train(tr).get_name()
+            << " cannot reach its exit vertex, hence the instance is "
+               "infeasible";
+      instances::SolGeneralPerformanceOptimizationInstance solution(
+          old_instance);
+      solution.set_status(SolutionStatus::Infeasible);
+      export_general_solution(
+          solution, solution_settings_input,
+          get_further_data(model_detail_input, solver_strategy_input,
+                           solution_settings_input, time_limit));
+      cleanup();
+      this->m_instance = old_instance;
+      return solution;
+    }
+  }
+
   this->initialize_variables(solution_settings_input, solver_strategy_input,
                              model_detail_input);
 
@@ -184,46 +206,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     m_model->write((path / (m_solution_settings.model_name + ".mps")).string());
   }
 
-  export_general_solution(
-      solution, m_solution_settings,
-      {
-          .bool_data =
-              {{"fix_routes", model_detail_input.fix_routes},
-               {"simplify_headway_constraints",
-                model_detail_input.simplify_headway_constraints},
-               {"strengthen_vertex_headway_constraints",
-                model_detail_input.strengthen_vertex_headway_constraints},
-               {"allow_late_entry", model_detail_input.allow_late_entry},
-               {"use_minimum_time_bounds",
-                model_detail_input.use_minimum_time_bounds},
-               {"use_indicator_constraints",
-                solver_strategy_input.use_indicator_constraints},
-               {"use_lazy_constraints",
-                solver_strategy_input.use_lazy_constraints},
-               {"include_reverse_headways",
-                solver_strategy_input.include_reverse_headways},
-               {"include_higher_velocities_in_edge_expr",
-                solver_strategy_input.include_higher_velocities_in_edge_expr}},
-          .integer_data = {{"time_limit", time_limit}},
-          .double_data = {{"max_velocity_delta",
-                           model_detail_input.max_velocity_delta},
-                          {"max_exit_delay", model_detail_input.max_exit_delay},
-                          {"max_station_delay",
-                           model_detail_input.max_station_delay},
-                          {"abs_mip_gap", solver_strategy_input.abs_mip_gap}},
-          .string_data =
-              {{"velocity_refinement_strategy",
-                velocity_refinement_strategy_to_string(
-                    model_detail_input.velocity_refinement_strategy)},
-               {"lazy_constraint_selection_strategy",
-                lazy_constraint_selection_strategy_to_string(
-                    solver_strategy_input.lazy_constraint_selection_strategy)},
-               {"lazy_train_selection_strategy",
-                lazy_train_selection_strategy_to_string(
-                    solver_strategy_input.lazy_train_selection_strategy)},
-               {"parameter_identifier",
-                m_solution_settings.parameter_identifier.value_or("")}},
-      });
+  export_general_solution(solution, m_solution_settings,
+                          get_further_data(model_detail_input,
+                                           solver_strategy_input,
+                                           m_solution_settings, time_limit));
 
   cleanup();
 
@@ -677,6 +663,47 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   this->fill_velocity_extensions();
   this->fill_relevant_reverse_edges();
 }
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::FurtherData
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
+    const ModelDetailMovingBlock&      model_detail,
+    const SolverStrategyMovingBlock&   solver_strategy,
+    const SolutionSettingsMovingBlock& solution_settings, int time_limit) {
+  return {
+      .bool_data = {{"fix_routes", model_detail.fix_routes},
+                    {"simplify_headway_constraints",
+                     model_detail.simplify_headway_constraints},
+                    {"strengthen_vertex_headway_constraints",
+                     model_detail.strengthen_vertex_headway_constraints},
+                    {"allow_late_entry", model_detail.allow_late_entry},
+                    {"use_minimum_time_bounds",
+                     model_detail.use_minimum_time_bounds},
+                    {"use_indicator_constraints",
+                     solver_strategy.use_indicator_constraints},
+                    {"use_lazy_constraints",
+                     solver_strategy.use_lazy_constraints},
+                    {"include_reverse_headways",
+                     solver_strategy.include_reverse_headways},
+                    {"include_higher_velocities_in_edge_expr",
+                     solver_strategy.include_higher_velocities_in_edge_expr}},
+      .integer_data = {{"time_limit", time_limit}},
+      .double_data  = {{"max_velocity_delta", model_detail.max_velocity_delta},
+                       {"max_exit_delay", model_detail.max_exit_delay},
+                       {"max_station_delay", model_detail.max_station_delay},
+                       {"abs_mip_gap", solver_strategy.abs_mip_gap}},
+      .string_data = {{"velocity_refinement_strategy",
+                       velocity_refinement_strategy_to_string(
+                           model_detail.velocity_refinement_strategy)},
+                      {"lazy_constraint_selection_strategy",
+                       lazy_constraint_selection_strategy_to_string(
+                           solver_strategy.lazy_constraint_selection_strategy)},
+                      {"lazy_train_selection_strategy",
+                       lazy_train_selection_strategy_to_string(
+                           solver_strategy.lazy_train_selection_strategy)},
+                      {"parameter_identifier",
+                       solution_settings.parameter_identifier.value_or("")}},
+  };
+}
+
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::latest_exit_time(
     size_t tr) const {
   auto const& exit_time = m_instance.get_const_schedule(tr).get_exit_time();

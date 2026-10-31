@@ -232,6 +232,20 @@ private:
       const SolutionSettingsMovingBlock& solution_settings_input,
       const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetailMovingBlock&      model_detail_input);
+  /**
+   * @brief Collects the settings of a solve for the solver data export.
+   *
+   * @param model_detail The model detail the solve uses
+   * @param solver_strategy The solver strategy the solve uses
+   * @param solution_settings The solution settings the solve uses
+   * @param time_limit The time limit in seconds passed to the solver
+   * @return The settings as further data of the solver data export
+   */
+  [[nodiscard]] static FurtherData
+  get_further_data(const ModelDetailMovingBlock&      model_detail,
+                   const SolverStrategyMovingBlock&   solver_strategy,
+                   const SolutionSettingsMovingBlock& solution_settings,
+                   int                                time_limit);
 
   /** @brief The scheduled exit time of a train plus the allowed delay. */
   double latest_exit_time(size_t tr) const;

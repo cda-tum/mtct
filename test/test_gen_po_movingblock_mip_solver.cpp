@@ -2489,4 +2489,29 @@ TEST(GenPOMovingBlockMIPSolver, StopsAreServedInScheduleOrder) {
                  "StopsAreServedInScheduleOrder");
 }
 
+TEST(GenPOMovingBlockMIPSolver, UnreachableExitIsInfeasible) {
+  // Without a successor relation between the two edges, the train cannot reach
+  // its exit vertex. Hence, it cannot use any edge and has no variables.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  network.add_edge(v0, v1, 100, 10);
+  network.add_edge(v1, v2, 100, 10);
+
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v2, 1);
+
+  // With fixed routes, a train without a route can use the same edges
+  for (const bool fix_routes : {false, true}) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto sol = solver.solve({.fix_routes = fix_routes}, {}, {}, 100);
+
+    EXPECT_FALSE(sol.has_solution()) << "fix_routes = " << fix_routes;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Infeasible)
+        << "fix_routes = " << fix_routes;
+  }
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
