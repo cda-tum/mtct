@@ -2530,7 +2530,15 @@ ttd_headway_strategies() {
             LazyConstraintSelectionStrategy::AllChecked,
         .abs_mip_gap = 0.01}},
       {"LazySimplified", true, {.abs_mip_gap = 0.01}},
-      {"NoLazy", false, {.use_lazy_constraints = false, .abs_mip_gap = 0.01}}};
+      {"NoLazy", false, {.use_lazy_constraints = false, .abs_mip_gap = 0.01}},
+      {"NoLazyIndicator",
+       false,
+       {.use_indicator_constraints = true,
+        .use_lazy_constraints      = false,
+        .abs_mip_gap               = 0.01}},
+      {"NoLazySimplified",
+       true,
+       {.use_lazy_constraints = false, .abs_mip_gap = 0.01}}};
 }
 } // namespace
 
