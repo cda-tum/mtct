@@ -823,14 +823,6 @@ TEST(VSSGenSolver, GurobiVSSGenPostprocessFreeRoutesEdgeOutsidePath) {
                      {"v1"});
   instance.add_train("Train2", 50, 10, 10, 10, true, 20, 10, {"v0"}, 55, 10,
                      {"v1"});
-  // Even with free routes, the solver looks up the unbreakable sections on the
-  // routes of the trains.
-  instance.add_empty_route("Train0");
-  instance.push_back_edge_to_route("Train0", {"v2", "v3"});
-  for (const auto& tr_name : {"Train1", "Train2"}) {
-    instance.add_empty_route(tr_name);
-    instance.push_back_edge_to_route(tr_name, {"v0", "v1"});
-  }
 
   EXPECT_FALSE(instance.edges_used_by_train("Train0", false)
                    .contains(instance.get_const_network().get_edge_index(
@@ -848,6 +840,70 @@ TEST(VSSGenSolver, GurobiVSSGenPostprocessFreeRoutesEdgeOutsidePath) {
   EXPECT_EQ(obj_val.get_obj(), 2);
 
   check_schedule_within_dt_and_order(obj_val, 5, "obj_val");
+}
+
+TEST(VSSGenSolver, GurobiVSSGenFreeRoutesUnbreakableSiding) {
+  // Three trains pass from v1 to v2, 10 s apart, either on a breakable main
+  // track or on an unbreakable siding. Their routes all use the main track, on
+  // which they cannot follow each other that closely, see
+  // GurobiVSSGenVSSDiscreteFree. With free routes, the siding is an unbreakable
+  // section, which only one train can use at a time. Hence, the middle train
+  // takes it and the other two are separated by two borders on the main track.
+  // Every train has its own entry and exit track.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto& network = instance.get_editable_network();
+  network.add_vertex("v1", cda_rail::VertexType::TTD);
+  network.add_vertex("v2", cda_rail::VertexType::TTD);
+  network.add_vertex("va", cda_rail::VertexType::NoBorder);
+  network.add_edge({"v1"}, {"v2"}, 300, 10, true, 100);
+  network.add_edge({"v1"}, {"va"}, 150, 10, false);
+  network.add_edge({"va"}, {"v2"}, 150, 10, false);
+  network.add_successor({"v1", "va"}, {"va", "v2"});
+
+  const std::vector<std::string> tr_names{"Train1", "Train2", "Train3"};
+  for (size_t tr = 0; tr < tr_names.size(); ++tr) {
+    const auto& tr_name = tr_names.at(tr);
+    const auto  entry   = "entry_" + tr_name;
+    const auto  exit    = "exit_" + tr_name;
+    network.add_vertex(entry, cda_rail::VertexType::TTD);
+    network.add_vertex(exit, cda_rail::VertexType::TTD);
+    network.add_edge({entry}, {"v1"}, 50, 10, false);
+    network.add_edge({"v2"}, {exit}, 50, 10, false);
+    network.add_successor({entry, "v1"}, {"v1", "v2"});
+    network.add_successor({entry, "v1"}, {"v1", "va"});
+    network.add_successor({"v1", "v2"}, {"v2", exit});
+    network.add_successor({"va", "v2"}, {"v2", exit});
+
+    const auto entry_time = 10.0 * static_cast<double>(tr);
+    instance.add_train(tr_name, 50, 10, 10, 10, true, entry_time, 10, {entry},
+                       entry_time + 45, 10, {exit});
+    instance.add_empty_route(tr_name);
+    instance.push_back_edge_to_route(tr_name, {entry, "v1"});
+    instance.push_back_edge_to_route(tr_name, {"v1", "v2"});
+    instance.push_back_edge_to_route(tr_name, {"v2", exit});
+  }
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
+
+  const auto obj_val_fixed = solver.solve({5, true}, {}, {}, {}, 120, true);
+
+  EXPECT_EQ(obj_val_fixed.get_status(), cda_rail::SolutionStatus::Infeasible);
+
+  const auto obj_val_free = solver.solve({5, false}, {}, {}, {}, 120, true);
+
+  EXPECT_EQ(obj_val_free.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(obj_val_free.get_obj(), 2);
+
+  const auto siding = network.get_edge_index({"v1"}, {"va"});
+  for (const auto& tr_name : tr_names) {
+    EXPECT_EQ(obj_val_free.get_const_solution_routes()
+                  .get_route(tr_name)
+                  .contains_edge(siding),
+              tr_name == "Train2")
+        << tr_name;
+  }
+
+  check_schedule_within_dt_and_order(obj_val_free, 5, "obj_val_free");
 }
 
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {

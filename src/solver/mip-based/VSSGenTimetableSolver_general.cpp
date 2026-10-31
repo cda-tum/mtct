@@ -530,18 +530,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
        ++sec_index) {
     const auto&               sec = unbreakable_sections[sec_index];
     const cda_rail::index_set sec_set(sec.begin(), sec.end());
-    const auto&               tr_on_sec = m_instance.trains_in_section(sec_set);
+    // Without fixed routes, a train can be on every section it can enter
+    const auto& tr_on_sec = m_instance.trains_in_section(sec_set, fix_routes);
     // tr is on section if it occupies at least one edge of the section
     for (auto const tr : tr_on_sec) {
       const auto& tr_interval = train_interval[tr];
       const auto& tr_name =
           m_instance.get_const_train_list().get_train(tr).get_name();
-      const auto& tr_route = m_instance.get_const_routes().get_route(tr_name);
+      const auto tr_edges = m_instance.edges_used_by_train(tr, fix_routes);
       for (size_t t = tr_interval.first; t <= tr_interval.second; ++t) {
         GRBLinExpr lhs   = 0;
         int        count = 0;
         for (auto const e_index : sec) {
-          if (tr_route.contains_edge(e_index)) {
+          if (tr_edges.contains(e_index)) {
             lhs += m_vars["x"](tr, t, e_index);
             count++;
           }

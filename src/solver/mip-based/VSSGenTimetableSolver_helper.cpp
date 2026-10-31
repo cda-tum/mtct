@@ -35,22 +35,13 @@ cda_rail::index_vector
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
     size_t train_index) const {
   cda_rail::index_vector indices;
-  const auto&            tr_name =
-      m_instance.get_const_train_list().get_train(train_index).get_name();
-  const auto& tr_route =
-      m_instance.get_const_routes().get_route(tr_name).get_edges();
+  // Without fixed routes, these are all edges the train can use
+  const auto tr_edges = m_instance.edges_used_by_train(train_index, fix_routes);
   for (size_t i = 0; i < unbreakable_sections.size(); ++i) {
-    bool edge_found = false;
-    // If unbreakable_section[i] (of type vector) and tr_route (of type vector)
-    // overlap (have a common element), add i to indices
-    for (size_t j0 = 0; j0 < unbreakable_sections[i].size() && !edge_found;
-         ++j0) {
-      for (size_t j1 = 0; j1 < tr_route.size() && !edge_found; ++j1) {
-        if (unbreakable_sections[i][j0] == tr_route[j1]) {
-          indices.push_back(i);
-          edge_found = true;
-        }
-      }
+    if (std::ranges::any_of(unbreakable_sections[i], [&tr_edges](size_t e) {
+          return tr_edges.contains(e);
+        })) {
+      indices.push_back(i);
     }
   }
 
