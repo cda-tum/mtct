@@ -2455,6 +2455,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_object = m_instance.get_const_train_list().get_train(tr);
     const auto  t_bound   = latest_exit_time(tr);
+    const auto  entry = m_instance.get_const_schedule(tr).get_entry_vertex();
 
     for (const auto e : m_instance.edges_used_by_train(
              tr, this->m_model_detail.fix_routes, false)) {
@@ -2517,11 +2518,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         const auto& ttd_section = m_ttd_sections.at(ttd_index);
         // If all of neighboring_edges are in ttd_section, then it is not an
         // entering edge Hence, if at least one neighboring edge is not in
-        // ttd_section, then we have an entering edge
-        const bool is_entering_edge = std::ranges::any_of(
-            neighboring_edges, [&ttd_section](const auto& e_tmp) {
-              return !std::ranges::contains(ttd_section, e_tmp);
-            });
+        // ttd_section, then we have an entering edge. Moreover, the train
+        // enters the section if it starts at its border.
+        const bool is_entering_edge =
+            v_source == entry ||
+            std::ranges::any_of(
+                neighboring_edges, [&ttd_section](const auto& e_tmp) {
+                  return !std::ranges::contains(ttd_section, e_tmp);
+                });
         if (is_entering_edge) {
           // We need a constraint for each other train in the TTD section
           const auto tr_on_ttd = m_instance.trains_in_section(

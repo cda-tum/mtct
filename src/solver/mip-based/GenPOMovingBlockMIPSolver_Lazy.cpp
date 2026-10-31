@@ -1171,11 +1171,14 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         const auto& ttd_section = solver->m_ttd_sections.at(ttd_index);
         // If all of neighboring_edges are in ttd_section, then it is not an
         // entering edge Hence, if at least one neighboring edge is not in
-        // ttd_section, then we have an entering edge
-        const bool is_entering_edge = std::ranges::any_of(
-            neighboring_edges, [&ttd_section](const auto& e_tmp) {
-              return !std::ranges::contains(ttd_section, e_tmp);
-            });
+        // ttd_section, then we have an entering edge. Moreover, the train
+        // enters the section if it starts at its border.
+        const bool is_entering_edge =
+            r_v_idx == 0 ||
+            std::ranges::any_of(
+                neighboring_edges, [&ttd_section](const auto& e_tmp) {
+                  return !std::ranges::contains(ttd_section, e_tmp);
+                });
         if (is_entering_edge) {
           // Check TTD condition on entering edge
           const auto& tr_order_ttd = train_orders_on_ttd.at(ttd_index);

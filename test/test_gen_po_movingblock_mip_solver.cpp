@@ -2633,6 +2633,18 @@ TEST(GenPOMovingBlockMIPSolver, TrainWaitingAtTtdBorderDoesNotOccupySection) {
 
     ASSERT_TRUE(sol.has_solution()) << label;
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal) << label;
+
+    // TrB leaves c, and hence enters the section, only once the rear of TrA
+    // has left it, i.e., after 31 s at the earliest
+    const auto trb_times     = sol.get_train_times("TrB");
+    double     trb_departure = trb_times.front();
+    for (const auto t : trb_times) {
+      if (sol.get_train_pos("TrB", t) <= 1e-3) {
+        trb_departure = t;
+      }
+    }
+    EXPECT_GE(trb_departure, 31 - 1e-3) << label;
+
     check_trajectory(instance, sol,
                      "TrainWaitingAtTtdBorderDoesNotOccupySection");
   }
