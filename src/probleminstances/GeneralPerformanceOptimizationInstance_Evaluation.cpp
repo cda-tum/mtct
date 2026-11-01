@@ -66,9 +66,9 @@ double min_distance_until_speed(double v, double a, double tau) {
 // acceleration and deceleration. Its speed has to be possible within the
 // distance in between, which has to be at least min_distance_until_speed
 // within the time in between. Otherwise, the bound obtained from the next
-// sample lies behind the previous one. The positions may be off by the
-// precision to which the solver rounded them. Kept behind such a trajectory,
-// the train can always stop where the train of the solution can.
+// sample lies behind the previous one. The positions may be off within the
+// solver's tolerances. Kept behind such a trajectory, the train can always stop
+// where the train of the solution can.
 bool trajectory_follows_dynamics(
     const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
     const cda_rail::Train& train) {
@@ -79,8 +79,7 @@ bool trajectory_follows_dynamics(
     const auto t_2  = times.at(i);
     const auto v_2  = sol.get_train_speed(tr_name, t_2);
     const auto dist = sol.get_train_pos(tr_name, t_2) -
-                      sol.get_train_pos(tr_name, t_1) +
-                      cda_rail::ROUNDING_PRECISION;
+                      sol.get_train_pos(tr_name, t_1) + cda_rail::GRB_EPS;
     if (!cda_rail::possible_by_eom(sol.get_train_speed(tr_name, t_1), v_2,
                                    train.get_acceleration(),
                                    train.get_deceleration(), dist) ||
@@ -297,7 +296,7 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
 
         // In between, the trajectory can only be approximated. This is not
         // possible if the two samples contradict the train's dynamics, which
-        // happens if the solver rounded the positions.
+        // can happen within the solver's tolerances.
         if (!possible_by_eom(get_train_speed(tr_name, prev_t), next_vel, a,
                              train.get_deceleration(),
                              next_pos - get_train_pos(tr_name, prev_t))) {

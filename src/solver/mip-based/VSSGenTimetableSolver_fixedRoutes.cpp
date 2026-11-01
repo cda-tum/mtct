@@ -313,9 +313,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (const auto e : m_instance.edges_used_by_train(tr, this->fix_routes)) {
       const auto& e_index = breakable_edge_indices[e];
       const auto& e_len = m_instance.get_editable_network().get_edge(e).length;
-      const auto  vss_number_e =
-          m_instance.get_editable_network().max_vss_on_edge(e);
-      const auto edge_pos = m_instance.route_edge_pos(tr_name, e);
+      const auto  vss_number_e = max_vss_per_edge.at(e);
+      const auto  edge_pos     = m_instance.route_edge_pos(tr_name, e);
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
@@ -404,10 +403,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_fixed_routes_only_stop_at_vss_constraints() {
   // For every breakable edge position exactly b_pos if tight
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
-    const auto& e = breakable_edges[i];
-    const auto  vss_number_e =
-        m_instance.get_editable_network().max_vss_on_edge(e);
-    const auto& edge = m_instance.get_editable_network().get_edge(e);
+    const auto& e            = breakable_edges[i];
+    const auto  vss_number_e = max_vss_per_edge.at(e);
+    const auto& edge         = m_instance.get_editable_network().get_edge(e);
     const auto& edge_name =
         "[" + m_instance.get_editable_network().get_vertex(edge.source).name +
         "," + m_instance.get_editable_network().get_vertex(edge.target).name +

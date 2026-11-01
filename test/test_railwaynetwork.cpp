@@ -812,11 +812,15 @@ TEST(RailwayNetwork, NetworkFunctions) {
   EXPECT_TRUE(network.has_edge({"v0"}, {"v1"}));
   EXPECT_FALSE(network.has_edge({"v0"}, {"v2"}));
 
-  // Maximum number of VSS test
+  // Maximum number of VSS test. Every block, including the ones at both ends
+  // of the edge, has at least the minimal block length, e.g., 5 blocks of 2 m
+  // fit on e3. Chebyshev's blocks at the ends are shorter, so that only one
+  // border fits.
   EXPECT_EQ(network.max_vss_on_edge(e0), 0);
-  EXPECT_EQ(network.max_vss_on_edge(e1), 2);
+  EXPECT_EQ(network.max_vss_on_edge(e1), 1);
   EXPECT_EQ(network.max_vss_on_edge(e2), 0);
-  EXPECT_EQ(network.max_vss_on_edge(e3), 5);
+  EXPECT_EQ(network.max_vss_on_edge(e3), 4);
+  EXPECT_EQ(network.max_vss_on_edge(e3, cda_rail::vss::CHEBYSHEV), 1);
 
   // change vertex name tests
   network.change_vertex_name(0, "v0_tmp");

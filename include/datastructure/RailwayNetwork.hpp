@@ -1285,22 +1285,30 @@ public:
 private:
   /**
    * @brief Returns the maximum number of VSS borders placeable on edge
-   *        @p index.
-   * @param index Numeric edge index.
-   * @return `floor(length / min_block_length)`, or `0` if the edge is not
-   *         breakable or `min_block_length` is zero.
+   *        @p index if they are placed by @p sep_func.
+   * @param index    Numeric edge index.
+   * @param sep_func Separation function placing the borders.
+   * @return One less than vss::functions::max_n_blocks, or `0` if the edge is
+   *         not breakable or `min_block_length` is zero or exceeds the edge's
+   *         length.
    * @throws cda_rail::exceptions::EdgeNotExistentException If the edge does
    *         not exist.
    */
-  [[nodiscard]] size_t max_vss_on_edge_helper(size_t index) const;
+  [[nodiscard]] size_t
+  max_vss_on_edge_helper(size_t                         index,
+                         const vss::SeparationFunction& sep_func) const;
 
 public:
   /**
    * @brief Returns the maximum number of VSS borders that can be placed on
    *        @p edge.
    *
-   * The value equals `floor(length / min_block_length)`. Returns `0` for
-   * non-breakable edges or when `min_block_length` is zero.
+   * Every block has at least the edge's `min_block_length`, including the
+   * blocks towards both ends of the edge, since these end at a border as well.
+   * Uniformly separated blocks allow the most borders, hence the value equals
+   * `floor(length / min_block_length) - 1`. Returns `0` for non-breakable
+   * edges, when `min_block_length` is zero, and when the edge is too short for
+   * two blocks, in particular when `min_block_length` exceeds its length.
    *
    * @param edge Edge descriptor.
    * @return Maximum number of VSS borders.
@@ -1308,7 +1316,27 @@ public:
    *         not exist.
    */
   [[nodiscard]] size_t max_vss_on_edge(EdgeInput const& edge) const {
-    return max_vss_on_edge_helper(edge.resolve(this));
+    return max_vss_on_edge(edge, vss::UNIFORM);
+  };
+
+  /**
+   * @brief Returns the maximum number of VSS borders that can be placed on
+   *        @p edge if their positions are given by @p sep_func.
+   *
+   * As above, every block has at least the edge's `min_block_length`. A
+   * separation function with blocks of different lengths allows fewer
+   * borders than a uniform one.
+   *
+   * @param edge     Edge descriptor.
+   * @param sep_func Separation function placing the borders.
+   * @return Maximum number of VSS borders.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If the edge does
+   *         not exist.
+   */
+  [[nodiscard]] size_t
+  max_vss_on_edge(EdgeInput const&               edge,
+                  const vss::SeparationFunction& sep_func) const {
+    return max_vss_on_edge_helper(edge.resolve(this), sep_func);
   };
 
   // -----------------------------

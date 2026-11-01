@@ -189,10 +189,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
   // relevant_edges is only filled for the non-discretized models, hence the
   // following loop is skipped in the discretized case handled above.
   for (size_t r_e_index = 0; r_e_index < relevant_edges.size(); ++r_e_index) {
-    const auto e_index = relevant_edges.at(r_e_index);
-    const auto vss_number_e =
-        m_instance.get_const_network().max_vss_on_edge(e_index);
-    const auto& e = m_instance.get_const_network().get_edge(e_index);
+    const auto  e_index      = relevant_edges.at(r_e_index);
+    const auto  vss_number_e = max_vss_per_edge.at(e_index);
+    const auto& e            = m_instance.get_const_network().get_edge(e_index);
     const auto  reverse_edge_index =
         m_instance.get_const_network().get_reverse_edge_index(e_index);
     for (size_t vss = 0; vss < vss_number_e; ++vss) {
@@ -284,11 +283,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         continue;
       }
 
-      const auto b_pos_val = round_to_given_tolerance(
-          m_vars.at("b_pos")
-              .at(breakable_edge_indices.at(e_index), vss)
-              .get(GRB_DoubleAttr_X),
-          ROUNDING_PRECISION);
+      // Values are exported unrounded. Optimal solutions leave no slack, e.g.,
+      // a train's rear is exactly on a border when the following train needs
+      // the section, so any rounding can delay the following train when the
+      // solution is simulated.
+      const auto b_pos_val = m_vars.at("b_pos")
+                                 .at(breakable_edge_indices.at(e_index), vss)
+                                 .get(GRB_DoubleAttr_X);
       IF_PLOG(plog::debug) {
         const auto& source =
             m_instance.get_const_network().get_vertex(e.source).name;
@@ -340,12 +341,14 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     const auto train = m_instance.get_const_train_list().get_train(tr);
     for (size_t t = train_interval[tr].first;
          t <= train_interval[tr].second + 1; ++t) {
-      auto const& tr_name         = sol_obj.get_instance()
-                                        ->get_const_train_list()
-                                        .get_train(tr)
-                                        .get_name();
-      const auto  train_speed_val = round_to_given_tolerance(
-          m_vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), GRB_EPS);
+      auto const& tr_name = sol_obj.get_instance()
+                                ->get_const_train_list()
+                                .get_train(tr)
+                                .get_name();
+      // Within its tolerances, Gurobi may slightly violate the bounds.
+      const auto train_speed_val =
+          std::clamp(m_vars.at("v").at(tr, t).get(GRB_DoubleAttr_X), 0.0,
+                     train.get_max_speed());
       sol_obj.add_train_speed(tr_name, static_cast<double>(t) * dt,
                               train_speed_val);
     }
@@ -358,8 +361,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     // The extracted positions denote the rear end of the train plus its
     // length. Hence, the train has left the network as soon as this position
     // has reached the length of its route plus its length.
-    const double pos_left_network =
-        round_to_given_tolerance(r_len + tr_len, ROUNDING_PRECISION);
+    const double          pos_left_network = r_len + tr_len;
     std::optional<double> exit_time;
     for (auto t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
@@ -367,11 +369,9 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       if (fix_routes) {
         train_pos = m_vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X);
       } else {
-        const double len_in = round_to_given_tolerance(
-            m_vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X),
-            ROUNDING_PRECISION);
-        if (len_in > EPS) {
-          train_pos = -len_in;
+        // The train has not fully entered if, and only if, x_in is set.
+        if (m_vars.at("x_in").at(tr, t).get(GRB_DoubleAttr_X) > 0.5) {
+          train_pos = -m_vars.at("len_in").at(tr, t).get(GRB_DoubleAttr_X);
         } else {
           // The position of the edge source along the route is tracked
           // explicitly, because the route used by the model can differ from
@@ -390,8 +390,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
         }
       }
 
-      train_pos += tr_len;
-      train_pos = round_to_given_tolerance(train_pos, ROUNDING_PRECISION);
+      train_pos = std::max(0.0, train_pos + tr_len);
       sol_obj.add_train_pos(train.get_name(), static_cast<double>(t) * dt,
                             train_pos);
 
@@ -403,23 +402,17 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     auto   t_final         = train_interval[tr].second + 1;
     double train_pos_final = NAN;
     if (fix_routes) {
-      train_pos_final = round_to_given_tolerance(
-          m_vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
-          ROUNDING_PRECISION);
+      train_pos_final =
+          m_vars.at("mu").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
     } else {
       train_pos_final =
           r_len +
-          round_to_given_tolerance(
-              m_vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
-              ROUNDING_PRECISION);
+          m_vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
     }
     if (include_braking_curves) {
-      train_pos_final -= round_to_given_tolerance(
-          m_vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X),
-          ROUNDING_PRECISION);
+      train_pos_final -=
+          m_vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
     }
-    train_pos_final =
-        round_to_given_tolerance(train_pos_final, ROUNDING_PRECISION);
     sol_obj.add_train_pos(train.get_name(), static_cast<double>(t_final) * dt,
                           train_pos_final);
 
@@ -602,6 +595,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   iterative_include_cuts    = true;
   postprocess               = false;
   max_vss_per_edge_in_iteration.clear();
+  max_vss_per_edge.clear();
   breakable_edge_indices.clear();
   fwd_bwd_sections.clear();
   GeneralMIPSolver::cleanup();
@@ -609,9 +603,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
 
 bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
     size_t relevant_edge_index, double obj_ub, GRBLinExpr& cut_expr) {
-  const auto& e = relevant_edges.at(relevant_edge_index);
-  const auto  vss_number_e =
-      m_instance.get_editable_network().max_vss_on_edge(e);
+  const auto& e            = relevant_edges.at(relevant_edge_index);
+  const auto  vss_number_e = max_vss_per_edge.at(e);
   const auto& current_vss_number_e =
       max_vss_per_edge_in_iteration.at(relevant_edge_index);
 
@@ -643,10 +636,9 @@ bool cda_rail::solver::mip_based::VSSGenTimetableSolver::update_vss(
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
     size_t relevant_edge_index, size_t new_max_vss, GRBLinExpr& cut_expr) {
-  const auto& e = relevant_edges.at(relevant_edge_index);
-  const auto  vss_number_e =
-      m_instance.get_editable_network().max_vss_on_edge(e);
-  const auto old_max_vss =
+  const auto& e            = relevant_edges.at(relevant_edge_index);
+  const auto  vss_number_e = max_vss_per_edge.at(e);
+  const auto  old_max_vss =
       max_vss_per_edge_in_iteration.at(relevant_edge_index);
   max_vss_per_edge_in_iteration[relevant_edge_index] = new_max_vss;
 
@@ -798,6 +790,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
   num_edges    = m_instance.get_editable_network().number_of_edges();
   num_vertices = m_instance.get_editable_network().number_of_vertices();
 
+  max_vss_per_edge.clear();
+  max_vss_per_edge.reserve(num_edges);
+  for (size_t e = 0; e < num_edges; ++e) {
+    max_vss_per_edge.emplace_back(
+        m_instance.get_const_network().max_vss_on_edge(e));
+  }
+
   {
     const auto raw_unbreakable =
         m_instance.get_editable_network().unbreakable_sections();
@@ -846,9 +845,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
 
   max_vss_per_edge_in_iteration.resize(relevant_edges.size(), 0);
   for (size_t i = 0; i < relevant_edges.size(); ++i) {
-    const auto& e = relevant_edges.at(i);
-    const auto  vss_number_e =
-        m_instance.get_editable_network().max_vss_on_edge(e);
+    const auto& e            = relevant_edges.at(i);
+    const auto  vss_number_e = max_vss_per_edge.at(e);
     if (iterative_vss) {
       if (iterative_update_strategy == UpdateStrategyVSSGen::Fixed) {
         max_vss_per_edge_in_iteration[i] = std::min<size_t>(
@@ -921,8 +919,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
 
   double obj_ub = 1.0;
   for (const auto& e : relevant_edges) {
-    obj_ub +=
-        static_cast<double>(m_instance.get_const_network().max_vss_on_edge(e));
+    obj_ub += static_cast<double>(max_vss_per_edge.at(e));
   }
   double obj_lb           = 0;
   size_t iteration_number = 0;
@@ -977,8 +974,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
         if (static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1 <
                 obj_lb_tmp &&
             max_vss_per_edge_in_iteration.at(i) <
-                m_instance.get_const_network().max_vss_on_edge(
-                    relevant_edges.at(i))) {
+                max_vss_per_edge.at(relevant_edges.at(i))) {
           obj_lb_tmp =
               static_cast<double>(max_vss_per_edge_in_iteration.at(i)) + 1;
         }

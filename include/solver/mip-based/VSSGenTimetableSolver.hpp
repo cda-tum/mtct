@@ -156,6 +156,9 @@ private:
   bool                   iterative_include_cuts_tmp{true};
   bool                   postprocess{false};
   cda_rail::index_vector max_vss_per_edge_in_iteration{};
+  // Network::max_vss_on_edge of every edge, which is computed only once, since
+  // it is needed throughout the model creation and not cheap
+  cda_rail::index_vector             max_vss_per_edge{};
   std::unordered_map<size_t, size_t> breakable_edge_indices{};
   std::vector<std::pair<cda_rail::index_vector, cda_rail::index_vector>>
       fwd_bwd_sections{};

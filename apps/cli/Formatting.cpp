@@ -2,11 +2,13 @@
 
 #include "Definitions.hpp"
 
+#include <cstdint>
 #include <iomanip>
 #include <ios>
 #include <map>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 const std::map<std::string, cda_rail::VertexType>&
 cda_rail::cli::vertex_type_map() {
@@ -31,4 +33,15 @@ std::string cda_rail::cli::format_double(double const value) {
     str.pop_back();
   }
   return str;
+}
+
+std::string cda_rail::cli::hash_identifier(std::string_view const settings) {
+  std::uint32_t hash = 2166136261U;
+  for (const char c : settings) {
+    hash ^= static_cast<unsigned char>(c);
+    hash *= 16777619U;
+  }
+  std::stringstream stream;
+  stream << std::hex << std::setw(8) << std::setfill('0') << hash;
+  return stream.str();
 }

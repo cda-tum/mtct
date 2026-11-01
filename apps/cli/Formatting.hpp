@@ -50,6 +50,18 @@ vertex_input(const std::string& name) {
 }
 
 /**
+ * @brief The hash of all settings that `--generate-parameter-identifier` uses
+ * as identifier.
+ *
+ * Appending all settings themselves to the instance name would exceed the 260
+ * characters Windows allows in a path by default. They are stored in
+ * `solver_data.json` anyway. The hash (32-bit FNV-1a as eight hexadecimal
+ * digits) is the same on every platform, so that the same settings always
+ * lead to the same directory.
+ */
+[[nodiscard]] std::string hash_identifier(std::string_view settings);
+
+/**
  * @brief Looks a value up in one of the option maps to print it by its name.
  *
  * The option maps are name-to-value, since that is what CLI11's

@@ -652,7 +652,12 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       this->get_instance()->get_const_network().get_edge(edge);
   const auto& tr_obj =
       this->get_instance()->get_const_train_list().get_train(tr_name);
-  const auto max_speed = std::min(tr_obj.get_max_speed(), edge_obj.max_speed);
+  // Within the solver's tolerances, the speeds can marginally exceed the speed
+  // limit.
+  auto max_speed = std::min(tr_obj.get_max_speed(), edge_obj.max_speed);
+  if (std::max(v1, v2) <= max_speed + GRB_EPS) {
+    max_speed = std::max({max_speed, v1, v2});
+  }
   const auto dist_travelled = pos_2 - pos_1;
 
   if (std::abs(dist_travelled) < GRB_EPS) {

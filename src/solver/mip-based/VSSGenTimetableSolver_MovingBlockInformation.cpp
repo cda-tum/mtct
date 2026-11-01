@@ -259,7 +259,7 @@ void cda_rail::solver::mip_based::
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
     const auto& e            = breakable_edges[i];
     const auto& network      = m_instance.get_const_network();
-    const auto  vss_number_e = network.max_vss_on_edge(e);
+    const auto  vss_number_e = max_vss_per_edge.at(e);
     const auto& edge         = network.get_edge(e);
     const auto& edge_name = "[" + network.get_vertex(edge.source).name + "," +
                             network.get_vertex(edge.target).name + "]";

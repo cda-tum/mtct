@@ -656,8 +656,11 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
 
   const std::pair<double, double> milestone_pair = {
       milestones.at(edge_number), milestones.at(edge_number + 1)};
-  const bool is_on_edge    = (pos.front > milestone_pair.first + EPS &&
-                              pos.rear < milestone_pair.second - EPS);
+  // Solutions of the MILPs can place a rear exactly on a border, which must not
+  // keep the edge occupied due to numerical inaccuracies. Hence, a train is on
+  // an edge only if it reaches more than GRB_EPS into it.
+  const bool is_on_edge    = (pos.front > milestone_pair.first + GRB_EPS &&
+                              pos.rear < milestone_pair.second - GRB_EPS);
   const bool rear_on_edge  = is_on_edge && (pos.rear >= milestone_pair.first);
   const bool front_on_edge = is_on_edge && (pos.front <= milestone_pair.second);
 
@@ -726,7 +729,7 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
     if (!occ_status.tr_on_edge &&
         (occupation_type == TTDOccupationType::OnlyBehind ||
          occupation_type == TTDOccupationType::OccupiedOrBehind) &&
-        pos_on_edge.rear >=
+        pos_on_edge.rear + GRB_EPS >=
             get_instance()->get_const_network().get_edge(edge_id).length) {
       potentially_behind =
           true; // Train is either behind ttd section or on a later ttd edge
@@ -1052,8 +1055,9 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   for (size_t i = 0; i < get_train_edges_of_tr(tr).size() &&
                      milestones.at(i) + EPS < pos + max_displacement;
        ++i) {
-    if (milestones.at(i + 1) <= pos - train.get_length()) {
-      continue; // Train has fully left the edge already
+    if (milestones.at(i + 1) <= pos - train.get_length() + GRB_EPS) {
+      continue; // Train has fully left the edge already (within GRB_EPS, as in
+                // get_position_on_route_edge)
     }
     if (!also_limit_by_leaving_edges && milestones.at(i + 1) <= pos) {
       continue; // Train's front has already left the edge

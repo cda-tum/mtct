@@ -119,7 +119,7 @@ void cda_rail::cli::finalize_mb_astar_settings(MbAStarSettings& settings) {
   }
   if (settings.exporting.generate_identifier) {
     settings.exporting.parameter_identifier =
-        generate_mb_astar_identifier(settings);
+        hash_identifier(generate_mb_astar_identifier(settings));
   }
 }
 

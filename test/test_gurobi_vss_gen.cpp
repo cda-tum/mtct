@@ -72,14 +72,26 @@ void check_schedule_within_dt_and_order(
   // Every VSS border lies strictly within its edge and is mirrored on the
   // reverse edge, if the latter exists. Since the objective counts the borders,
   // it coincides with the number of borders on one edge of every such pair.
+  // Every block has at least the edge's minimal block length, also the blocks
+  // towards both ends of the edge, since these end at a border as well.
   size_t num_vss = 0;
   for (size_t e_id = 0; e_id < network.number_of_edges(); ++e_id) {
-    auto const& edge    = network.get_edge(e_id);
-    auto const  vss_pos = sol.get_vss_pos(e_id);
-    auto const  e_name  = network.get_edge_name(e_id);
+    auto const& edge            = network.get_edge(e_id);
+    auto const  vss_pos         = sol.get_vss_pos(e_id);
+    auto const  e_name          = network.get_edge_name(e_id);
+    double      previous_border = 0;
     for (auto const& pos : vss_pos) {
       EXPECT_GT(pos, 0) << label << ", Edge: " << e_name;
       EXPECT_LT(pos, edge.length) << label << ", Edge: " << e_name;
+      EXPECT_GE(pos - previous_border,
+                edge.min_block_length - cda_rail::GRB_EPS)
+          << label << ", Edge: " << e_name;
+      previous_border = pos;
+    }
+    if (!vss_pos.empty()) {
+      EXPECT_GE(edge.length - previous_border,
+                edge.min_block_length - cda_rail::GRB_EPS)
+          << label << ", Edge: " << e_name;
     }
 
     auto const reverse_edge = network.get_reverse_edge_index(e_id);
