@@ -730,6 +730,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                            m_vars["b_used"](i, vss) * min_block_len_e,
                            "b_used_min_value_if_used_" + std::to_string(e) +
                                "_" + std::to_string(vss));
+        // The target of a breakable edge is a border as well, hence also the
+        // block towards it has the minimal length. Only one edge of a
+        // bidirectional track is relevant, so this is not covered by the
+        // reverse edge either.
+        m_model->addConstr(m_vars["b_pos"](e_index, vss), GRB_LESS_EQUAL,
+                           e_len - (m_vars["b_used"](i, vss) * min_block_len_e),
+                           "b_used_max_value_if_used_" + std::to_string(e) +
+                               "_" + std::to_string(vss));
         // Also remove redundant solutions
         if (vss < vss_number_e - 1) {
           m_model->addConstr(m_vars["b_pos"](e_index, vss), GRB_GREATER_EQUAL,

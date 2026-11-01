@@ -1055,8 +1055,9 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
   for (size_t i = 0; i < get_train_edges_of_tr(tr).size() &&
                      milestones.at(i) + EPS < pos + max_displacement;
        ++i) {
-    if (milestones.at(i + 1) <= pos - train.get_length()) {
-      continue; // Train has fully left the edge already
+    if (milestones.at(i + 1) <= pos - train.get_length() + GRB_EPS) {
+      continue; // Train has fully left the edge already (within GRB_EPS, as in
+                // get_position_on_route_edge)
     }
     if (!also_limit_by_leaving_edges && milestones.at(i + 1) <= pos) {
       continue; // Train's front has already left the edge
