@@ -288,7 +288,7 @@ void cda_rail::cli::finalize_vss_mip_settings(VssMipSettings& settings) {
   }
   if (settings.exporting.generate_identifier) {
     settings.exporting.parameter_identifier =
-        generate_vss_mip_identifier(settings);
+        hash_identifier(generate_vss_mip_identifier(settings));
   }
 }
 

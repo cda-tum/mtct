@@ -188,7 +188,7 @@ void cda_rail::cli::finalize_mb_mip_settings(CLI::App&      app,
   }
   if (settings.exporting.generate_identifier) {
     settings.exporting.parameter_identifier =
-        generate_mb_mip_identifier(settings);
+        hash_identifier(generate_mb_mip_identifier(settings));
   }
 }
 

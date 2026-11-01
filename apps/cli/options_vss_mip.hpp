@@ -73,7 +73,10 @@ struct VssMipSettings {
 void add_vss_mip_options(CLI::App& app, VssMipSettings& settings);
 /** @brief Generates the parameter identifier if it was asked for. */
 void finalize_vss_mip_settings(VssMipSettings& settings);
-/** @brief The identifier `--generate-parameter-identifier` produces. */
+/**
+ * @brief All settings, whose hash `--generate-parameter-identifier` uses as
+ * identifier, see hash_identifier.
+ */
 [[nodiscard]] std::string
 generate_vss_mip_identifier(const VssMipSettings& settings);
 /** @brief Logs the settings, as the apps do before they solve. */

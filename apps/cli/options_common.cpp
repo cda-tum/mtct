@@ -151,9 +151,10 @@ void cda_rail::cli::add_export_options(CLI::App& app, ExportSettings& settings,
                settings.generate_identifier,
                "Whether to automatically generate a parameter identifier "
                "based on the parameter settings. If set, the parameter "
-               "identifier will be generated as a concatenation of the "
-               "parameter names and values. Otherwise the identifier has to "
-               "be set explicitly if it should not remain empty.")
+               "identifier will be a short hash of all parameter values, "
+               "which are stored in solver_data.json. Otherwise the "
+               "identifier has to be set explicitly if it should not remain "
+               "empty.")
       ->excludes(parameter_identifier_option)
       ->group("Export Options");
 

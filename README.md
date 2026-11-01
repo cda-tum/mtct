@@ -130,6 +130,8 @@ Using `--export-solution` (or `--export-solution-and-instance`, if the instance 
 If the solutions belong somewhere else than the instances, a separate working directory can be given by `--export-working-directory`.
 Since the same instance is often solved with different settings, an identifier can be appended to the instance name in the export path.
 It is either specified explicitly by `--parameter-identifier` or generated from the used settings by `--generate-parameter-identifier`.
+The generated identifier is a short hash of all settings, so that the path stays within the 260 characters Windows allows by default.
+The same settings always give the same hash, and the settings themselves are stored in `solver_data.json`.
 
 An exported solution can be evaluated by `--evaluate`.
 This simulates the solution in full detail and adds the resulting delays to `solution_data.json`, so that solutions obtained with different levels of detail can be compared.

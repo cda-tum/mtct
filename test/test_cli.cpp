@@ -1206,14 +1206,27 @@ TEST(CliOptions, MbMipGeneratedIdentifier) {
   app.parse(std::string{"-o -e my-solutions -g"});
   cda_rail::cli::finalize_mb_mip_settings(app, settings);
 
-  ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
   // The defaults, in the order in which the identifier concatenates them.
-  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
+  const auto all_settings = cda_rail::cli::generate_mb_mip_identifier(settings);
+  EXPECT_EQ(all_settings,
             "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_f_OnlyViolated_"
             "OnlyAdjacent_10_-1");
-  // The identifier ends up as a directory name.
+  ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
+            cda_rail::cli::hash_identifier(all_settings));
+}
+
+TEST(CliOptions, HashIdentifier) {
+  // 32-bit FNV-1a, so that the same settings give the same directory on
+  // every platform
+  EXPECT_EQ(cda_rail::cli::hash_identifier(""), "811c9dc5");
+  EXPECT_EQ(cda_rail::cli::hash_identifier("a"), "e40c292c");
+  EXPECT_EQ(cda_rail::cli::hash_identifier("foobar"), "bf9cf968");
+  EXPECT_NE(cda_rail::cli::hash_identifier("15_t_t_Continuous_f"),
+            cda_rail::cli::hash_identifier("15_t_t_Continuous_t"));
+  // The hash ends up as a directory name.
   EXPECT_NO_THROW(cda_rail::exceptions::throw_if_invalid_folder_name(
-      settings.exporting.parameter_identifier.value_or("")));
+      cda_rail::cli::hash_identifier("6_Greedy_f_t_t_f_1")));
 }
 
 TEST(CliOptions, GeneratedIdentifierExcludesAnExplicitOne) {
@@ -1259,9 +1272,12 @@ TEST(CliOptions, MbAStarGeneratedIdentifier) {
   app.parse(std::string{"-o -e my-solutions -g"});
   cda_rail::cli::finalize_mb_astar_settings(settings);
 
+  const auto all_settings =
+      cda_rail::cli::generate_mb_astar_identifier(settings);
+  EXPECT_EQ(all_settings, "6_Greedy_f_t_t_f_1_SingleEdge_Simple_-1");
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
   EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
-            "6_Greedy_f_t_t_f_1_SingleEdge_Simple_-1");
+            cda_rail::cli::hash_identifier(all_settings));
 }
 
 TEST(CliVssOptions, ModelAndSolverSettings) {
@@ -1347,12 +1363,16 @@ TEST(CliVssOptions, GeneratedIdentifier) {
   app.parse(std::string{"-o -e my-solutions -g"});
   cda_rail::cli::finalize_vss_mip_settings(settings);
 
-  ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
   // The defaults, in the order in which the identifier concatenates them. The
   // trailing 't' is the fix_routes setting, which only exists without moving
   // block information.
-  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
+  const auto all_settings =
+      cda_rail::cli::generate_vss_mip_identifier(settings);
+  EXPECT_EQ(all_settings,
             "15_t_t_Continuous_f_f_t_f_Optimal_Fixed_1_2_t_f_-1_t");
+  ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
+            cda_rail::cli::hash_identifier(all_settings));
 }
 
 TEST(CliVssOptions, GeneratedIdentifierWithMovingBlockInformation) {
@@ -1362,9 +1382,13 @@ TEST(CliVssOptions, GeneratedIdentifierWithMovingBlockInformation) {
   app.parse(std::string{"-o -e my-solutions -g -m mb-solutions"});
   cda_rail::cli::finalize_vss_mip_settings(settings);
 
+  const auto all_settings =
+      cda_rail::cli::generate_vss_mip_identifier(settings);
+  EXPECT_EQ(all_settings,
+            "15_t_t_Continuous_f_f_t_f_Optimal_Fixed_1_2_t_f_-1_t_t_t_t_t");
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
   EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
-            "15_t_t_Continuous_f_f_t_f_Optimal_Fixed_1_2_t_f_-1_t_t_t_t_t");
+            cda_rail::cli::hash_identifier(all_settings));
 }
 
 TEST(CliVssOptions, PostprocessIsPartOfTheExportOptions) {
@@ -1591,9 +1615,10 @@ TEST(CliVssOptions, GeneratedIdentifierListsTheSeparationFunctions) {
   app.parse(std::string{"-o -e sub -g -r Inferred -j Uniform -j Chebyshev"});
   cda_rail::cli::finalize_vss_mip_settings(settings);
 
+  const auto all_settings =
+      cda_rail::cli::generate_vss_mip_identifier(settings);
+  EXPECT_NE(all_settings.find("Inferred_Uniform_Chebyshev"), std::string::npos);
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
-  const auto identifier = settings.exporting.parameter_identifier.value_or("");
-  EXPECT_NE(identifier.find("Inferred_Uniform_Chebyshev"), std::string::npos);
-  EXPECT_NO_THROW(
-      cda_rail::exceptions::throw_if_invalid_folder_name(identifier));
+  EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
+            cda_rail::cli::hash_identifier(all_settings));
 }

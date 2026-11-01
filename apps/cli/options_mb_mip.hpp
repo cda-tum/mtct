@@ -57,7 +57,10 @@ void add_mb_mip_options(CLI::App& app, MbMipSettings& settings);
  */
 void finalize_mb_mip_settings(CLI::App& app, MbMipSettings& settings);
 
-/** @brief The identifier `--generate-parameter-identifier` produces. */
+/**
+ * @brief All settings, whose hash `--generate-parameter-identifier` uses as
+ * identifier, see hash_identifier.
+ */
 [[nodiscard]] std::string
 generate_mb_mip_identifier(const MbMipSettings& settings);
 
