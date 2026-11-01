@@ -1080,6 +1080,23 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                            "sum_edge_type_" + edge_name);
       }
 
+      // Every block has the minimal length, which limits the number of blocks
+      // depending on the separation function, i.e.,
+      // num_vss_segments <= sum_{separation_types} (max_vss + 1) * edge_type
+      GRBLinExpr max_num_vss_segments = 0;
+      for (size_t sep_type_index = 0;
+           sep_type_index < vss_model.get_separation_functions().size();
+           ++sep_type_index) {
+        const auto max_vss_type =
+            m_instance.get_editable_network().max_vss_on_edge(
+                e, vss_model.get_separation_functions().at(sep_type_index));
+        max_num_vss_segments += static_cast<double>(max_vss_type + 1) *
+                                m_vars["edge_type"](i, sep_type_index);
+      }
+      m_model->addConstr(m_vars["num_vss_segments"](i), GRB_LESS_EQUAL,
+                         max_num_vss_segments,
+                         "num_vss_segments_max_" + edge_name);
+
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
         // b_pos(breakable_e_index, vss) = e_len * sum_{separation_types}
         // frac_type(i, sep_type_index, vss)
@@ -1160,6 +1177,24 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
     m_model->addConstr(lhs_sum_edge_type, GRB_LESS_EQUAL, 1,
                        "sum_edge_vss_type_" + edge_name);
+
+    // Every block has the minimal length, which limits the number of borders
+    // depending on the separation function. type_num_vss_segments(i, *, vss)
+    // stands for vss + 1 borders.
+    for (size_t sep_type_index = 0;
+         sep_type_index < vss_model.get_separation_functions().size();
+         ++sep_type_index) {
+      const auto max_vss_type =
+          m_instance.get_editable_network().max_vss_on_edge(
+              e, vss_model.get_separation_functions().at(sep_type_index));
+      for (size_t vss = max_vss_type; vss < vss_number_e; ++vss) {
+        m_model->addConstr(
+            m_vars["type_num_vss_segments"](i, sep_type_index, vss), GRB_EQUAL,
+            0,
+            "type_num_vss_segments_max_" + edge_name + "_" +
+                std::to_string(sep_type_index) + "_" + std::to_string(vss));
+      }
+    }
 
     // Set b_pos accordingly
     for (size_t vss = 0; vss < vss_number_e; ++vss) {

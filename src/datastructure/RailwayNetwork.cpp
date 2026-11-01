@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -662,12 +661,16 @@ double cda_rail::Network::minimal_neighboring_edge_length_helper(
       .length;
 }
 
-size_t cda_rail::Network::max_vss_on_edge_helper(size_t index) const {
+size_t cda_rail::Network::max_vss_on_edge_helper(
+    size_t index, const vss::SeparationFunction& sep_func) const {
   const auto& edge = get_edge(index);
-  if (!edge.breakable || edge.min_block_length == 0) {
+  if (!edge.breakable || edge.min_block_length == 0 ||
+      edge.min_block_length > edge.length) {
     return 0;
   }
-  return static_cast<size_t>(std::floor(edge.length / edge.min_block_length));
+  return vss::functions::max_n_blocks(sep_func,
+                                      edge.min_block_length / edge.length) -
+         1;
 }
 
 // -----------------------------
