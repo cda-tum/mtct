@@ -13,13 +13,12 @@ using index_vector = std::vector<size_t>;
 using index_set    = std::unordered_set<size_t>;
 
 // Constants
-constexpr double INF     = std::numeric_limits<double>::max() / 3;
-constexpr double EPS     = 1000 * std::numeric_limits<double>::epsilon();
-constexpr double GRB_EPS = 1e-4;
-constexpr double V_MIN   = 0.3;
-constexpr double ROUNDING_PRECISION       = 1;
-constexpr double STOP_TOLERANCE           = 10;
-constexpr double ABS_PWL_ERROR            = 10;
+constexpr double INF            = std::numeric_limits<double>::max() / 3;
+constexpr double EPS            = 1000 * std::numeric_limits<double>::epsilon();
+constexpr double GRB_EPS        = 1e-4;
+constexpr double V_MIN          = 0.3;
+constexpr double STOP_TOLERANCE = 10;
+constexpr double ABS_PWL_ERROR  = 10;
 constexpr double LINE_SPEED_ACCURACY      = 0.1;
 constexpr double LINE_SPEED_TIME_ACCURACY = 0.1;
 constexpr double MIN_NON_ZERO             = 0.1;
