@@ -1289,7 +1289,8 @@ private:
    * @param index    Numeric edge index.
    * @param sep_func Separation function placing the borders.
    * @return One less than vss::functions::max_n_blocks, or `0` if the edge is
-   *         not breakable or `min_block_length` is zero.
+   *         not breakable or `min_block_length` is zero or exceeds the edge's
+   *         length.
    * @throws cda_rail::exceptions::EdgeNotExistentException If the edge does
    *         not exist.
    */
@@ -1306,7 +1307,8 @@ public:
    * blocks towards both ends of the edge, since these end at a border as well.
    * Uniformly separated blocks allow the most borders, hence the value equals
    * `floor(length / min_block_length) - 1`. Returns `0` for non-breakable
-   * edges or when `min_block_length` is zero.
+   * edges, when `min_block_length` is zero, and when the edge is too short for
+   * two blocks, in particular when `min_block_length` exceeds its length.
    *
    * @param edge Edge descriptor.
    * @return Maximum number of VSS borders.
