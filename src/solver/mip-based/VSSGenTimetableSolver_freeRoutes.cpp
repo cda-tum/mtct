@@ -482,7 +482,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
   const auto& train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
-    const auto tr_name = train_list.get_train(tr).get_name();
+    const auto tr_name  = train_list.get_train(tr).get_name();
+    const auto tr_edges = m_instance.edges_used_by_train(tr, this->fix_routes);
     for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
          ++t) {
       const auto before_after_struct =
@@ -502,8 +503,11 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           tr, t_steps_after, before_after_struct.v_after,
           train_list.get_train(tr).get_deceleration(), false);
 
-      // Iterate over all edges
+      // Iterate over all edges the train can use, since x = 0 on all others
       for (size_t e = 0; e < num_edges; ++e) {
+        if (!tr_edges.contains(e)) {
+          continue;
+        }
         const auto e_len = m_instance.get_editable_network().get_edge(e).length;
 
         double dist_before = NAN;
@@ -591,11 +595,16 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_free_route_constraints() {
   const auto train_list = m_instance.get_const_train_list();
   for (size_t tr = 0; tr < num_tr; ++tr) {
-    const auto& tr_name = train_list.get_train(tr).get_name();
+    const auto& tr_name  = train_list.get_train(tr).get_name();
+    const auto  tr_edges = m_instance.edges_used_by_train(tr, this->fix_routes);
     for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
-      const auto& e     = breakable_edges[e_index];
-      const auto  e_len = m_instance.get_editable_network().get_edge(e).length;
-      const auto  vss_number_e =
+      const auto& e = breakable_edges[e_index];
+      if (!tr_edges.contains(e)) {
+        // The train cannot use e, hence it has no borders on it
+        continue;
+      }
+      const auto e_len = m_instance.get_editable_network().get_edge(e).length;
+      const auto vss_number_e =
           m_instance.get_editable_network().max_vss_on_edge(e);
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {

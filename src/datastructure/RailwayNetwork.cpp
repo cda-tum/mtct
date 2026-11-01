@@ -269,6 +269,57 @@ cda_rail::Network::get_successors_helper(size_t index) const {
   return m_successors.at(index);
 }
 
+cda_rail::index_set
+cda_rail::Network::edges_on_paths_between_helper(size_t source,
+                                                 size_t target) const {
+  // An edge lies on such a path if it can be reached from source and target
+  // can be reached from it, in both cases following valid successors only.
+  const auto reachable_edges = [](const cda_rail::index_set& start_edges,
+                                  const auto&                next_edges) {
+    cda_rail::index_set visited = start_edges;
+    std::vector<size_t> to_visit(start_edges.begin(), start_edges.end());
+    while (!to_visit.empty()) {
+      const auto e = to_visit.back();
+      to_visit.pop_back();
+      for (const auto e_next : next_edges(e)) {
+        if (visited.insert(e_next).second) {
+          to_visit.push_back(e_next);
+        }
+      }
+    }
+    return visited;
+  };
+
+  // The predecessors of all edges at once, since get_predecessors() would
+  // search all edges for every single one
+  std::vector<cda_rail::index_vector> predecessors(number_of_edges());
+  for (size_t e = 0; e < number_of_edges(); ++e) {
+    for (const auto e_next : get_successors(e)) {
+      if (is_valid_successor(e, e_next)) {
+        predecessors.at(e_next).push_back(e);
+      }
+    }
+  }
+
+  const auto from_source = reachable_edges(
+      out_edges(source), [this](size_t e) -> const cda_rail::index_set& {
+        return get_successors(e);
+      });
+  const auto to_target = reachable_edges(
+      in_edges(target),
+      [&predecessors](size_t e) -> const cda_rail::index_vector& {
+        return predecessors.at(e);
+      });
+
+  cda_rail::index_set result;
+  for (const auto e : from_source) {
+    if (to_target.contains(e)) {
+      result.insert(e);
+    }
+  }
+  return result;
+}
+
 cda_rail::index_set cda_rail::Network::neighbors_helper(size_t v_index) const {
   if (!has_vertex(v_index)) {
     throw exceptions::VertexNotExistentException(v_index);

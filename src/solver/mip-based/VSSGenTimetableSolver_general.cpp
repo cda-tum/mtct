@@ -73,11 +73,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     m_vars["stopped"] = MultiArray<GRBVar>(num_tr, num_t);
   }
 
+  // With free routes, the model covers every edge, but a train can only use
+  // the edges on its way from its entry to its exit vertex.
+  cda_rail::index_set all_edges;
+  all_edges.reserve(num_edges);
+  for (size_t e = 0; e < num_edges; ++e) {
+    all_edges.insert(e);
+  }
+
   auto train_list = m_instance.get_const_train_list();
   for (size_t i = 0; i < num_tr; ++i) {
     auto max_speed =
         m_instance.get_const_train_list().get_train(i).get_max_speed();
-    auto tr_name = train_list.get_train(i).get_name();
+    auto       tr_name  = train_list.get_train(i).get_name();
+    const auto tr_edges = m_instance.edges_used_by_train(tr_name, fix_routes);
     for (size_t t = train_interval[i].first; t <= train_interval[i].second + 1;
          ++t) {
       m_vars["v"](i, t) = m_model->addVar(
@@ -86,8 +95,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     }
     for (size_t t = train_interval[i].first; t <= train_interval[i].second;
          ++t) {
-      for (auto const edge_id :
-           m_instance.edges_used_by_train(tr_name, fix_routes)) {
+      for (auto const edge_id : fix_routes ? tr_edges : all_edges) {
         const auto& edge = m_instance.get_editable_network().get_edge(edge_id);
         const auto& edge_name =
             "[" +
@@ -96,7 +104,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             m_instance.get_editable_network().get_vertex(edge.target).name +
             "]";
         m_vars["x"](i, t, edge_id) = m_model->addVar(
-            0, 1, 0, GRB_BINARY,
+            0, tr_edges.contains(edge_id) ? 1 : 0, 0, GRB_BINARY,
             "x_" + tr_name + "_" + std::to_string(static_cast<double>(t) * dt) +
                 "_" + edge_name);
       }
@@ -387,26 +395,32 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (const auto& no_border_vss_section : no_border_vss_sections) {
     const auto section_set = cda_rail::index_set(no_border_vss_section.begin(),
                                                  no_border_vss_section.end());
-    const auto tr_on_section = m_instance.trains_in_section(section_set);
+    // Without fixed routes, a train can be on every section it can enter
+    const auto tr_on_section =
+        m_instance.trains_in_section(section_set, fix_routes);
     const auto no_border_vss_section_sorted =
         m_instance.get_editable_network().combine_reverse_edges(
             no_border_vss_section, true);
     auto tr_on_section_vec =
         cda_rail::index_vector(tr_on_section.begin(), tr_on_section.end());
     std::ranges::sort(tr_on_section_vec);
+    // Whether a train can use a (possibly non-existing) edge
+    const auto can_use = [](const cda_rail::index_set&  tr_edges,
+                            const std::optional<size_t> e) {
+      return e.has_value() && tr_edges.contains(e.value());
+    };
     for (size_t i = 0; i < tr_on_section_vec.size(); ++i) {
       const auto tr1          = tr_on_section_vec[i];
       const auto tr1_interval = train_interval[tr1];
       const auto tr1_name =
           m_instance.get_const_train_list().get_train(tr1).get_name();
-      const auto tr1_route = m_instance.get_const_routes().get_route(tr1_name);
+      const auto tr1_edges = m_instance.edges_used_by_train(tr1, fix_routes);
       for (size_t j = i + 1; j < tr_on_section_vec.size(); ++j) {
         const auto tr2          = tr_on_section_vec[j];
         const auto tr2_interval = train_interval[tr2];
         const auto tr2_name =
             m_instance.get_const_train_list().get_train(tr2).get_name();
-        const auto tr2_route =
-            m_instance.get_const_routes().get_route(tr2_name);
+        const auto tr2_edges = m_instance.edges_used_by_train(tr2, fix_routes);
         std::pair<size_t, size_t> t_interval;
         t_interval.first  = std::max(tr1_interval.first, tr2_interval.first);
         t_interval.second = std::min(tr1_interval.second, tr2_interval.second);
@@ -424,19 +438,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
               const auto e1_second  = no_border_vss_section_sorted[e1].second;
               const auto e2_first   = no_border_vss_section_sorted[e2].first;
               const auto e2_second  = no_border_vss_section_sorted[e2].second;
-              if (tr1_route.contains_edge(e1_first)) {
+              if (can_use(tr1_edges, e1_first)) {
                 lhs -= m_vars["x"](tr1, t, e1_first.value());
                 lhs_first += m_vars["x"](tr1, t, e1_first.value());
               }
-              if (tr1_route.contains_edge(e1_second)) {
+              if (can_use(tr1_edges, e1_second)) {
                 lhs -= m_vars["x"](tr1, t, e1_second.value());
                 lhs_second += m_vars["x"](tr1, t, e1_second.value());
               }
-              if (tr2_route.contains_edge(e2_first)) {
+              if (can_use(tr2_edges, e2_first)) {
                 lhs -= m_vars["x"](tr2, t, e2_first.value());
                 lhs_first += m_vars["x"](tr2, t, e2_first.value());
               }
-              if (tr2_route.contains_edge(e2_second)) {
+              if (can_use(tr2_edges, e2_second)) {
                 lhs -= m_vars["x"](tr2, t, e2_second.value());
                 lhs_second += m_vars["x"](tr2, t, e2_second.value());
               }
@@ -522,18 +536,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
        ++sec_index) {
     const auto&               sec = unbreakable_sections[sec_index];
     const cda_rail::index_set sec_set(sec.begin(), sec.end());
-    const auto&               tr_on_sec = m_instance.trains_in_section(sec_set);
+    // Without fixed routes, a train can be on every section it can enter
+    const auto& tr_on_sec = m_instance.trains_in_section(sec_set, fix_routes);
     // tr is on section if it occupies at least one edge of the section
     for (auto const tr : tr_on_sec) {
       const auto& tr_interval = train_interval[tr];
       const auto& tr_name =
           m_instance.get_const_train_list().get_train(tr).get_name();
-      const auto& tr_route = m_instance.get_const_routes().get_route(tr_name);
+      const auto tr_edges = m_instance.edges_used_by_train(tr, fix_routes);
       for (size_t t = tr_interval.first; t <= tr_interval.second; ++t) {
         GRBLinExpr lhs   = 0;
         int        count = 0;
         for (auto const e_index : sec) {
-          if (tr_route.contains_edge(e_index)) {
+          if (tr_edges.contains(e_index)) {
             lhs += m_vars["x"](tr, t, e_index);
             count++;
           }

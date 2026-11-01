@@ -178,13 +178,9 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   get_const_train_list().throw_if_train_not_exist(train_name);
   if (!fixed_routes ||
       (!error_if_no_route && !get_const_routes().has_route(train_name))) {
-    // return set with values 0, 1, ..., num_edges-1
-    auto const          num_edges = get_const_network().get_edges().size();
-    auto                edge_ids  = std::views::iota(size_t{0}, num_edges);
-    cda_rail::index_set all_edges;
-    all_edges.reserve(num_edges);
-    all_edges.insert(edge_ids.begin(), edge_ids.end());
-    return all_edges;
+    auto const& schedule = get_const_schedule(train_name);
+    return get_const_network().edges_on_paths_between(
+        schedule.get_entry_vertex(), schedule.get_exit_vertex());
   }
   auto const& route_edges =
       get_const_routes().get_route(train_name).get_edges();
@@ -257,14 +253,14 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     throw exceptions::EdgeNotExistentException(edge_id);
   }
 
-  if (!fixed_routes) {
-    return trains_to_consider;
-  }
   cda_rail::index_set return_trains;
   for (const auto tr : trains_to_consider) {
     auto const& tr_name = get_const_train_list().get_train(tr).get_name();
-    if (!error_if_not_route && !route_map.has_route(tr_name)) {
-      return_trains.insert(tr);
+    if (!fixed_routes ||
+        (!error_if_not_route && !route_map.has_route(tr_name))) {
+      if (edges_used_by_train(tr_name, false).contains(edge_id)) {
+        return_trains.insert(tr);
+      }
     } else {
       const auto& tr_route = route_map.get_route(tr_name);
       if (tr_route.contains_edge(edge_id)) {

@@ -889,6 +889,41 @@ public:
 
 private:
   /**
+   * @brief Returns the edges on some path from vertex @p source to vertex
+   *        @p target.
+   * @param source Numeric index of the first vertex.
+   * @param target Numeric index of the last vertex.
+   * @return Set of edge indices.
+   * @throws cda_rail::exceptions::VertexNotExistentException If a vertex does
+   *         not exist.
+   */
+  [[nodiscard]] cda_rail::index_set
+  edges_on_paths_between_helper(size_t source, size_t target) const;
+
+public:
+  /**
+   * @brief Returns all edges that lie on some path from @p source to
+   *        @p target.
+   *
+   * A path starts with an edge leaving @p source, ends with an edge entering
+   * @p target, and only follows valid successors. A train entering the
+   * network at @p source and leaving it at @p target can use no other edge.
+   *
+   * @param source Vertex descriptor of the first vertex.
+   * @param target Vertex descriptor of the last vertex.
+   * @return Set of edge indices.
+   * @throws cda_rail::exceptions::VertexNotExistentException If a vertex does
+   *         not exist.
+   */
+  [[nodiscard]] cda_rail::index_set
+  edges_on_paths_between(VertexInput const& source,
+                         VertexInput const& target) const {
+    return edges_on_paths_between_helper(source.resolve(this),
+                                         target.resolve(this));
+  }
+
+private:
+  /**
    * @brief Returns the set of vertex indices adjacent to vertex @p v_index.
    * @param v_index Numeric vertex index.
    * @return Set of neighboring vertex indices.

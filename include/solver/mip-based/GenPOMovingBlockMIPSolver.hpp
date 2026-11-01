@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -83,7 +84,8 @@ struct ModelDetailMovingBlock {
   bool allow_late_entry                      = false;
   // Bound every timing variable by the earliest time at which the
   // corresponding event can happen, i.e. by the minimal running time the train
-  // needs to get there. Without these bounds the only lower bound on the
+  // needs to get there, including the stops it has to serve on the way.
+  // Without these bounds the only lower bound on the
   // objective is the scheduled timetable, and since everything that forces a
   // train to travel at all is a big-M constraint, the LP relaxation is then
   // free of any running time. Disabling this is only useful to measure the
@@ -98,7 +100,9 @@ struct ModelDetailMovingBlock {
  *
  * `OnlyViolated` adds every constraint that the incumbent violates,
  * `OnlyFirstFound` stops after the first of them, and `AllChecked` adds every
- * constraint it looked at, whether it was violated or not.
+ * constraint it looked at, whether it was violated or not. With every
+ * strategy, a constraint that was already added is only added again if the
+ * incumbent violates it.
  */
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
   OnlyViolated   = 0,
@@ -228,6 +232,20 @@ private:
       const SolutionSettingsMovingBlock& solution_settings_input,
       const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetailMovingBlock&      model_detail_input);
+  /**
+   * @brief Collects the settings of a solve for the solver data export.
+   *
+   * @param model_detail The model detail the solve uses
+   * @param solver_strategy The solver strategy the solve uses
+   * @param solution_settings The solution settings the solve uses
+   * @param time_limit The time limit in seconds passed to the solver
+   * @return The settings as further data of the solver data export
+   */
+  [[nodiscard]] static FurtherData
+  get_further_data(const ModelDetailMovingBlock&      model_detail,
+                   const SolverStrategyMovingBlock&   solver_strategy,
+                   const SolutionSettingsMovingBlock& solution_settings,
+                   int                                time_limit);
 
   /** @brief The scheduled exit time of a train plus the allowed delay. */
   double latest_exit_time(size_t tr) const;
@@ -235,6 +253,11 @@ private:
   [[nodiscard]] double minimum_arrival_time(size_t tr, size_t v) const {
     return m_minimum_arrival_times.at(tr).at(v);
   };
+  /**
+   * @brief The earliest time the front of a train can arrive at one of the
+   *        possible vertices of a stop, at most its latest exit time.
+   */
+  [[nodiscard]] double minimum_stop_arrival_time(size_t tr, size_t stop) const;
   // Between the front and the rear of a train passing a vertex, the train
   // covers its own length, which takes at least its length divided by its
   // maximal speed.
@@ -358,7 +381,52 @@ private:
 
   class LazyCallback : public MessageCallback {
   private:
+    /** @brief A lazy constraint lhs >= rhs. */
+    struct LazyConstraint {
+      GRBLinExpr lhs;
+      GRBLinExpr rhs;
+    };
+
+    /** @brief The rule by which lazy constraints are created. */
+    enum class LazyConstraintKind : std::uint8_t {
+      VertexHeadway  = 0,
+      EdgeHeadway    = 1,
+      TtdHeadway     = 2,
+      ReverseEdge    = 3,
+      SimplifiedEdge = 4,
+      SimplifiedTtd  = 5,
+    };
+
     GenPOMovingBlockMIPSolver* solver;
+    // The lazy constraints added so far, by a key that identifies how they
+    // were created, see add_lazy_constraints().
+    std::map<std::vector<size_t>, std::vector<LazyConstraint>>
+        m_added_lazy_constraints;
+    // Gurobi's feasibility tolerance, with which a constraint that was added
+    // before counts as violated.
+    double m_feasibility_tolerance = 0;
+
+    /**
+     * @brief Adds lazy constraints unless they were added before.
+     *
+     * Constraints that were added before are only added again if the current
+     * solution violates them, which Gurobi does not rule out. Either way, a
+     * solution that violates one of the constraints is rejected, exactly as if
+     * all of them were added again.
+     *
+     * @param kind The rule by which the constraints are created
+     * @param key Every index that determines the constraints for this rule,
+     *        i.e., equal keys always lead to equal constraints
+     * @param create Creates the constraints as a std::vector<LazyConstraint>,
+     *        only called for a new key
+     */
+    template <typename CreateConstraints>
+    void add_lazy_constraints(LazyConstraintKind kind, std::vector<size_t> key,
+                              const CreateConstraints& create);
+    /** @brief The value of an expression in the current solution. */
+    [[nodiscard]] double get_solution_value(const GRBLinExpr& expr);
+    /** @brief The index of a velocity among those of a train at a vertex. */
+    [[nodiscard]] size_t velocity_index(size_t tr, size_t v, double vel) const;
 
     /**
      * @brief The routes of the current solution.

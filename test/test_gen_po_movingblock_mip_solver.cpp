@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <limits>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -518,13 +519,12 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
                             v8, {{e_7_8}})) != tr_1_2_data.end());
 
   // tr_2_1_data
-  // Expect the following pairs:
+  // Train 2 has no route, but on its way from v8 to v1 it can only use the
+  // tracks towards v1. Expect the following pairs:
   // - v_41 with edge e_51_41
-  // - v_51 with e_61_51 or e_41_51
-  // - v_61 with e_51_61
+  // - v_51 with e_61_51
   // - v42 with e_62_42
-  // - v62 with e_42_62
-  EXPECT_EQ(tr_2_1_data.size(), 5);
+  EXPECT_EQ(tr_2_1_data.size(), 3);
 
   std::unordered_map<size_t, size_t> tr_2_1_stop_map;
   for (size_t i = 0; i < tr_2_1_data.size(); ++i) {
@@ -532,9 +532,9 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   }
   EXPECT_EQ(tr_2_1_stop_map.count(v41), 1);
   EXPECT_EQ(tr_2_1_stop_map.count(v51), 1);
-  EXPECT_EQ(tr_2_1_stop_map.count(v61), 1);
+  EXPECT_EQ(tr_2_1_stop_map.count(v61), 0);
   EXPECT_EQ(tr_2_1_stop_map.count(v42), 1);
-  EXPECT_EQ(tr_2_1_stop_map.count(v62), 1);
+  EXPECT_EQ(tr_2_1_stop_map.count(v62), 0);
 
   const auto& [tr_2_1_data_v21_v, tr_2_1_data_v21_p] =
       tr_2_1_data.at(tr_2_1_stop_map.at(v41));
@@ -547,21 +547,10 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   const auto& [tr_2_1_data_v51_v, tr_2_1_data_v51_p] =
       tr_2_1_data.at(tr_2_1_stop_map.at(v51));
   EXPECT_EQ(tr_2_1_data_v51_v, v51);
-  EXPECT_EQ(tr_2_1_data_v51_p.size(), 2);
+  EXPECT_EQ(tr_2_1_data_v51_p.size(), 1);
   EXPECT_TRUE(std::find(tr_2_1_data_v51_p.begin(), tr_2_1_data_v51_p.end(),
                         std::vector<size_t>{e_61_51}) !=
               tr_2_1_data_v51_p.end());
-  EXPECT_TRUE(std::find(tr_2_1_data_v51_p.begin(), tr_2_1_data_v51_p.end(),
-                        std::vector<size_t>{e_41_51}) !=
-              tr_2_1_data_v51_p.end());
-
-  const auto& [tr_2_1_data_v61_v, tr_2_1_data_v61_p] =
-      tr_2_1_data.at(tr_2_1_stop_map.at(v61));
-  EXPECT_EQ(tr_2_1_data_v61_v, v61);
-  EXPECT_EQ(tr_2_1_data_v61_p.size(), 1);
-  EXPECT_TRUE(std::find(tr_2_1_data_v61_p.begin(), tr_2_1_data_v61_p.end(),
-                        std::vector<size_t>{e_51_61}) !=
-              tr_2_1_data_v61_p.end());
 
   const auto& [tr_2_1_data_v42_v, tr_2_1_data_v42_p] =
       tr_2_1_data.at(tr_2_1_stop_map.at(v42));
@@ -570,14 +559,6 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_TRUE(std::find(tr_2_1_data_v42_p.begin(), tr_2_1_data_v42_p.end(),
                         std::vector<size_t>{e_62_42}) !=
               tr_2_1_data_v42_p.end());
-
-  const auto& [tr_2_1_data_v62_v, tr_2_1_data_v62_p] =
-      tr_2_1_data.at(tr_2_1_stop_map.at(v62));
-  EXPECT_EQ(tr_2_1_data_v62_v, v62);
-  EXPECT_EQ(tr_2_1_data_v62_p.size(), 1);
-  EXPECT_TRUE(std::find(tr_2_1_data_v62_p.begin(), tr_2_1_data_v62_p.end(),
-                        std::vector<size_t>{e_42_62}) !=
-              tr_2_1_data_v62_p.end());
 
   // Test if velocity data was set correctly
   const auto& vel_data = solver.m_velocity_extensions;
@@ -2243,6 +2224,79 @@ TEST(GenPOMovingBlockMIPSolver, MinimumTimeBoundsDoNotChangeOptimum) {
   check_schedule(instance, sol_without, "MinimumTimeBounds");
 }
 
+TEST(GenPOMovingBlockMIPSolver, MinimumTimeBoundsAtVertexBeforeOrAfterStop) {
+  // Station S has a track on each of two routes from v0 to v5. On the shorter
+  // route, the train passes v1 on its way to S, on the longer one only after
+  // it stopped at S. Hence, the minimum time bound at v1 must not assume that
+  // v1 is passed after the stop, which would cut off the optimal route.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4      = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v5      = network.add_vertex("v5", cda_rail::VertexType::TTD);
+  const auto v6      = network.add_vertex("v6", cda_rail::VertexType::TTD);
+
+  // Shorter route v0, v1, v2, v3 (stop), v5
+  const auto e01 = network.add_edge(v0, v1, 100, 10);
+  const auto e12 = network.add_edge(v1, v2, 100, 10);
+  const auto e23 = network.add_edge(v2, v3, 100, 10);
+  const auto e35 = network.add_edge(v3, v5, 100, 10);
+  // Longer route v0, v4, v6 (stop), v1, v2, v3, v5
+  const auto e04 = network.add_edge(v0, v4, 150, 10);
+  const auto e46 = network.add_edge(v4, v6, 100, 10);
+  const auto e61 = network.add_edge(v6, v1, 100, 10);
+
+  network.add_successor(e01, e12);
+  network.add_successor(e61, e12);
+  network.add_successor(e12, e23);
+  network.add_successor(e23, e35);
+  network.add_successor(e04, e46);
+  network.add_successor(e46, e61);
+
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v5, 1);
+
+  instance.add_empty_station("S");
+  instance.add_track_to_station("S", e23);
+  instance.add_track_to_station("S", e46);
+  instance.insert_stop("Tr1", "S", 0, 30);
+
+  const cda_rail::solver::mip_based::SolverStrategyMovingBlock strategy{
+      .abs_mip_gap = 1e-4};
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_with(instance);
+  const auto                                             sol_with =
+      solver_with.solve({.use_minimum_time_bounds = true}, strategy, {}, 100);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_without(
+      instance);
+  const auto sol_without = solver_without.solve(
+      {.use_minimum_time_bounds = false}, strategy, {}, 100);
+
+  ASSERT_TRUE(sol_with.has_solution());
+  ASSERT_TRUE(sol_without.has_solution());
+  EXPECT_EQ(sol_with.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_without.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_APPROX_EQ(sol_with.get_obj(), sol_without.get_obj());
+
+  // The optimal route passes v1 before the stop
+  const auto& route_edges =
+      sol_without.get_const_solution_routes().get_route("Tr1").get_edges();
+  EXPECT_TRUE(std::ranges::contains(route_edges, e01));
+
+  check_trajectory(instance, sol_with,
+                   "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_schedule(instance, sol_with,
+                 "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_trajectory(instance, sol_without,
+                   "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_schedule(instance, sol_without,
+                 "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+}
+
 TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 
@@ -2370,6 +2424,230 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
                    true);
   check_schedule(instance, sol6,
                  "PreventOvertakingWhileStopping (late entry, no lazy)", 0.0);
+}
+
+TEST(GenPOMovingBlockMIPSolver, StopsAreServedInScheduleOrder) {
+  // A single track from left to right passes station S2 before station S1, so
+  // the train can only serve its stops in the order S2, S1.
+  const auto create_instance = [](double s1_service_time,
+                                  double s2_service_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+    const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+    const auto v4      = network.add_vertex("v4", cda_rail::VertexType::TTD);
+    const auto v5      = network.add_vertex("v5", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 100, 10);
+    const auto e12 = network.add_edge(v1, v2, 100, 10);
+    const auto e23 = network.add_edge(v2, v3, 100, 10);
+    const auto e34 = network.add_edge(v3, v4, 100, 10);
+    const auto e45 = network.add_edge(v4, v5, 100, 10);
+
+    network.add_successor(e01, e12);
+    network.add_successor(e12, e23);
+    network.add_successor(e23, e34);
+    network.add_successor(e34, e45);
+
+    instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v5, 1);
+
+    instance.add_empty_station("S1");
+    instance.add_track_to_station("S1", e34);
+    instance.add_empty_station("S2");
+    instance.add_track_to_station("S2", e12);
+    instance.insert_stop("Tr1", "S1", s1_service_time, 30);
+    instance.insert_stop("Tr1", "S2", s2_service_time, 30);
+
+    return instance;
+  };
+
+  // The schedule demands S1 before S2, which the track does not allow
+  const auto wrong_order_instance = create_instance(0, 60);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver wrong_order_solver(
+      wrong_order_instance);
+  const auto wrong_order_sol = wrong_order_solver.solve({}, {}, {}, 100);
+
+  EXPECT_FALSE(wrong_order_sol.has_solution())
+      << "Expected no solution if the stops can only be served out of order";
+  EXPECT_EQ(wrong_order_sol.get_status(), cda_rail::SolutionStatus::Infeasible)
+      << "Expected infeasibility if the stops can only be served out of order";
+
+  // The same track with the stops scheduled in the order of the track
+  const auto right_order_instance = create_instance(60, 0);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver right_order_solver(
+      right_order_instance);
+  const auto right_order_sol = right_order_solver.solve({}, {}, {}, 100);
+
+  ASSERT_TRUE(right_order_sol.has_solution())
+      << "Expected a solution if the stops can be served in order";
+  EXPECT_EQ(right_order_sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  check_trajectory(right_order_instance, right_order_sol,
+                   "StopsAreServedInScheduleOrder");
+  check_schedule(right_order_instance, right_order_sol,
+                 "StopsAreServedInScheduleOrder");
+}
+
+TEST(GenPOMovingBlockMIPSolver, UnreachableExitIsInfeasible) {
+  // Without a successor relation between the two edges, the train cannot reach
+  // its exit vertex. Hence, it cannot use any edge and has no variables.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  network.add_edge(v0, v1, 100, 10);
+  network.add_edge(v1, v2, 100, 10);
+
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v2, 1);
+
+  // With fixed routes, a train without a route can use the same edges
+  for (const bool fix_routes : {false, true}) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto sol = solver.solve({.fix_routes = fix_routes}, {}, {}, 100);
+
+    EXPECT_FALSE(sol.has_solution()) << "fix_routes = " << fix_routes;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Infeasible)
+        << "fix_routes = " << fix_routes;
+  }
+}
+
+namespace {
+// The ways to model the TTD headways, each with whether the headway
+// constraints are simplified
+std::vector<std::tuple<std::string, bool,
+                       cda_rail::solver::mip_based::SolverStrategyMovingBlock>>
+ttd_headway_strategies() {
+  return {
+      {"Lazy", false, {.abs_mip_gap = 0.01}},
+      {"LazyWithReverseHeadways",
+       false,
+       {.include_reverse_headways           = true,
+        .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
+            LazyConstraintSelectionStrategy::AllChecked,
+        .abs_mip_gap = 0.01}},
+      {"LazySimplified", true, {.abs_mip_gap = 0.01}},
+      {"NoLazy", false, {.use_lazy_constraints = false, .abs_mip_gap = 0.01}},
+      {"NoLazyIndicator",
+       false,
+       {.use_indicator_constraints = true,
+        .use_lazy_constraints      = false,
+        .abs_mip_gap               = 0.01}},
+      {"NoLazySimplified",
+       true,
+       {.use_lazy_constraints = false, .abs_mip_gap = 0.01}}};
+}
+} // namespace
+
+TEST(GenPOMovingBlockMIPSolver, CrossingTtdSectionIsUsedByOneTrainAtATime) {
+  // Two lines cross at m, so the four edges around m form one TTD section,
+  // which only one train can occupy at a time, whichever way the headways are
+  // modelled. Both trains are 10 m long and
+  // enter at time 0 with their maximal speed of 10 m/s, 100 m before the
+  // section, where they can wait. Hence, each leaves the network after 41 s at
+  // the earliest. The rear of the first train to pass leaves the section after
+  // 31 s at the earliest, and only then the other one can enter it, after which
+  // it needs another 31 s to leave the network. Hence, the exit times sum up to
+  // at least 41 + 31 + 31 = 103 s.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto m       = network.add_vertex("m", cda_rail::VertexType::NoBorder);
+  for (const auto& [from, to] :
+       {std::pair<std::string, std::string>{"a", "b"}, {"c", "d"}}) {
+    const auto v_entry =
+        network.add_vertex(from + "0", cda_rail::VertexType::TTD);
+    const auto v_from = network.add_vertex(from, cda_rail::VertexType::TTD);
+    const auto v_to   = network.add_vertex(to, cda_rail::VertexType::TTD);
+    const auto v_exit = network.add_vertex(to + "0", cda_rail::VertexType::TTD);
+    const auto e_entry = network.add_edge(v_entry, v_from, 100, 10, false);
+    const auto e_in    = network.add_edge(v_from, m, 100, 10, false);
+    const auto e_out   = network.add_edge(m, v_to, 100, 10, false);
+    const auto e_exit  = network.add_edge(v_to, v_exit, 100, 10, false);
+    network.add_successor(e_entry, e_in);
+    network.add_successor(e_in, e_out);
+    network.add_successor(e_out, e_exit);
+    instance.add_train("Tr" + from, 10, 10, 2, 2, true, 0, 10, v_entry, 0, 10,
+                       v_exit, 1);
+  }
+
+  for (const auto& [label, simplify_headway_constraints, solver_strategy] :
+       ttd_headway_strategies()) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {.simplify_headway_constraints = simplify_headway_constraints},
+        solver_strategy, {}, 100);
+
+    ASSERT_TRUE(sol.has_solution()) << label;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal) << label;
+    EXPECT_GE(sol.get_obj(), 103 - 1e-3) << label;
+    check_trajectory(instance, sol,
+                     "CrossingTtdSectionIsUsedByOneTrainAtATime");
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, TrainWaitingAtTtdBorderDoesNotOccupySection) {
+  // As above, two lines cross at m, but TrB enters at standstill at c, directly
+  // in front of the TTD section. TrA cannot wait: it needs 41 s through the
+  // network at its maximal speed of 10 m/s and has to leave it after 42 s.
+  // Hence, TrA passes the section first and its rear leaves it after 31 s.
+  // Until then, TrB waits at c, which does not occupy the section, because its
+  // moving authority ends at c.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto a0      = network.add_vertex("a0", cda_rail::VertexType::TTD);
+  const auto a       = network.add_vertex("a", cda_rail::VertexType::TTD);
+  const auto m       = network.add_vertex("m", cda_rail::VertexType::NoBorder);
+  const auto b       = network.add_vertex("b", cda_rail::VertexType::TTD);
+  const auto b0      = network.add_vertex("b0", cda_rail::VertexType::TTD);
+  const auto c       = network.add_vertex("c", cda_rail::VertexType::TTD);
+  const auto d       = network.add_vertex("d", cda_rail::VertexType::TTD);
+  const auto d0      = network.add_vertex("d0", cda_rail::VertexType::TTD);
+  const auto a0_a    = network.add_edge(a0, a, 100, 10, false);
+  const auto a_m     = network.add_edge(a, m, 100, 10, false);
+  const auto m_b     = network.add_edge(m, b, 100, 10, false);
+  const auto b_b0    = network.add_edge(b, b0, 100, 10, false);
+  const auto c_m     = network.add_edge(c, m, 100, 10, false);
+  const auto m_d     = network.add_edge(m, d, 100, 10, false);
+  const auto d_d0    = network.add_edge(d, d0, 100, 10, false);
+  network.add_successor(a0_a, a_m);
+  network.add_successor(a_m, m_b);
+  network.add_successor(m_b, b_b0);
+  network.add_successor(c_m, m_d);
+  network.add_successor(m_d, d_d0);
+
+  instance.add_train("TrA", 10, 10, 2, 2, true, 0, 10, a0, 42, 10, b0, 1);
+  instance.add_train("TrB", 10, 10, 2, 2, true, 0, 0, c, 100, 10, d0, 1);
+
+  for (const auto& [label, simplify_headway_constraints, solver_strategy] :
+       ttd_headway_strategies()) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {.simplify_headway_constraints = simplify_headway_constraints,
+         .max_exit_delay               = 0},
+        solver_strategy, {}, 100);
+
+    ASSERT_TRUE(sol.has_solution()) << label;
+    EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal) << label;
+
+    // TrB leaves c, and hence enters the section, only once the rear of TrA
+    // has left it, i.e., after 31 s at the earliest
+    const auto trb_times     = sol.get_train_times("TrB");
+    double     trb_departure = trb_times.front();
+    for (const auto t : trb_times) {
+      if (sol.get_train_pos("TrB", t) <= 1e-3) {
+        trb_departure = t;
+      }
+    }
+    EXPECT_GE(trb_departure, 31 - 1e-3) << label;
+
+    check_trajectory(instance, sol,
+                     "TrainWaitingAtTtdBorderDoesNotOccupySection");
+  }
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)
