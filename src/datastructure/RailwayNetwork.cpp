@@ -58,7 +58,6 @@ void cda_rail::Network::export_network(
   }
   export_graphml(path);
   export_successors_cpp(path);
-  export_successors_python(path);
 }
 
 // -----------------------------

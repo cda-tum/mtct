@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -374,7 +373,7 @@ public:
   /**
    * @brief Exports the network to disk.
    *
-   * Writes `tracks.graphml`, `successors_cpp.json`, and `successors.txt` to
+   * Writes `tracks.graphml` and `successors_cpp.json` to
    * `working_directory/networks/<networkName>/`.
    *
    * @param working_directory Root working directory.
@@ -2553,30 +2552,11 @@ private:
   void export_graphml(const std::filesystem::path& p) const;
 
   /**
-   * @brief Writes the successor map to `successors.txt` (Python dict format)
-   *        in directory @p p.
-   * @param p Destination directory path.
-   */
-  void export_successors_python(const std::filesystem::path& p) const;
-
-  /**
    * @brief Writes the successor map to `successors_cpp.json` (JSON format
    *        used by the C++ import) in directory @p p.
    * @param p Destination directory path.
    */
   void export_successors_cpp(const std::filesystem::path& p) const;
-
-  /**
-   * @brief Writes the successor set of edge @p i to @p file in Python set
-   *        notation.
-   *
-   * Produces `set()` for an empty successor set or
-   * `{('src','tgt'), ...}` otherwise.
-   *
-   * @param file Output file stream.
-   * @param i    Index of the edge whose successors are written.
-   */
-  void write_successor_set_to_file(std::ofstream& file, size_t i) const;
 
   /**
    * @brief Returns the endpoint of edge @p e that is not @p v.

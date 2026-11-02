@@ -1932,8 +1932,6 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
       "tmp3folder/instances/atmos2023/SimpleStation/timetable/trains.json"));
   // Expect network files to exist
   EXPECT_TRUE(std::filesystem::exists(
-      "tmp3folder/networks/SimpleStation/successors.txt"));
-  EXPECT_TRUE(std::filesystem::exists(
       "tmp3folder/networks/SimpleStation/successors_cpp.json"));
   EXPECT_TRUE(std::filesystem::exists(
       "tmp3folder/networks/SimpleStation/tracks.graphml"));
@@ -2066,8 +2064,6 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
       "tmp6folder/instances/atmos2023/SimpleStation/timetable/trains.json"));
   // Expect network files to exist
   EXPECT_TRUE(std::filesystem::exists(
-      "tmp6folder/networks/SimpleStation/successors.txt"));
-  EXPECT_TRUE(std::filesystem::exists(
       "tmp6folder/networks/SimpleStation/successors_cpp.json"));
   EXPECT_TRUE(std::filesystem::exists(
       "tmp6folder/networks/SimpleStation/tracks.graphml"));
@@ -2124,7 +2120,6 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   EXPECT_TRUE(std::filesystem::exists(
       "instances/atmos2023/SimpleStation/timetable/trains.json"));
   // Expect network files to exist
-  EXPECT_TRUE(std::filesystem::exists("networks/SimpleStation/successors.txt"));
   EXPECT_TRUE(
       std::filesystem::exists("networks/SimpleStation/successors_cpp.json"));
   EXPECT_TRUE(std::filesystem::exists("networks/SimpleStation/tracks.graphml"));

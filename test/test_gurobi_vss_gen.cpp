@@ -2055,7 +2055,6 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
         expect_non_empty_file(instance_dir / "timetable" / "schedules.json");
         expect_non_empty_file(instance_dir / "timetable" / "stations.json");
         expect_non_empty_file(instance_dir / "timetable" / "trains.json");
-        expect_non_empty_file(network_dir / "successors.txt");
         expect_non_empty_file(network_dir / "successors_cpp.json");
         expect_non_empty_file(network_dir / "tracks.graphml");
       };
