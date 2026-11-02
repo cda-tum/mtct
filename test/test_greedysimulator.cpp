@@ -1330,6 +1330,22 @@ TEST(GreedySimulator, AbsoluteDistanceMA) {
                 tr_on_edges, true),
             10);
 
+  // Trains standing bumper to bumper on v3_v4, which starts at 121 on the route
+  // of Train1 and at 120 on the one of Train2. Rounding can let them overlap
+  // slightly, which must neither turn the train behind into one ahead nor stop
+  // the train ahead from limiting.
+  train_pos[tr2] = {145, 195};
+  train_pos[tr1] = {96 + 1e-9, 146 + 1e-9};
+  EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
+                                               train_velocities, {tr1, tr2}, {},
+                                               tr_on_edges, true),
+            200);
+  train_pos[tr1] = {196 - 1e-9, 246 - 1e-9};
+  EXPECT_NEAR(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
+                                                 train_velocities, {tr1, tr2},
+                                                 {}, tr_on_edges, true),
+              0, 1e-6);
+
   EXPECT_THROW((void)simulator.get_absolute_distance_ma(
                    tr3, 200, train_pos, train_velocities, {tr1, tr2}, {},
                    tr_on_edges, true),

@@ -995,9 +995,10 @@ cda_rail::simulator::EventSimulator::Run::train_ahead(size_t tr, size_t i,
       continue;
     }
     const auto [rear, front] = *position;
-    // On its current edge, a train is not limited by those behind it
-    if (first_edge && pos > m.at(i) + EPS &&
-        std::max(0.0, pos - length(tr) - m.at(i)) >= front) {
+    // On its current edge, a train is not limited by those behind it, i.e., by
+    // those whose front is not ahead of its own, as in
+    // GreedySimulator::get_absolute_distance_ma
+    if (first_edge && pos > m.at(i) + EPS && front <= pos - m.at(i)) {
       continue;
     }
     const auto obstacle = m.at(i) + std::max(0.0, rear);
