@@ -2410,6 +2410,18 @@ SOLVER_TEST(GeneralSimpleNetwork) {
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
 }
 
+SOLVER_TEST(RASToy) {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "toy", "ras", "./data");
+
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+  const auto                                                 sol_obj =
+      solver.solve({.simulator_type = simulator_type}, {}, {}, -1, false);
+
+  EXPECT_TRUE(sol_obj.has_solution());
+  EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
+}
+
 TEST(GenPOMovingBlockAStarSolver, Timeout) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "GeneralSimpleNetwork6Trains", "gen-po", "./data");
