@@ -452,10 +452,13 @@ public:
 
   /**
    * @brief Sorts the scheduled stops by service time.
+   *
+   * Stops with equal service times keep their order, since that is the order
+   * in which they are served.
    */
 
   void sort_stops_by_service_time() {
-    std::ranges::sort(m_stops, {}, &ScheduledStop::get_service_time);
+    std::ranges::stable_sort(m_stops, {}, &ScheduledStop::get_service_time);
   }
 };
 
