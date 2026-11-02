@@ -539,6 +539,22 @@ public:
   [[nodiscard]] bool is_consistent_for_transformation() const;
 
   /**
+   * @brief Checks that no successor lets a train reverse its direction of
+   *        travel.
+   *
+   * A train passing a vertex comes from one side of it and leaves to the
+   * other, e.g., from the toe of a switch to one of its two branches or back.
+   * Hence, the neighbors of every vertex must split into two sides such that
+   * every successor pair connects a neighbor on one side with a neighbor on
+   * the other. A successor turning back onto the reverse edge (U-turn)
+   * violates this, and so does one from one branch of a switch to the other
+   * (zig-zag) if the switch can also be passed from its toe.
+   *
+   * @return `true` if the successors of every vertex admit such a split.
+   */
+  [[nodiscard]] bool has_reversal_free_successors() const;
+
+  /**
    * @brief Returns the total number of vertices in the network.
    * @return Number of vertices.
    */

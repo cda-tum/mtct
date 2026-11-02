@@ -932,6 +932,9 @@ public:
   /**
    * @brief Checks consistency while optionally allowing trains without routes.
    *
+   * Besides the timetable and the routes, this requires the network to let no
+   * train reverse, see Network::has_reversal_free_successors.
+   *
    * @param every_train_must_have_route Whether every train must have a route.
    * @return `true` if the instance is consistent under the requested rule.
    */

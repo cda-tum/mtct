@@ -287,6 +287,9 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 
 bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     check_consistency(bool every_train_must_have_route) const {
+  if (!get_const_network().has_reversal_free_successors()) {
+    return false;
+  }
   if (!get_const_timetable().check_consistency(this->get_const_network())) {
     return false;
   }
