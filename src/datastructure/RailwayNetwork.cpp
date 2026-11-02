@@ -58,7 +58,6 @@ void cda_rail::Network::export_network(
   }
   export_graphml(path);
   export_successors_cpp(path);
-  export_successors_python(path);
 }
 
 // -----------------------------
@@ -130,6 +129,45 @@ bool cda_rail::Network::is_consistent_for_transformation() const {
           return get_vertex(j).type == VertexType::NoBorder;
         })) {
       return false;
+    }
+  }
+  return true;
+}
+
+bool cda_rail::Network::has_reversal_free_successors() const {
+  // For every vertex, the neighbors a train passes between
+  std::vector<std::unordered_map<size_t, cda_rail::index_set>> passes(
+      number_of_vertices());
+  for (size_t e = 0; e < number_of_edges(); ++e) {
+    const auto& edge = get_edge(e);
+    for (const auto f : m_successors.at(e)) {
+      const auto next = get_edge(f).target;
+      passes.at(edge.target)[edge.source].insert(next);
+      passes.at(edge.target)[next].insert(edge.source);
+    }
+  }
+
+  // Two-color the neighbors of every vertex by the side they are on
+  for (const auto& vertex_passes : passes) {
+    std::unordered_map<size_t, bool> side;
+    for (const auto& start : vertex_passes | std::views::keys) {
+      if (side.contains(start)) {
+        continue;
+      }
+      side[start] = false;
+      std::vector<size_t> stack{start};
+      while (!stack.empty()) {
+        const auto u = stack.back();
+        stack.pop_back();
+        for (const auto w : vertex_passes.at(u)) {
+          if (!side.contains(w)) {
+            side[w] = !side.at(u);
+            stack.push_back(w);
+          } else if (side.at(w) == side.at(u)) {
+            return false;
+          }
+        }
+      }
     }
   }
   return true;

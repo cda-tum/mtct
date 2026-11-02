@@ -356,32 +356,6 @@ void cda_rail::Network::export_graphml(const std::filesystem::path& p) const {
   }
 }
 
-void cda_rail::Network::export_successors_python(
-    const std::filesystem::path& p) const {
-  std::ofstream file(p / "successors.txt");
-  if (!file.is_open()) {
-    throw exceptions::ExportException("Could not open file " +
-                                      (p / "successors.txt").string());
-  }
-  file << "{";
-  bool first = true;
-  for (size_t i = 0; i < number_of_edges(); ++i) {
-    if (!first) {
-      file << ", ";
-    }
-    first            = false;
-    const auto& edge = get_edge(i);
-    file << "('" << m_vertices.at(edge.source).name << "', '"
-         << m_vertices.at(edge.target).name << "'): ";
-    write_successor_set_to_file(file, i);
-  }
-  file << "}\n";
-  if (!file) {
-    throw exceptions::ExportException("Failed to write file " +
-                                      (p / "successors.txt").string());
-  }
-}
-
 void cda_rail::Network::export_successors_cpp(
     const std::filesystem::path& p) const {
   nlohmann::json j;
@@ -407,27 +381,6 @@ void cda_rail::Network::export_successors_cpp(
     throw exceptions::ExportException("Failed to write file " +
                                       (p / "successors_cpp.json").string());
   }
-}
-
-void cda_rail::Network::write_successor_set_to_file(std::ofstream& file,
-                                                    size_t         i) const {
-  const auto& succs = get_successors(i);
-  if (succs.empty()) {
-    file << "set()";
-    return;
-  }
-  file << "{";
-  bool first = true;
-  for (const auto succ : succs) {
-    if (!first) {
-      file << ", ";
-    }
-    first          = false;
-    const auto& se = get_edge(succ);
-    file << "('" << m_vertices.at(se.source).name << "', '"
-         << m_vertices.at(se.target).name << "')";
-  }
-  file << "}";
 }
 
 std::pair<cda_rail::index_vector, cda_rail::index_vector>

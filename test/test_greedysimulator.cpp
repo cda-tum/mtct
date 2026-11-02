@@ -10,13 +10,23 @@
 #include "simulator/GreedySimulator.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <cmath>
+#include <functional>
+#include <limits>
+#include <map>
+#include <numeric>
+#include <optional>
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include <plog/Formatters/TxtFormatter.h>
 #include <plog/Init.h>
 #include <plog/Log.h>
 #include <plog/Severity.h>
+#include <queue>
+#include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 using namespace cda_rail;
 
@@ -1319,6 +1329,22 @@ TEST(GreedySimulator, AbsoluteDistanceMA) {
                 tr3, 200, train_pos, train_velocities, {tr1, tr2, tr3}, {},
                 tr_on_edges, true),
             10);
+
+  // Trains standing bumper to bumper on v3_v4, which starts at 121 on the route
+  // of Train1 and at 120 on the one of Train2. Rounding can let them overlap
+  // slightly, which must neither turn the train behind into one ahead nor stop
+  // the train ahead from limiting.
+  train_pos[tr2] = {145, 195};
+  train_pos[tr1] = {96 + 1e-9, 146 + 1e-9};
+  EXPECT_EQ(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
+                                               train_velocities, {tr1, tr2}, {},
+                                               tr_on_edges, true),
+            200);
+  train_pos[tr1] = {196 - 1e-9, 246 - 1e-9};
+  EXPECT_NEAR(simulator.get_absolute_distance_ma(tr2, 200, train_pos,
+                                                 train_velocities, {tr1, tr2},
+                                                 {}, tr_on_edges, true),
+              0, 1e-6);
 
   EXPECT_THROW((void)simulator.get_absolute_distance_ma(
                    tr3, 200, train_pos, train_velocities, {tr1, tr2}, {},
@@ -4719,6 +4745,155 @@ SIMULATOR_TEST(DesiredOrderInstanceSolutionBug) {
   // vertex at 250
   EXPECT_LE(sim_res.train_trajectories.at(tr1).at(500).pos, 250 + 50);
   EXPECT_GT(sim_res.exit_times.at(tr2), sim_res.exit_times.at(tr1));
+}
+
+namespace {
+// Cheapest path of edges following start and ending in one of targets, where
+// bidirectional edges count three times their length, so that trains keep to
+// one-way tracks wherever possible.
+index_vector cheapest_path(const Network& network, size_t start,
+                           const index_set& targets,
+                           const index_set& forbidden) {
+  std::vector<double> dist(network.number_of_edges(),
+                           std::numeric_limits<double>::infinity());
+  std::vector<std::optional<size_t>> pred(network.number_of_edges());
+  using QueueEntry = std::pair<double, size_t>;
+  std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<>> pq;
+  dist.at(start) = 0;
+  pq.emplace(0, start);
+  while (!pq.empty()) {
+    const auto [d, e] = pq.top();
+    pq.pop();
+    if (d > dist.at(e)) {
+      continue;
+    }
+    if (e != start && targets.contains(e)) {
+      index_vector path;
+      for (std::optional<size_t> x = e; x.value() != start;
+           x                       = pred.at(x.value())) {
+        path.push_back(x.value());
+      }
+      std::ranges::reverse(path);
+      return path;
+    }
+    for (const auto f : network.get_successors(e)) {
+      if (forbidden.contains(f)) {
+        continue;
+      }
+      const double cost =
+          network.get_edge(f).length *
+          (network.get_reverse_edge_index(f).has_value() ? 3.0 : 1.0);
+      if (d + cost < dist.at(f)) {
+        dist.at(f) = d + cost;
+        pred.at(f) = e;
+        pq.emplace(d + cost, f);
+      }
+    }
+  }
+  return {};
+}
+} // namespace
+
+TEST(GreedySimulator, RASInstancesFeasibleWithExactEntry) {
+  // The trains are dispatched as follows: every train takes the cheapest route
+  // through its stops, the trains stopping at a station take turns in using
+  // its platforms, and all trains pass every TTD section, entry and exit in
+  // the order of their entry times. Since every turnout belongs to a TTD
+  // section, the trains keep this order wherever their routes meet. Simulating
+  // these decisions without late entry, with the default time step of the A*
+  // search and with a coarse one, shows that both instances are feasible.
+  for (const auto* instance_name : {"toy", "practical"}) {
+    const instances::GeneralPerformanceOptimizationInstance instance(
+        instance_name, "ras", "./data");
+    const auto& network    = instance.get_const_network();
+    const auto  num_trains = instance.get_const_train_list().size();
+
+    index_vector trains(num_trains);
+    std::iota(trains.begin(), trains.end(), 0);
+    std::ranges::stable_sort(trains, {}, [&instance](size_t tr) {
+      return instance.get_const_schedule(tr).get_entry_time();
+    });
+
+    std::vector<index_vector>        train_edges(num_trains);
+    std::vector<std::vector<double>> stop_positions(num_trains);
+    std::map<index_vector, size_t>   platform_turns;
+    for (const auto tr : trains) {
+      const auto& schedule = instance.get_const_schedule(tr);
+      const auto& stops    = schedule.get_stops();
+      auto&       route    = train_edges.at(tr);
+      route.push_back(*network.out_edges(schedule.get_entry_vertex()).begin());
+      for (size_t stop = 0; stop < stops.size(); ++stop) {
+        // Platforms on which the train can stop and continue to its next
+        // station, respectively its exit
+        const auto next_targets =
+            stop + 1 < stops.size()
+                ? stops.at(stop + 1).get_station().tracks
+                : network.in_edges(schedule.get_exit_vertex());
+        index_vector tracks(stops.at(stop).get_station().tracks.begin(),
+                            stops.at(stop).get_station().tracks.end());
+        std::ranges::sort(tracks);
+        index_vector              platforms;
+        std::vector<index_vector> paths;
+        for (const auto track : tracks) {
+          auto path = cheapest_path(network, route.back(), {track},
+                                    {route.begin(), route.end()});
+          if (path.empty()) {
+            continue;
+          }
+          auto extended_route = route;
+          extended_route.insert(extended_route.end(), path.begin(), path.end());
+          if (instance.is_route_end_valid_stop_pos(tr, extended_route, stop) &&
+              !cheapest_path(network, track, next_targets,
+                             {extended_route.begin(), extended_route.end()})
+                   .empty()) {
+            platforms.push_back(track);
+            paths.push_back(std::move(path));
+          }
+        }
+        ASSERT_FALSE(platforms.empty())
+            << instance_name << ": no platform for stop " << stop
+            << " of train " << tr;
+        const auto& path = paths.at(platform_turns[platforms]++ % paths.size());
+        route.insert(route.end(), path.begin(), path.end());
+        stop_positions.at(tr).push_back(network.length_of_path(route));
+      }
+      const auto path = cheapest_path(
+          network, route.back(), network.in_edges(schedule.get_exit_vertex()),
+          {route.begin(), route.end()});
+      ASSERT_FALSE(path.empty())
+          << instance_name << ": no route to the exit of train " << tr;
+      route.insert(route.end(), path.begin(), path.end());
+    }
+
+    const auto                ttd_sections = network.unbreakable_sections();
+    std::vector<index_vector> ttd_orders(ttd_sections.size());
+    std::vector<index_vector> vertex_orders(network.number_of_vertices());
+    for (const auto tr : trains) {
+      for (size_t ttd = 0; ttd < ttd_sections.size(); ++ttd) {
+        if (std::ranges::any_of(train_edges.at(tr), [&](size_t e) {
+              return ttd_sections.at(ttd).contains(e);
+            })) {
+          ttd_orders.at(ttd).push_back(tr);
+        }
+      }
+      const auto& schedule = instance.get_const_schedule(tr);
+      vertex_orders.at(schedule.get_entry_vertex()).push_back(tr);
+      vertex_orders.at(schedule.get_exit_vertex()).push_back(tr);
+    }
+
+    const simulator::GreedySimulator simulator(instance, ttd_sections,
+                                               train_edges, ttd_orders,
+                                               vertex_orders, stop_positions);
+    for (const double dt : {6.0, 15.0}) {
+      const auto result = simulator.simulate(dt, false, true, false, true);
+      EXPECT_TRUE(result.success) << instance_name << ", dt " << dt;
+      for (size_t tr = 0; tr < num_trains; ++tr) {
+        EXPECT_EQ(result.stop_times.at(tr).size(),
+                  instance.get_const_schedule(tr).get_stops().size())
+            << instance_name << ", dt " << dt << ", train " << tr;
+      }
+    }
+  }
 }
 
 // NOLINTEND

@@ -984,11 +984,15 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
           get_position_on_edge(other_tr, other_pos, edge_id);
       bool check_other_tr = occ.tr_on_edge;
       if (check_other_tr && first_edge) {
-        // Other train could be behind train on the same edge
+        // Other train could be behind train on the same edge. Since trains do
+        // not overlap, it is if its front is not ahead of this train's front.
+        // Comparing with this train's rear instead would depend on rounding if
+        // the other train stands right behind it, since the positions of both
+        // are measured along different routes.
         [[maybe_unused]] const auto [occ_tr, pos_tr] =
             get_position_on_route_edge(tr, train_positions.at(tr), i,
                                        milestones);
-        if (occ_tr.tr_on_edge && pos_tr.rear >= pos.front) {
+        if (occ_tr.tr_on_edge && pos.front <= pos_tr.front) {
           check_other_tr = false; // Train is not behind the other train
         }
       }

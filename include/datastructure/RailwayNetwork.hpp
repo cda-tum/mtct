@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -374,7 +373,7 @@ public:
   /**
    * @brief Exports the network to disk.
    *
-   * Writes `tracks.graphml`, `successors_cpp.json`, and `successors.txt` to
+   * Writes `tracks.graphml` and `successors_cpp.json` to
    * `working_directory/networks/<networkName>/`.
    *
    * @param working_directory Root working directory.
@@ -537,6 +536,22 @@ public:
    * @return `true` if all consistency conditions are satisfied.
    */
   [[nodiscard]] bool is_consistent_for_transformation() const;
+
+  /**
+   * @brief Checks that no successor lets a train reverse its direction of
+   *        travel.
+   *
+   * A train passing a vertex comes from one side of it and leaves to the
+   * other, e.g., from the toe of a switch to one of its two branches or back.
+   * Hence, the neighbors of every vertex must split into two sides such that
+   * every successor pair connects a neighbor on one side with a neighbor on
+   * the other. A successor turning back onto the reverse edge (U-turn)
+   * violates this, and so does one from one branch of a switch to the other
+   * (zig-zag) if the switch can also be passed from its toe.
+   *
+   * @return `true` if the successors of every vertex admit such a split.
+   */
+  [[nodiscard]] bool has_reversal_free_successors() const;
 
   /**
    * @brief Returns the total number of vertices in the network.
@@ -2537,30 +2552,11 @@ private:
   void export_graphml(const std::filesystem::path& p) const;
 
   /**
-   * @brief Writes the successor map to `successors.txt` (Python dict format)
-   *        in directory @p p.
-   * @param p Destination directory path.
-   */
-  void export_successors_python(const std::filesystem::path& p) const;
-
-  /**
    * @brief Writes the successor map to `successors_cpp.json` (JSON format
    *        used by the C++ import) in directory @p p.
    * @param p Destination directory path.
    */
   void export_successors_cpp(const std::filesystem::path& p) const;
-
-  /**
-   * @brief Writes the successor set of edge @p i to @p file in Python set
-   *        notation.
-   *
-   * Produces `set()` for an empty successor set or
-   * `{('src','tgt'), ...}` otherwise.
-   *
-   * @param file Output file stream.
-   * @param i    Index of the edge whose successors are written.
-   */
-  void write_successor_set_to_file(std::ofstream& file, size_t i) const;
 
   /**
    * @brief Returns the endpoint of edge @p e that is not @p v.

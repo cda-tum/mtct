@@ -1797,6 +1797,48 @@ TEST(RailwayNetwork, NetworkConsistency) {
   EXPECT_FALSE(network.is_consistent_for_transformation());
 }
 
+TEST(RailwayNetwork, ReversalFreeSuccessors) {
+  // Switch v with toe t and branches a and b, plus a diamond crossing c of
+  // the tracks p-q and r-s, all bidirectional
+  const auto network_with_switch = []() {
+    cda_rail::Network network;
+    for (const auto* name : {"t", "v", "a", "b", "c", "p", "q", "r", "s"}) {
+      network.add_vertex(name, cda_rail::VertexType::TTD);
+    }
+    for (const auto& [u, w] :
+         std::vector<std::pair<std::string, std::string>>{{"t", "v"},
+                                                          {"v", "a"},
+                                                          {"v", "b"},
+                                                          {"p", "c"},
+                                                          {"c", "q"},
+                                                          {"r", "c"},
+                                                          {"c", "s"}}) {
+      network.add_bidirectional_edge({u}, {w}, 100, 10);
+    }
+    network.add_successor({"t", "v"}, {"v", "a"});
+    network.add_successor({"t", "v"}, {"v", "b"});
+    network.add_successor({"a", "v"}, {"v", "t"});
+    network.add_successor({"b", "v"}, {"v", "t"});
+    network.add_successor({"p", "c"}, {"c", "q"});
+    network.add_successor({"q", "c"}, {"c", "p"});
+    network.add_successor({"r", "c"}, {"c", "s"});
+    network.add_successor({"s", "c"}, {"c", "r"});
+    return network;
+  };
+
+  EXPECT_TRUE(network_with_switch().has_reversal_free_successors());
+
+  // Turning back onto the reverse edge
+  auto u_turn = network_with_switch();
+  u_turn.add_successor({"t", "v"}, {"v", "t"});
+  EXPECT_FALSE(u_turn.has_reversal_free_successors());
+
+  // Moving from one branch of the switch to the other
+  auto zig_zag = network_with_switch();
+  zig_zag.add_successor({"a", "v"}, {"v", "b"});
+  EXPECT_FALSE(zig_zag.has_reversal_free_successors());
+}
+
 TEST(RailwayNetwork, ReadNetwork) {
   const cda_rail::Network network =
       cda_rail::Network::import_network("SimpleStation", "./data/");
