@@ -3,16 +3,21 @@
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
 #include "datastructure/Timetable.hpp"
+#include "nlohmann/json.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "simulator/EventSimulator.hpp"
 #include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
+#include "solver/GeneralSolver.hpp"
 #include "solver/astar-based/CompletionHeuristic.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <cstddef>
+#include <filesystem>
+#include <fstream>
 #include <optional>
 #include <vector>
 
@@ -71,6 +76,26 @@ size_t ttd_of(const instances::GeneralPerformanceOptimizationInstance& instance,
       .value();
 }
 
+// The solver data of a solution exported with the given settings, read as in
+// GenPOMovingBlockAStarSolver.SolverDataExport. The export is removed again.
+nlohmann::json exported_solver_data(
+    const instances::SolGeneralPerformanceOptimizationInstance& solution,
+    const solver::GeneralSolutionSettings&                      settings) {
+  const auto    path = solution.get_export_path(settings.working_directory,
+                                                settings.solution_subdirectory,
+                                                settings.parameter_identifier) /
+                       "solver_data.json";
+  std::ifstream data_file(path);
+  if (!data_file.is_open()) {
+    throw exceptions::ImportException("Could not open file " + path.string());
+  }
+  nlohmann::json data;
+  data_file >> data;
+  data_file.close();
+  std::filesystem::remove_all(settings.working_directory);
+  return data;
+}
+
 // A line v0 -> v1 -> v2 -> v3, whose middle edge is the only track of
 // station S, at which the single train stops.
 struct LineInstance {
@@ -106,13 +131,13 @@ LineInstance line_instance() {
 }
 
 // A line v0 -> v1 -> v3 -> v4, with the platforms a1 and b1 of station S
-// between v1 and v3. The early and the late train both stop at S; the one
-// with the smaller index enters later.
+// between v1 and v3, of which b1 is 500 m long. The early and the late train
+// of 100 m both stop at S; the one with the smaller index enters later.
 struct StationInstance {
   instances::GeneralPerformanceOptimizationInstance instance;
   size_t tr_late, tr_early, v0, in, a1, a2, b1, b2, out;
 };
-StationInstance station_instance() {
+StationInstance station_instance(double a1_length = 500) {
   Network    network;
   const auto v0  = network.add_vertex("v0", VertexType::TTD);
   const auto v1  = network.add_vertex("v1", VertexType::TTD);
@@ -121,7 +146,7 @@ StationInstance station_instance() {
   const auto v3  = network.add_vertex("v3", VertexType::TTD);
   const auto v4  = network.add_vertex("v4", VertexType::TTD);
   const auto in  = network.add_edge(v0, v1, 1000, 20);
-  const auto a1  = network.add_edge(v1, v2a, 500, 20);
+  const auto a1  = network.add_edge(v1, v2a, a1_length, 20);
   const auto a2  = network.add_edge(v2a, v3, 100, 20);
   const auto b1  = network.add_edge(v1, v2b, 500, 20);
   const auto b2  = network.add_edge(v2b, v3, 100, 20);
@@ -198,15 +223,16 @@ MergeInstance merge_instance(double entry_a, double entry_b) {
 
 // Train 1 runs from vL_in to vR_out and train 2 from vR_in to vL_out. Both
 // use the single track a <-> b in opposite directions, which lies between the
-// switches sL and sR, each of which is a TTD section. Every entry is 500 m
-// ahead of its switch, so that a train can wait for the other one, unless
-// train 2 enters right at its switch.
+// switches sL and sR, each of which is a TTD section. The entry of train 1 is
+// approach_1 ahead of its switch, the one of train 2 500 m, so that a train
+// can wait for the other one, unless train 2 enters right at its switch.
 struct OppositeInstance {
   instances::GeneralPerformanceOptimizationInstance instance;
   size_t                                            tr_1, tr_2, left, right;
 };
 OppositeInstance opposite_instance(double entry_1, double entry_2,
-                                   bool train_2_enters_at_switch = false) {
+                                   bool   train_2_enters_at_switch = false,
+                                   double approach_1               = 500) {
   Network    network;
   const auto vl_in  = network.add_vertex("vL_in", VertexType::TTD);
   const auto vl_out = network.add_vertex("vL_out", VertexType::TTD);
@@ -220,7 +246,7 @@ OppositeInstance opposite_instance(double entry_1, double entry_2,
   const auto a      = network.add_vertex("a", VertexType::TTD);
   const auto b      = network.add_vertex("b", VertexType::TTD);
 
-  const auto in_l  = network.add_edge(vl_in, pl, 500, 20);
+  const auto in_l  = network.add_edge(vl_in, pl, approach_1, 20);
   const auto pl_sl = network.add_edge(pl, sl, 10, 20, false);
   const auto sl_a  = network.add_edge(sl, a, 10, 20, false);
   const auto a_sl  = network.add_edge(a, sl, 10, 20, false);
@@ -373,6 +399,20 @@ TEST(CompletionHeuristic, PlatformsInTurnsByEntryTime) {
   EXPECT_TRUE(is_feasible(station.instance, completed.value()));
 }
 
+TEST(CompletionHeuristic, PlatformsTooShortForTheTrainAreSkipped) {
+  // Platform a1 is shorter than the trains, so that both stop at b1, although
+  // a1 would be the turn of one of them
+  const auto station   = station_instance(50);
+  const auto completed = complete(station.instance);
+  ASSERT_TRUE(completed.has_value());
+  for (const auto tr : {station.tr_early, station.tr_late}) {
+    EXPECT_EQ(completed->train_edges.at(tr),
+              (index_vector{station.in, station.b1, station.b2, station.out}));
+    EXPECT_EQ(completed->stop_positions.at(tr), std::vector<double>{1500});
+  }
+  EXPECT_TRUE(is_feasible(station.instance, completed.value()));
+}
+
 TEST(CompletionHeuristic, PlatformsOfThePartialStateCountForTheTurns) {
   // The partial state lets the early train stop at platform a1, so that the
   // late one, whose stop the completion chooses first, takes b1
@@ -482,6 +522,17 @@ TEST(CompletionHeuristic, FirstComeFirstServedOppositeDirections) {
   EXPECT_EQ(completed_2->ttd_orders.at(first_2.right),
             (index_vector{first_2.tr_2, first_2.tr_1}));
   EXPECT_TRUE(is_feasible(first_2.instance, completed_2.value()));
+
+  // Train 1 enters first, but 3000 m ahead of its switch, so that train 2
+  // gets to the single track first
+  const auto first_far     = opposite_instance(0, 20, false, 3000);
+  const auto completed_far = complete(first_far.instance);
+  ASSERT_TRUE(completed_far.has_value());
+  EXPECT_EQ(completed_far->ttd_orders.at(first_far.left),
+            (index_vector{first_far.tr_2, first_far.tr_1}));
+  EXPECT_EQ(completed_far->ttd_orders.at(first_far.right),
+            (index_vector{first_far.tr_2, first_far.tr_1}));
+  EXPECT_TRUE(is_feasible(first_far.instance, completed_far.value()));
 }
 
 TEST(CompletionHeuristic, StretchOfWhichEachTrainHoldsOneEnd) {
@@ -549,6 +600,15 @@ TEST(CompletionHeuristic, OnlyTheGreedySimulatorDecidesOrders) {
   static void Name##_with(simulator::SimulatorType simulator_type)
 
 COMPLETION_SOLVER_TEST(SameResultAsWithoutCompletions) {
+  // The solver data are exported to a folder of their own per simulator, so
+  // that both tests can run in parallel
+  const solver::GeneralSolutionSettings export_settings{
+      .export_option        = solver::GeneralExportOption::ExportSolution,
+      .working_directory    = simulator_type == simulator::SimulatorType::Greedy
+                                  ? "tmp_completion_greedy"
+                                  : "tmp_completion_event",
+      .parameter_identifier = "completion"};
+  int most_completions = 0;
   for (const auto& instance :
        {merge_instance(0, 30).instance, merge_instance(30, 0).instance,
         opposite_instance(0, 20).instance, line_instance().instance}) {
@@ -564,13 +624,26 @@ COMPLETION_SOLVER_TEST(SameResultAsWithoutCompletions) {
             solver.solve({.simulator_type = simulator_type},
                          {.next_state_strategy = next_state_strategy,
                           .completion_interval = interval},
-                         {}, -1, false);
+                         export_settings, -1, false);
         EXPECT_EQ(without.get_status(), SolutionStatus::Optimal);
         EXPECT_EQ(with.get_status(), without.get_status());
         EXPECT_DOUBLE_EQ(with.get_obj(), without.get_obj());
+
+        // Every interval-th state the search expands is completed, starting
+        // with the initial one, while the final state that ends the search is
+        // not expanded
+        const auto data       = exported_solver_data(with, export_settings);
+        const auto iterations = data.at("iterations_int").get<int>();
+        const auto attempted  = data.at("completions_attempted_int").get<int>();
+        EXPECT_EQ(attempted, (iterations - 2) / static_cast<int>(interval) + 1);
+        if (interval == 1) {
+          most_completions = std::max(most_completions, attempted);
+        }
       }
     }
   }
+  // Not only the initial state is completed
+  EXPECT_GT(most_completions, 1);
 }
 
 COMPLETION_SOLVER_TEST(SearchContinuesAfterFailedCompletion) {
