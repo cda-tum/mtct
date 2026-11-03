@@ -346,6 +346,14 @@ bool cda_rail::simulator::GeneralSimulator::is_final_state() const {
   // have been set
 }
 
+std::optional<cda_rail::simulator::SimulatorState>
+cda_rail::simulator::GeneralSimulator::first_come_first_served_state(
+    [[maybe_unused]] double dt, [[maybe_unused]] bool late_entry_possible,
+    [[maybe_unused]] bool limit_speed_by_leaving_edges) const {
+  throw cda_rail::exceptions::ConsistencyException(
+      "This simulator cannot decide orders first come, first served.");
+}
+
 double
 cda_rail::simulator::GeneralSimulator::tr_braking_distance(size_t tr,
                                                            double v) const {

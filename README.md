@@ -448,9 +448,9 @@ Export Options:
   -g,     --generate-parameter-identifier Excludes: --parameter-identifier
                               Whether to automatically generate a parameter identifier based on
                               the parameter settings. If set, the parameter identifier will be
-                              generated as a concatenation of the parameter names and values.
-                              Otherwise the identifier has to be set explicitly if it should
-                              not remain empty.
+                              a short hash of all parameter values, which are stored in
+                              solver_data.json. Otherwise the identifier has to be set
+                              explicitly if it should not remain empty.
           --evaluate : Needs: --export-solution or --export-solution-and-instance
                               Evaluate the solution before exporting it, i.e., simulate its
                               decisions in detail, and include the resulting delays in the
@@ -599,9 +599,9 @@ Export Options:
   -g,     --generate-parameter-identifier Excludes: --parameter-identifier
                               Whether to automatically generate a parameter identifier based on
                               the parameter settings. If set, the parameter identifier will be
-                              generated as a concatenation of the parameter names and values.
-                              Otherwise the identifier has to be set explicitly if it should
-                              not remain empty.
+                              a short hash of all parameter values, which are stored in
+                              solver_data.json. Otherwise the identifier has to be set
+                              explicitly if it should not remain empty.
           --evaluate : Needs: --export-solution or --export-solution-and-instance Needs: --evaluation-dt
                               Evaluate the solution before exporting it, i.e., simulate its
                               decisions in detail, and include the resulting delays in the
@@ -623,6 +623,9 @@ Its trajectories are exact, apart from trains closely following another one, whi
 How far the trains are moved in every step is controlled by `--next-state-strategy`, and which heuristic estimates the remaining time by `--remaining-time-heuristic-strategy`.
 Using `--time-aware-state-transitions`, states that cannot lead to a better solution are not explored, which reduces the runtime drastically.
 If a proven optimal solution is not needed, `--heuristic-weight` allows to weight the heuristic, which speeds up the search while still guaranteeing an approximation factor.
+To find feasible solutions early, `--completion-interval x` completes the initial state and every x-th state the search expands heuristically.
+The trains then continue along quickest paths, and the orders still open are decided first come, first served.
+These completions are additional solutions only and do not affect the bound of the search.
 In contrast to the MILP, the A\* search does not support bounding the delays.
 
 ```commandline
@@ -687,6 +690,10 @@ Solver Parameters:
   -r,     --remaining-time-heuristic-strategy ENUM:value in {Simple->1,Zero->0} OR {1,0} [1]
                               Remaining time heuristic strategy to use in the simulation.
                               Currently supports 'Zero' and 'Simple'
+          --completion-interval UINT [0]
+                              If x > 0, the initial state and every x-th state after it that
+                              the search expands are completed heuristically to a feasible
+                              solution, if possible. 0 never completes a state.
 
 Additional Solving Parameters:
   -t,     --time-limit INT [-1]
@@ -714,9 +721,9 @@ Export Options:
   -g,     --generate-parameter-identifier Excludes: --parameter-identifier
                               Whether to automatically generate a parameter identifier based on
                               the parameter settings. If set, the parameter identifier will be
-                              generated as a concatenation of the parameter names and values.
-                              Otherwise the identifier has to be set explicitly if it should
-                              not remain empty.
+                              a short hash of all parameter values, which are stored in
+                              solver_data.json. Otherwise the identifier has to be set
+                              explicitly if it should not remain empty.
           --evaluate : Needs: --export-solution or --export-solution-and-instance
                               Evaluate the solution before exporting it, i.e., simulate its
                               decisions in detail, and include the resulting delays in the

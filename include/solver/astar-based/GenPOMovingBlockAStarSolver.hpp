@@ -95,6 +95,11 @@ struct ModelDetailMBAStar {
  * An `a_star_weight` greater than one gives up optimality in exchange for
  * runtime, in which case the solution is at most that factor worse than an
  * optimal one.
+ *
+ * If `completion_interval` is some x > 0, the initial state and every x-th
+ * dequeued state after it are completed heuristically, see complete_state,
+ * and the completed state is added to the successors of the dequeued one.
+ * This yields feasible solutions early without affecting the bound.
  */
 struct SolverStrategyMBAStar {
   simulator::RemainingTimeHeuristicType remaining_time_heuristic_type =
@@ -103,6 +108,7 @@ struct SolverStrategyMBAStar {
   bool              consider_earliest_exit = true;
   bool              time_aware_state_transitions = false;
   double            a_star_weight                = 1.0;
+  size_t            completion_interval          = 0;
 };
 } // namespace cda_rail::solver::astar_based
 

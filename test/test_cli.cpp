@@ -1258,6 +1258,22 @@ TEST(CliOptions, MbAStarSettings) {
   EXPECT_FALSE(settings.consider_earliest_exit);
 }
 
+TEST(CliOptions, MbAStarCompletionInterval) {
+  cda_rail::cli::MbAStarSettings settings;
+  CLI::App                       app;
+  cda_rail::cli::add_mb_astar_options(app, settings);
+  app.parse(std::string{"--completion-interval 50"});
+
+  EXPECT_EQ(settings.completion_interval, 50);
+  EXPECT_EQ(
+      cda_rail::cli::mb_astar_solver_strategy(settings).completion_interval,
+      50);
+  // Only part of the identifier if completions are used, see
+  // MbAStarGeneratedIdentifier
+  EXPECT_EQ(cda_rail::cli::generate_mb_astar_identifier(settings),
+            "6_Greedy_f_t_t_f_1_SingleEdge_Simple_-1_50");
+}
+
 TEST(CliOptions, MbAStarHasNoLpModelExport) {
   cda_rail::cli::MbAStarSettings settings;
   CLI::App                       app;

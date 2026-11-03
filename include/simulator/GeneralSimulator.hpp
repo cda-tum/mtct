@@ -458,6 +458,30 @@ public:
                     save_trajectories, true);
   };
 
+  /**
+   * @brief Decides every order that the current state leaves open first come,
+   * first served.
+   *
+   * The routes and stops are taken as they are, and the trains of every order
+   * of the state keep their relative order. Every train that is not yet in
+   * the order of a TTD section, entry or exit vertex of its route is inserted
+   * into that order once it gets there in the simulation, i.e., once it needs
+   * it for its moving authority: behind the trains that got there before it,
+   * and hence ahead of the trains of the state that have not gotten there
+   * yet.
+   *
+   * @param dt See simulate.
+   * @param late_entry_possible See simulate.
+   * @param limit_speed_by_leaving_edges See simulate.
+   * @return The state with the realized orders, or `std::nullopt` if the
+   * trains do not all reach the ends of their routes that way.
+   * @throws cda_rail::exceptions::ConsistencyException If the simulator does
+   * not support this.
+   */
+  [[nodiscard]] virtual std::optional<SimulatorState>
+  first_come_first_served_state(double dt, bool late_entry_possible,
+                                bool limit_speed_by_leaving_edges) const;
+
 protected:
   // --------------------
   // PROTECTED HELPER
