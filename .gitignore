@@ -54,3 +54,4 @@ gurobi*
 test/ras-datasets/
 .github/copilot-instructions.md
 test/cmake_test_discovery_*.json
+/plans/
