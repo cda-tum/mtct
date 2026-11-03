@@ -52,11 +52,11 @@ cda_rail::index_vector quickest_extension(
 size_t stop_edge(const cda_rail::Network&      network,
                  const cda_rail::index_vector& route, double pos) {
   double end = 0.0;
-  for (const auto edge : route) {
-    end += network.get_edge(edge).length;
+  for (size_t i = 0; i + 1 < route.size(); ++i) {
+    end += network.get_edge(route.at(i)).length;
     // The stop position may have been summed up in another order
     if (end >= pos - cda_rail::GRB_EPS) {
-      return edge;
+      return route.at(i);
     }
   }
   return route.back();

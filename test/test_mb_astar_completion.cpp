@@ -350,6 +350,7 @@ TEST(CompletionHeuristic, KeepsPartialRouteStopsAndOrders) {
   without_stop.stop_positions.at(0) = {};
   EXPECT_FALSE(solver::astar_based::complete_routes(line.instance, without_stop)
                    .has_value());
+  EXPECT_FALSE(complete(line.instance, without_stop).has_value());
 }
 
 TEST(CompletionHeuristic, QuickestRatherThanShortestPath) {
@@ -382,6 +383,56 @@ TEST(CompletionHeuristic, QuickestRatherThanShortestPath) {
   ASSERT_TRUE(completed.has_value());
   EXPECT_EQ(completed->train_edges.at(tr),
             (index_vector{in, via_1, via_2, out}));
+}
+
+TEST(CompletionHeuristic, PartialRoutesThatCannotBeCompleted) {
+  // From the line v0 -> v1 -> v2 -> v4, the loop v2 -> v3 -> v1 branches off,
+  // from which a dead end leads to v5
+  Network    network;
+  const auto v0       = network.add_vertex("v0", VertexType::TTD);
+  const auto v1       = network.add_vertex("v1", VertexType::TTD);
+  const auto v2       = network.add_vertex("v2", VertexType::TTD);
+  const auto v3       = network.add_vertex("v3", VertexType::TTD);
+  const auto v4       = network.add_vertex("v4", VertexType::TTD);
+  const auto v5       = network.add_vertex("v5", VertexType::TTD);
+  const auto in       = network.add_edge(v0, v1, 1000, 20);
+  const auto mid      = network.add_edge(v1, v2, 500, 20);
+  const auto out      = network.add_edge(v2, v4, 1000, 20);
+  const auto loop_1   = network.add_edge(v2, v3, 500, 20);
+  const auto loop_2   = network.add_edge(v3, v1, 500, 20);
+  const auto dead_end = network.add_edge(v3, v5, 1000, 20);
+  network.add_successor(in, mid);
+  network.add_successor(mid, out);
+  network.add_successor(mid, loop_1);
+  network.add_successor(loop_1, loop_2);
+  network.add_successor(loop_1, dead_end);
+  network.add_successor(loop_2, mid);
+
+  Timetable  timetable;
+  const auto tr = timetable.add_train("Train", 100, 20, 2, 4, true, 0, 10, v0,
+                                      60, 20, v4, network);
+  const instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, RouteMap());
+  simulator::GreedySimulator simulator(
+      instance, instance.get_const_network().unbreakable_sections());
+  const auto initial = simulator.get_simulator_state();
+
+  const auto completed =
+      solver::astar_based::complete_routes(instance, initial);
+  ASSERT_TRUE(completed.has_value());
+  EXPECT_EQ(completed->train_edges.at(tr), (index_vector{in, mid, out}));
+
+  // From the dead end, the exit cannot be reached
+  auto in_dead_end               = initial;
+  in_dead_end.train_edges.at(tr) = {in, mid, loop_1, dead_end};
+  EXPECT_FALSE(
+      solver::astar_based::complete_routes(instance, in_dead_end).has_value());
+
+  // Around the loop, the way to the exit uses mid a second time
+  auto around_loop               = initial;
+  around_loop.train_edges.at(tr) = {in, mid, loop_1, loop_2};
+  EXPECT_FALSE(
+      solver::astar_based::complete_routes(instance, around_loop).has_value());
 }
 
 TEST(CompletionHeuristic, PlatformsInTurnsByEntryTime) {
@@ -574,6 +625,28 @@ TEST(CompletionHeuristic, DeadlockYieldsNothing) {
   EXPECT_TRUE(solver::astar_based::complete_routes(opposite.instance, partial)
                   .has_value());
   EXPECT_FALSE(complete(opposite.instance, partial).has_value());
+}
+
+TEST(CompletionHeuristic, FirstComeFirstServedLeavesOutTrainsWithoutRoute) {
+  // Train B does not enter, so that only train A is in an order
+  const auto                 merge = merge_instance(0, 30);
+  simulator::GreedySimulator simulator(
+      merge.instance,
+      merge.instance.get_const_network().unbreakable_sections());
+  auto state = solver::astar_based::complete_routes(
+      merge.instance, simulator.get_simulator_state());
+  ASSERT_TRUE(state.has_value());
+  state->train_edges.at(merge.tr_b).clear();
+  simulator.set_simulator_state(state.value());
+
+  const auto decided = simulator.first_come_first_served_state(DT, false, true);
+  ASSERT_TRUE(decided.has_value());
+  EXPECT_EQ(decided->ttd_orders.at(merge.merge), index_vector{merge.tr_a});
+  for (const auto& orders : {decided->ttd_orders, decided->vertex_orders}) {
+    for (const auto& order : orders) {
+      EXPECT_FALSE(std::ranges::contains(order, merge.tr_b));
+    }
+  }
 }
 
 TEST(CompletionHeuristic, OnlyTheGreedySimulatorDecidesOrders) {
