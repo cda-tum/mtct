@@ -108,6 +108,12 @@ void cda_rail::cli::add_mb_astar_options(CLI::App&        app,
                                           CLI::ignore_case))
       ->capture_default_str()
       ->group("Solver Parameters");
+  app.add_option("--completion-interval", settings.completion_interval,
+                 "If x > 0, the initial state and every x-th state after it "
+                 "that the search expands are completed heuristically to a "
+                 "feasible solution, if possible. 0 never completes a state.")
+      ->capture_default_str()
+      ->group("Solver Parameters");
 
   add_solving_options(app, settings.solving);
   add_export_options(app, settings.exporting, {});
@@ -125,20 +131,33 @@ void cda_rail::cli::finalize_mb_astar_settings(MbAStarSettings& settings) {
 
 std::string
 cda_rail::cli::generate_mb_astar_identifier(const MbAStarSettings& settings) {
+  // The completion interval is only appended if completions are used, so
+  // that the identifiers of all other settings stay as they were
   return concatenate_string_views(
-      {format_double(settings.dt), "_",
-       simulator::simulator_type_to_string(settings.simulator_type), "_",
-       bool_to_str(settings.late_entry_possible), "_",
-       bool_to_str(settings.limit_speed_by_leaving_edges), "_",
-       bool_to_str(settings.consider_earliest_exit), "_",
-       bool_to_str(settings.time_aware_state_transitions), "_",
-       format_double(settings.a_star_weight), "_",
+      {format_double(settings.dt),
+       "_",
+       simulator::simulator_type_to_string(settings.simulator_type),
+       "_",
+       bool_to_str(settings.late_entry_possible),
+       "_",
+       bool_to_str(settings.limit_speed_by_leaving_edges),
+       "_",
+       bool_to_str(settings.consider_earliest_exit),
+       "_",
+       bool_to_str(settings.time_aware_state_transitions),
+       "_",
+       format_double(settings.a_star_weight),
+       "_",
        solver::astar_based::next_state_strategy_to_string(
            settings.next_state_strategy),
        "_",
        simulator::remaining_time_heuristic_type_to_string(
            settings.remaining_time_heuristic_type),
-       "_", std::to_string(settings.solving.time_limit)});
+       "_",
+       std::to_string(settings.solving.time_limit),
+       settings.completion_interval > 0
+           ? "_" + std::to_string(settings.completion_interval)
+           : ""});
 }
 
 void cda_rail::cli::log_mb_astar_settings(
@@ -161,6 +180,7 @@ void cda_rail::cli::log_mb_astar_settings(
   PLOGD << "  Remaining time heuristic strategy: "
         << simulator::remaining_time_heuristic_type_to_string(
                settings.remaining_time_heuristic_type);
+  PLOGD << "  Completion interval: " << settings.completion_interval;
   log_solving_settings(settings.solving);
   log_export_settings(settings.exporting, working_directory);
 }
@@ -181,7 +201,8 @@ cda_rail::cli::mb_astar_solver_strategy(const MbAStarSettings& settings) {
           .next_state_strategy          = settings.next_state_strategy,
           .consider_earliest_exit       = settings.consider_earliest_exit,
           .time_aware_state_transitions = settings.time_aware_state_transitions,
-          .a_star_weight                = settings.a_star_weight};
+          .a_star_weight                = settings.a_star_weight,
+          .completion_interval          = settings.completion_interval};
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)

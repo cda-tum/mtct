@@ -222,7 +222,36 @@ public:
            bool limit_speed_by_leaving_edges, bool save_trajectories,
            bool block_vertices_after_disappearing) const override;
 
+  /**
+   * @brief Decides every open order first come, first served, see
+   * GeneralSimulator::first_come_first_served_state.
+   *
+   * A train gets to a TTD section, or to its exit vertex, once its moving
+   * authority would extend into the section, respectively up to the end of
+   * its route, i.e., once the order is checked for it, and to its entry
+   * vertex once it is due to enter. Trains getting somewhere within the same
+   * time step get there in the order in which the simulation handles them,
+   * entering ones by their entry times.
+   *
+   * Two trains that use a stretch of track in opposite directions would block
+   * each other if each one entered it from its end. Hence, the stretch,
+   * namely every TTD section and vertex from the one at which a train gets to
+   * the shared track up to the one at which it leaves it, is given to the
+   * train that gets to it first: this train gets to all of them at once. If
+   * the other train got to one of them before, or the given state lets it
+   * pass one of them before this train, the other train came first and gets
+   * to the others before. Since a train of the given state that has not
+   * gotten somewhere yet is no obstacle, a stretch of which each train holds
+   * one end by the given state still goes to the train getting to it first.
+   */
+  [[nodiscard]] std::optional<SimulatorState> first_come_first_served_state(
+      double dt, bool late_entry_possible,
+      bool limit_speed_by_leaving_edges) const override;
+
 private:
+  /** @brief The orders built by first_come_first_served_state. */
+  class FirstComeFirstServed;
+
   // ---------------------------
   // PRIVATE HELPER FUNCTIONS
   // ---------------------------
@@ -663,6 +692,13 @@ private:
   PositionBoundFunction m_position_bound;
   /** @brief See set_position_bound. */
   index_set m_trains_with_feasible_bound;
+  /**
+   * @brief Called with a train and the position on its route up to which it
+   *        needs the orders of the TTD sections and vertices of its route,
+   *        right before one of them is checked, see
+   *        first_come_first_served_state; empty otherwise.
+   */
+  std::function<void(size_t tr, double pos)> m_order_request;
 };
 
 } // namespace cda_rail::simulator

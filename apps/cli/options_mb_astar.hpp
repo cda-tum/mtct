@@ -28,6 +28,7 @@ struct MbAStarSettings {
       solver::astar_based::NextStateStrategy::SingleEdge};
   simulator::RemainingTimeHeuristicType remaining_time_heuristic_type{
       simulator::RemainingTimeHeuristicType::Simple};
+  size_t completion_interval{0};
 
   SolvingSettings solving{};
   ExportSettings  exporting{};

@@ -10,6 +10,7 @@
 #include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
 #include "solver/GeneralSolver.hpp"
+#include "solver/astar-based/CompletionHeuristic.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -66,6 +67,16 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       get_instance().get_const_network().unbreakable_sections();
   const auto simulator = make_simulator(model_detail_input.simulator_type,
                                         get_instance(), ttd_sections);
+  // Only the greedy simulator decides orders first come, first served, the
+  // result of which the search simulates with its own simulator anyway
+  const auto completion_simulator =
+      solver_strategy_input.completion_interval > 0
+          ? make_simulator(simulator::SimulatorType::Greedy, get_instance(),
+                           ttd_sections)
+          : nullptr;
+  int completions_attempted{0};
+  int completions_found{0};
+  int completions_infeasible{0};
 
   std::unordered_set<simulator::SimulatorState> explored_states;
   MinPriorityQueue                              pq;
@@ -181,14 +192,37 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       break;
     }
 
-    const auto next_states_set =
+    auto next_states_set =
         next_states(current_state_objective_pair.state,
                     current_state_objective_pair.results, model_detail_input,
                     solver_strategy_input, &get_instance(), ttd_sections);
     PLOGV << "Found " << next_states_set.size() << " next states.";
+
+    // The completed state, if any, is the last successor
+    bool completed = false;
+    if (completion_simulator != nullptr &&
+        (iteration - 1) % solver_strategy_input.completion_interval == 0) {
+      completions_attempted++;
+      auto completed_state = complete_state(
+          *completion_simulator, current_state_objective_pair.state,
+          model_detail_input.dt, model_detail_input.late_entry_possible,
+          model_detail_input.limit_speed_by_leaving_edges);
+      completed = completed_state.has_value();
+      if (completed) {
+        completions_found++;
+      }
+      PLOGD << "Completion " << completions_attempted << " in iteration "
+            << iteration << (completed ? " found" : " found no")
+            << " final state.";
+      if (completed) {
+        next_states_set.emplace_back(std::move(completed_state.value()));
+      }
+    }
+
     size_t i = 0;
     for (const auto& s : next_states_set) {
       i++;
+      const bool is_completion = completed && i == next_states_set.size();
       PLOGV << "Processing next state " << i << "/" << next_states_set.size();
       if (explored_states.contains(s)) {
         PLOGV << "State already explored, skipping.";
@@ -204,6 +238,11 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       states_simulated++;
       if (!sim_res.success) {
         PLOGV << "State is infeasible, skipping.";
+        if (is_completion) {
+          completions_infeasible++;
+          PLOGD << "The completed state is infeasible for the simulator of "
+                   "the search.";
+        }
         continue;
       }
       const auto obj = simulator::objective_val(
@@ -230,16 +269,22 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       // consistent: heuristic_diff <= edge_weight -> heuristic_diff -
       // edge_weight <= 0
 
-      min_edge_cost = std::min(min_edge_cost, edge_weight);
-      max_edge_cost = std::max(max_edge_cost, edge_weight);
-      max_heuristic_inconsistency =
-          std::max(max_heuristic_inconsistency, heuristic_diff - edge_weight);
+      // A completion is no transition of the search
+      if (!is_completion) {
+        min_edge_cost = std::min(min_edge_cost, edge_weight);
+        max_edge_cost = std::max(max_edge_cost, edge_weight);
+        max_heuristic_inconsistency =
+            std::max(max_heuristic_inconsistency, heuristic_diff - edge_weight);
 
-      round_small_numbers_to_zero_inplace(max_heuristic_inconsistency, GRB_EPS);
+        round_small_numbers_to_zero_inplace(max_heuristic_inconsistency,
+                                            GRB_EPS);
+      }
 
       if (final && new_obj < best_obj) {
-        PLOGD << "Explored new best final state with objective = " << new_obj
-              << " after " << iteration << " iterations, "
+        PLOGD << "Explored new best final state"
+              << (is_completion ? " by completion" : "")
+              << " with objective = " << new_obj << " after " << iteration
+              << " iterations, "
               << std::chrono::duration_cast<std::chrono::seconds>(
                      std::chrono::high_resolution_clock::now() - m_start)
                      .count()
@@ -271,6 +316,12 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   PLOGD << "Min edge cost = " << min_edge_cost
         << ", max edge cost = " << max_edge_cost;
   PLOGD << "Max heuristic inconsistency = " << max_heuristic_inconsistency;
+  if (completion_simulator != nullptr) {
+    PLOGD << "Completions attempted = " << completions_attempted
+          << ", final states found = " << completions_found
+          << ", of which infeasible for the simulator of the search = "
+          << completions_infeasible;
+  }
 
   PLOGI << "Extracting solution object...";
 
@@ -406,7 +457,12 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
           .integer_data = {{"iterations", iteration},
                            {"states_simulated", states_simulated},
                            {"state_reexplorations", state_reexplorations},
-                           {"time_limit", time_limit}},
+                           {"time_limit", time_limit},
+                           {"completion_interval",
+                            solver_strategy_input.completion_interval},
+                           {"completions_attempted", completions_attempted},
+                           {"completions_found", completions_found},
+                           {"completions_infeasible", completions_infeasible}},
           .double_data  = {{"time_step", model_detail_input.dt},
                            {"a_star_weight",
                             solver_strategy_input.a_star_weight},

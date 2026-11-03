@@ -489,6 +489,25 @@ cda_rail::simulator::GreedySimulator::simulate(
       }
     }
 
+    if (m_order_request) {
+      // Trains that are due get to their entries in the order of their entry
+      // times
+      cda_rail::index_vector due_trains;
+      for (size_t tr = 0; tr < number_of_trains; ++tr) {
+        if (!trains_in_network.contains(tr) &&
+            !trains_finished_simulating.contains(tr) &&
+            t >= get_instance()->get_const_schedule(tr).get_entry_time()) {
+          due_trains.emplace_back(tr);
+        }
+      }
+      std::ranges::stable_sort(due_trains, {}, [this](size_t tr) {
+        return get_instance()->get_const_schedule(tr).get_entry_time();
+      });
+      for (const auto tr : due_trains) {
+        m_order_request(tr, 0.0);
+      }
+    }
+
     // Check for new trains entering the network
     const auto [tr_to_enter_success, tr_to_enter] = get_entering_trains(
         t, trains_in_network, trains_left, trains_finished_simulating,
@@ -623,6 +642,266 @@ cda_rail::simulator::GreedySimulator::simulate(
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+
+// ---------------------------------
+// FIRST COME, FIRST SERVED ORDERS
+// ---------------------------------
+
+class cda_rail::simulator::GreedySimulator::FirstComeFirstServed {
+public:
+  explicit FirstComeFirstServed(GreedySimulator& simulator);
+
+  // Lets tr get to every resource of its route before pos that it has not
+  // gotten to yet
+  void request(size_t tr, double pos);
+
+  [[nodiscard]] bool all_requested() const {
+    return std::ranges::all_of(
+        std::views::iota(size_t{0}, m_resources.size()), [this](size_t tr) {
+          return m_next_resource.at(tr) == m_resources.at(tr).size();
+        });
+  }
+
+private:
+  // A TTD section or vertex with an order, and the position on the route at
+  // which the train gets to it
+  struct Resource {
+    bool   is_vertex;
+    size_t index;
+    double pos;
+
+    bool operator==(const Resource& other) const {
+      return is_vertex == other.is_vertex && index == other.index;
+    }
+  };
+  // The resources first to last of a train, which the other train passes in
+  // the opposite direction
+  struct Stretch {
+    size_t other;
+    size_t first;
+    size_t last;
+  };
+
+  [[nodiscard]] const index_vector& order(const Resource& resource) const {
+    return resource.is_vertex
+               ? m_simulator.get_vertex_orders_of_vertex(resource.index)
+               : m_simulator.get_ttd_orders_of_ttd(resource.index);
+  }
+  [[nodiscard]] bool is_in_order(size_t tr, const Resource& resource) const {
+    return std::ranges::contains(order(resource), tr);
+  }
+  [[nodiscard]] index_set& arrived(const Resource& resource) {
+    return resource.is_vertex ? m_arrived_at_vertex.at(resource.index)
+                              : m_arrived_at_ttd.at(resource.index);
+  }
+  // Whether the order lets first pass before second, both being in it
+  [[nodiscard]] bool passes_before(size_t first, size_t second,
+                                   const Resource& resource) const {
+    const auto& order     = this->order(resource);
+    const auto  first_it  = std::ranges::find(order, first);
+    const auto  second_it = std::ranges::find(order, second);
+    return first_it < second_it && second_it != order.end();
+  }
+  // Unless the order already contains tr, e.g., by the given state, tr is
+  // inserted behind the trains that got there before it, i.e., ahead of the
+  // trains of the given state that have not gotten there yet
+  void get_to(size_t tr, const Resource& resource) {
+    auto& arrived_trains = arrived(resource);
+    if (!arrived_trains.insert(tr).second || is_in_order(tr, resource)) {
+      return;
+    }
+    auto       extended_order = order(resource);
+    const auto behind_arrived =
+        std::ranges::find_if(extended_order | std::views::reverse,
+                             [&arrived_trains](size_t other) {
+                               return arrived_trains.contains(other);
+                             })
+            .base();
+    extended_order.insert(behind_arrived, tr);
+    if (resource.is_vertex) {
+      m_simulator.set_vertex_orders_of_vertex(resource.index,
+                                              std::move(extended_order));
+    } else {
+      m_simulator.set_ttd_orders_of_ttd(resource.index,
+                                        std::move(extended_order));
+    }
+  }
+
+  GreedySimulator&                   m_simulator;
+  std::vector<std::vector<Resource>> m_resources;
+  std::vector<std::vector<Stretch>>  m_stretches;
+  index_vector                       m_next_resource;
+  // The trains that got to each TTD section and vertex so far
+  std::vector<index_set> m_arrived_at_ttd;
+  std::vector<index_set> m_arrived_at_vertex;
+};
+
+cda_rail::simulator::GreedySimulator::FirstComeFirstServed::
+    FirstComeFirstServed(GreedySimulator& simulator)
+    : m_simulator(simulator) {
+  const auto& network = simulator.get_instance()->get_const_network();
+  const auto  number_of_trains =
+      simulator.get_instance()->get_const_train_list().size();
+  constexpr auto none = std::numeric_limits<size_t>::max();
+
+  m_resources.resize(number_of_trains);
+  m_stretches.resize(number_of_trains);
+  m_next_resource.assign(number_of_trains, 0);
+  m_arrived_at_ttd.resize(simulator.get_ttd_sections().size());
+  m_arrived_at_vertex.resize(network.number_of_vertices());
+
+  std::vector<std::optional<size_t>> edge_ttds(network.number_of_edges());
+  for (size_t ttd = 0; ttd < simulator.get_ttd_sections().size(); ++ttd) {
+    for (const auto edge : simulator.get_ttd_sections().at(ttd)) {
+      edge_ttds.at(edge) = ttd;
+    }
+  }
+
+  // For every edge of a route, the last resource the train gets to before or
+  // on it, and the first one on or after it
+  std::vector<index_vector> resource_up_to(number_of_trains);
+  std::vector<index_vector> resource_from(number_of_trains);
+  for (size_t tr = 0; tr < number_of_trains; ++tr) {
+    const auto& edges = simulator.get_train_edges_of_tr(tr);
+    if (edges.empty()) {
+      continue;
+    }
+    const auto& schedule  = simulator.get_instance()->get_const_schedule(tr);
+    auto&       resources = m_resources.at(tr);
+    resources.push_back(
+        {.is_vertex = true, .index = schedule.get_entry_vertex(), .pos = 0.0});
+    std::vector<std::optional<size_t>> edge_resources;
+    double                             pos = 0.0;
+    for (const auto edge : edges) {
+      const auto ttd = edge_ttds.at(edge);
+      if (ttd.has_value()) {
+        const Resource resource{
+            .is_vertex = false, .index = ttd.value(), .pos = pos};
+        const auto it = std::ranges::find(resources, resource);
+        edge_resources.emplace_back(
+            static_cast<size_t>(it - resources.begin()));
+        if (it == resources.end()) {
+          resources.push_back(resource);
+        }
+      } else {
+        edge_resources.emplace_back(std::nullopt);
+      }
+      pos += network.get_edge(edge).length;
+    }
+    const bool leaves =
+        network.get_edge(edges.back()).target == schedule.get_exit_vertex();
+    if (leaves) {
+      resources.push_back(
+          {.is_vertex = true, .index = schedule.get_exit_vertex(), .pos = pos});
+    }
+
+    size_t up_to = 0;
+    for (const auto& edge_resource : edge_resources) {
+      up_to = edge_resource.value_or(up_to);
+      resource_up_to.at(tr).emplace_back(up_to);
+    }
+    size_t from = leaves ? resources.size() - 1 : none;
+    resource_from.at(tr).resize(edges.size());
+    for (size_t i = edges.size(); i-- > 0;) {
+      from                       = edge_resources.at(i).value_or(from);
+      resource_from.at(tr).at(i) = from;
+    }
+  }
+
+  std::vector<index_set> route_edges(number_of_trains);
+  for (size_t tr = 0; tr < number_of_trains; ++tr) {
+    const auto& edges = simulator.get_train_edges_of_tr(tr);
+    route_edges.at(tr).insert(edges.begin(), edges.end());
+  }
+  for (size_t tr = 0; tr < number_of_trains; ++tr) {
+    const auto& edges = simulator.get_train_edges_of_tr(tr);
+    std::vector<std::optional<size_t>> reverse_edges;
+    for (const auto edge : edges) {
+      reverse_edges.emplace_back(network.get_reverse_edge_index(edge));
+    }
+    for (size_t other = 0; other < number_of_trains; ++other) {
+      if (other == tr) {
+        continue;
+      }
+      const auto is_shared = [&reverse_edges, &route_edges, other](size_t i) {
+        return reverse_edges.at(i).has_value() &&
+               route_edges.at(other).contains(reverse_edges.at(i).value());
+      };
+      for (size_t i = 0; i < edges.size(); ++i) {
+        if (!is_shared(i)) {
+          continue;
+        }
+        size_t j = i;
+        while (j + 1 < edges.size() && is_shared(j + 1)) {
+          ++j;
+        }
+        const auto first = resource_up_to.at(tr).at(i);
+        const auto last  = resource_from.at(tr).at(j);
+        if (last != none && first < last) {
+          m_stretches.at(tr).push_back(
+              {.other = other, .first = first, .last = last});
+        }
+        i = j;
+      }
+    }
+  }
+}
+
+void cda_rail::simulator::GreedySimulator::FirstComeFirstServed::request(
+    size_t tr, double pos) {
+  const auto& resources = m_resources.at(tr);
+  auto&       next      = m_next_resource.at(tr);
+  // The positions are sums of many edge lengths, possibly added up in another
+  // order
+  while (next < resources.size() && resources.at(next).pos <= pos + GRB_EPS) {
+    for (const auto& stretch : m_stretches.at(tr)) {
+      if (stretch.first != next) {
+        continue;
+      }
+      const auto stretch_resources =
+          std::views::iota(stretch.first, stretch.last + 1) |
+          std::views::transform([&resources](size_t i) -> const Resource& {
+            return resources.at(i);
+          });
+      // The other train came first if it got to the stretch before, or if the
+      // given state lets it pass a part of it before tr
+      if (std::ranges::any_of(stretch_resources, [this, tr, &stretch](
+                                                     const Resource& resource) {
+            return arrived(resource).contains(stretch.other) ||
+                   passes_before(stretch.other, tr, resource);
+          })) {
+        for (const auto& resource : stretch_resources) {
+          if (std::ranges::contains(m_resources.at(stretch.other), resource)) {
+            get_to(stretch.other, resource);
+          }
+        }
+      }
+      for (const auto& resource : stretch_resources) {
+        get_to(tr, resource);
+      }
+    }
+    get_to(tr, resources.at(next));
+    ++next;
+  }
+}
+
+std::optional<cda_rail::simulator::SimulatorState>
+cda_rail::simulator::GreedySimulator::first_come_first_served_state(
+    double dt, bool late_entry_possible,
+    bool limit_speed_by_leaving_edges) const {
+  // The copy's orders are extended while it simulates
+  GreedySimulator      simulator(*this);
+  FirstComeFirstServed orders(simulator);
+  simulator.m_order_request = [&orders](size_t tr, double pos) {
+    orders.request(tr, pos);
+  };
+  const auto result = simulator.simulate(
+      dt, late_entry_possible, limit_speed_by_leaving_edges, false, true);
+  if (!result.success || !orders.all_requested()) {
+    return std::nullopt;
+  }
+  return simulator.get_simulator_state();
+}
 
 // ----------------------------
 // PRIVATE HELPER FUNCTIONS
@@ -798,6 +1077,9 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
 
     const auto ttd_sec = get_ttd(edge_id);
     if (ttd_sec.has_value()) {
+      if (m_order_request) {
+        m_order_request(tr, milestones.at(i));
+      }
       const auto& ttd_order = get_ttd_orders_of_ttd(ttd_sec.value());
       const auto  ttd_pos   = std::ranges::find(ttd_order, tr);
       if (ttd_pos == ttd_order.begin()) {
@@ -926,6 +1208,9 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
           }
         }
         if (check_ttd) {
+          if (m_order_request) {
+            m_order_request(tr, milestones.at(i));
+          }
           const auto& ttd_order = get_ttd_orders_of_ttd(ttd_sec.value());
           const auto  ttd_pos   = std::ranges::find(ttd_order, tr);
           if (ttd_pos != ttd_order.begin()) {
@@ -1351,6 +1636,10 @@ double cda_rail::simulator::GreedySimulator::get_exit_vertex_order_ma(
                              // its route
   }
 
+  if (m_order_request &&
+      pos + max_displacement + EPS >= train_edge_length(tr)) {
+    m_order_request(tr, train_edge_length(tr));
+  }
   return is_exit_vertex_blocked(tr, trains_in_network, trains_left)
              ? std::min(max_displacement, train_edge_length(tr) - pos)
              : max_displacement;
@@ -1431,11 +1720,15 @@ cda_rail::simulator::GreedySimulator::get_ma_and_maxv(
     ma = get_next_stop_ma(ma, train_positions.at(tr).front,
                           get_stop_positions_of_tr(tr).at(next_stop.value()));
   }
-  ma = get_exit_vertex_order_ma(tr, train_positions.at(tr).front, ma,
-                                trains_in_network, trains_left);
+  // The exit order only limits the moving authority at the end of the route,
+  // up to which the other limits look anyway, so it is only checked once
+  // these allow the train to get there, as first_come_first_served_state
+  // relies on
   ma = get_absolute_distance_ma(tr, ma, train_positions, train_velocities,
                                 trains_in_network, trains_left, tr_on_edges,
                                 also_check_reverse_edges);
+  ma = get_exit_vertex_order_ma(tr, train_positions.at(tr).front, ma,
+                                trains_in_network, trains_left);
   // The movement of this time step yields the train's position at current_time
   return apply_position_bound(
       tr, train_positions.at(tr).front, train_velocities.at(tr),
