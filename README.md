@@ -448,9 +448,9 @@ Export Options:
   -g,     --generate-parameter-identifier Excludes: --parameter-identifier
                               Whether to automatically generate a parameter identifier based on
                               the parameter settings. If set, the parameter identifier will be
-                              generated as a concatenation of the parameter names and values.
-                              Otherwise the identifier has to be set explicitly if it should
-                              not remain empty.
+                              a short hash of all parameter values, which are stored in
+                              solver_data.json. Otherwise the identifier has to be set
+                              explicitly if it should not remain empty.
           --evaluate : Needs: --export-solution or --export-solution-and-instance
                               Evaluate the solution before exporting it, i.e., simulate its
                               decisions in detail, and include the resulting delays in the
@@ -599,9 +599,9 @@ Export Options:
   -g,     --generate-parameter-identifier Excludes: --parameter-identifier
                               Whether to automatically generate a parameter identifier based on
                               the parameter settings. If set, the parameter identifier will be
-                              generated as a concatenation of the parameter names and values.
-                              Otherwise the identifier has to be set explicitly if it should
-                              not remain empty.
+                              a short hash of all parameter values, which are stored in
+                              solver_data.json. Otherwise the identifier has to be set
+                              explicitly if it should not remain empty.
           --evaluate : Needs: --export-solution or --export-solution-and-instance Needs: --evaluation-dt
                               Evaluate the solution before exporting it, i.e., simulate its
                               decisions in detail, and include the resulting delays in the
@@ -721,9 +721,9 @@ Export Options:
   -g,     --generate-parameter-identifier Excludes: --parameter-identifier
                               Whether to automatically generate a parameter identifier based on
                               the parameter settings. If set, the parameter identifier will be
-                              generated as a concatenation of the parameter names and values.
-                              Otherwise the identifier has to be set explicitly if it should
-                              not remain empty.
+                              a short hash of all parameter values, which are stored in
+                              solver_data.json. Otherwise the identifier has to be set
+                              explicitly if it should not remain empty.
           --evaluate : Needs: --export-solution or --export-solution-and-instance
                               Evaluate the solution before exporting it, i.e., simulate its
                               decisions in detail, and include the resulting delays in the
