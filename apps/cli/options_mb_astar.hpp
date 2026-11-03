@@ -6,6 +6,7 @@
 #include "simulator/GreedyHeuristic.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
+#include <cstddef>
 #include <string>
 
 namespace cda_rail::cli {

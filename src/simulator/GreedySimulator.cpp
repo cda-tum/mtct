@@ -684,8 +684,8 @@ private:
 
   [[nodiscard]] const index_vector& order(const Resource& resource) const {
     return resource.is_vertex
-               ? m_simulator.get_vertex_orders_of_vertex(resource.index)
-               : m_simulator.get_ttd_orders_of_ttd(resource.index);
+               ? m_simulator->get_vertex_orders_of_vertex(resource.index)
+               : m_simulator->get_ttd_orders_of_ttd(resource.index);
   }
   [[nodiscard]] bool is_in_order(size_t tr, const Resource& resource) const {
     return std::ranges::contains(order(resource), tr);
@@ -719,15 +719,16 @@ private:
             .base();
     extended_order.insert(behind_arrived, tr);
     if (resource.is_vertex) {
-      m_simulator.set_vertex_orders_of_vertex(resource.index,
-                                              std::move(extended_order));
+      m_simulator->set_vertex_orders_of_vertex(resource.index,
+                                               std::move(extended_order));
     } else {
-      m_simulator.set_ttd_orders_of_ttd(resource.index,
-                                        std::move(extended_order));
+      m_simulator->set_ttd_orders_of_ttd(resource.index,
+                                         std::move(extended_order));
     }
   }
 
-  GreedySimulator&                   m_simulator;
+  // The simulator whose orders are built, which outlives this object
+  GreedySimulator*                   m_simulator;
   std::vector<std::vector<Resource>> m_resources;
   std::vector<std::vector<Stretch>>  m_stretches;
   index_vector                       m_next_resource;
@@ -738,7 +739,7 @@ private:
 
 cda_rail::simulator::GreedySimulator::FirstComeFirstServed::
     FirstComeFirstServed(GreedySimulator& simulator)
-    : m_simulator(simulator) {
+    : m_simulator(&simulator) {
   const auto& network = simulator.get_instance()->get_const_network();
   const auto  number_of_trains =
       simulator.get_instance()->get_const_train_list().size();

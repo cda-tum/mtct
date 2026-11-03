@@ -12,7 +12,6 @@
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 
 #include "gtest/gtest.h"
-#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <vector>
