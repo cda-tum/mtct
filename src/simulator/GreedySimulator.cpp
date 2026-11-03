@@ -829,7 +829,8 @@ cda_rail::simulator::GreedySimulator::FirstComeFirstServed::
                route_edges.at(other).contains(reverse_edges.at(i).value());
       };
       for (size_t i = 0; i < edges.size(); ++i) {
-        if (!is_shared(i)) {
+        // Every maximal run i to j of shared edges, found from its first one
+        if (!is_shared(i) || (i > 0 && is_shared(i - 1))) {
           continue;
         }
         size_t j = i;
@@ -842,7 +843,6 @@ cda_rail::simulator::GreedySimulator::FirstComeFirstServed::
           m_stretches.at(tr).push_back(
               {.other = other, .first = first, .last = last});
         }
-        i = j;
       }
     }
   }
