@@ -219,13 +219,14 @@ cda_rail::simulator::GreedySimulator::simulate(
       auto const tr_exit_pos = tr_route_len + train_object.get_length();
       if (tr_new_speed < V_MIN &&
           (!last_edge_leaves_network ||
-           train_positions.at(tr).front +
-                   std::min(tr_ma_data.ma,
-                            (train_velocities.at(tr) + tr_new_speed) * dt /
-                                2.0) <
+           train_positions.at(tr).front + move_distance(train_velocities.at(tr),
+                                                        tr_new_speed,
+                                                        tr_ma_data.ma, dt) <
                tr_exit_pos - GRB_EPS)) {
         // Train is stopped, unless it leaves within this time step, after
-        // which its speed does not matter
+        // which its speed does not matter. Moving as in move_train, a slow
+        // train also leaves if it stops exactly at the exit position, which
+        // might be the only way to cover the last metres from a standstill.
         tr_new_speed = 0.0;
       }
 
@@ -1592,22 +1593,19 @@ double cda_rail::simulator::GreedySimulator::earliest_exit(
     auto v_1 =
         std::min(max_v, get_v1_from_ma(v, ma, train.get_deceleration(), dt));
     if (v_1 < V_MIN &&
-        pos + std::min(ma, (v + v_1) * dt / 2.0) < exit_pos - GRB_EPS) {
+        pos + move_distance(v, v_1, ma, dt) < exit_pos - GRB_EPS) {
       v_1 = 0;
     }
-    auto move_distance = std::min(ma, (v + v_1) * dt / 2.0);
-    if (v_1 < V_MIN && std::abs(ma - move_distance) < STOP_TOLERANCE) {
-      move_distance = ma;
-    }
-    if (move_distance < EPS) {
+    const auto distance = move_distance(v, v_1, ma, dt);
+    if (distance < EPS) {
       return INF;
     }
-    if (pos + move_distance > exit_pos + GRB_EPS) {
+    if (pos + distance > exit_pos + GRB_EPS) {
       // The rear passes the exit vertex within this time step
       return t - time_to_travel_distance_with_constant_acceleration(
-                     v_1, (v - v_1) / dt, pos + move_distance - exit_pos);
+                     v_1, (v - v_1) / dt, pos + distance - exit_pos);
     }
-    pos += move_distance;
+    pos += distance;
     v = v_1;
   }
   return t;
@@ -1781,16 +1779,23 @@ bool cda_rail::simulator::GreedySimulator::move_train(
     throw cda_rail::exceptions::TrainNotExistentException(tr);
   }
 
-  double move_distance =
-      std::min(ma, (v_0 + v_1) * dt / 2.0); // Distance moved in the time step
-  if (std::abs(move_distance) < EPS) {
-    return false;
+  const auto distance = move_distance(v_0, v_1, ma, dt);
+  train_positions.at(tr).front += distance; // Update the front position
+  return distance > 0;
+}
+
+double cda_rail::simulator::GreedySimulator::move_distance(double v_0,
+                                                           double v_1,
+                                                           double ma,
+                                                           double dt) {
+  const auto distance = std::min(ma, (v_0 + v_1) * dt / 2.0);
+  if (std::abs(distance) < EPS) {
+    return 0;
   }
-  if (v_1 < V_MIN && std::abs(ma - move_distance) < STOP_TOLERANCE) {
-    move_distance = ma;
+  if (v_1 < V_MIN && std::abs(ma - distance) < STOP_TOLERANCE) {
+    return ma;
   }
-  train_positions.at(tr).front += move_distance; // Update the front position
-  return move_distance > 0;
+  return distance;
 }
 
 void cda_rail::simulator::GreedySimulator::update_rear_positions(
