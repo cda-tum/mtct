@@ -291,6 +291,32 @@ TEST(SolutionEvaluation, SlowExitIsReplayed) {
   }
 }
 
+TEST(SolutionEvaluation, CrawlOutFromStandstillIsReplayed) {
+  // As a model without a minimum speed allows, the solution stops the train
+  // 1 m before its rear passes the exit vertex at 1100 m and lets it crawl
+  // this last metre from 150 to 165. Kept behind the solution, the train
+  // stands there as well. With dt = 15, it can only reach a speed far below
+  // V_MIN while still being able to stop within 1 m, so it has to stop exactly
+  // at the exit position, which is how it leaves at 165, as in the solution.
+  const auto instance = one_edge_instance(1);
+  instances::SolGeneralPerformanceOptimizationInstance sol(
+      instance, SolutionStatus::Feasible, 0, true);
+  add_samples(sol, "Train1",
+              {{0, 0, 10},
+               {90, 900, 10},
+               {120, 1099, 0},
+               {150, 1099, 0},
+               {165, 1100, 0}});
+  sol.set_exit_times({165});
+
+  sol.evaluate(15.0);
+  ASSERT_TRUE(sol.get_evaluation().has_value());
+  EXPECT_TRUE(sol.get_evaluation()->trains_violating_dynamics.empty());
+  const auto& trajectory = sol.get_evaluation()->trajectory;
+  ASSERT_TRUE(trajectory.success);
+  EXPECT_NEAR(trajectory.exit_times.at(0), 165, GRB_EPS);
+}
+
 TEST(SolutionEvaluation, SlowExitDoesNotDelayFollowingTrain) {
   // With a VSS border at 950 m, the second train can only enter once the rear
   // of the first one has passed it, which it does at 129 when crawling out as

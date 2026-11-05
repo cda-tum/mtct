@@ -628,7 +628,24 @@ private:
   // Train Movement Helper
 
   /**
-   * @brief Advances a train front position for one time step.
+   * @brief Distance a train covers within one time step.
+   *
+   * The train changes its speed linearly from v_0 to v_1 but never passes its
+   * moving authority. If it ends the time step slower than V_MIN within
+   * STOP_TOLERANCE of its moving authority, it stops exactly there.
+   *
+   * @param v_0 Initial speed.
+   * @param v_1 End-of-step speed.
+   * @param ma Moving-authority distance.
+   * @param dt Simulation time step.
+   * @return Distance covered, which is 0 if it is below EPS.
+   */
+  [[nodiscard]] static double move_distance(double v_0, double v_1, double ma,
+                                            double dt);
+
+  /**
+   * @brief Advances a train front position for one time step by
+   *        move_distance().
    *
    * @param tr Train index.
    * @param v_0 Initial speed.
