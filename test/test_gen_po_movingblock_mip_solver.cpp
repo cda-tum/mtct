@@ -7,6 +7,8 @@
 #include "TestingWarning.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Route.hpp"
+#include "gurobi_c++.h"
+#include "gurobi_c.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
@@ -2642,6 +2644,94 @@ TEST(GenPOMovingBlockMIPSolver, TrainWaitingAtTtdBorderDoesNotOccupySection) {
 
     check_trajectory(instance, sol,
                      "TrainWaitingAtTtdBorderDoesNotOccupySection");
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
+  // The warm start sets every integer variable of the model, and only those.
+  // Fixing them leaves a feasible model, including the lazy constraints, i.e.,
+  // Gurobi finds the times. On the smaller instances with every solver
+  // strategy that changes the integer variables.
+  using cda_rail::solver::mip_based::ModelDetailMovingBlock;
+  using cda_rail::solver::mip_based::SolverStrategyMovingBlock;
+  const std::vector<std::pair<std::string, std::string>> instances{
+      {"HighSpeedTrack2Trains", "atmos2023"},
+      {"HighSpeedTrack5Trains", "atmos2023"},
+      {"SimpleStation", "atmos2023"},
+      {"SingleTrack", "atmos2023"},
+      {"SingleTrackWithStation", "atmos2023"},
+      {"Overtake", "atmos2023"},
+      {"SimpleNetwork", "atmos2023"},
+      {"Stammstrecke4Trains", "atmos2023"},
+      {"Stammstrecke8Trains", "atmos2023"},
+      {"GeneralStammstrecke6Trains", "gen-po"}};
+  for (const auto& [name, subdirectory] : instances) {
+    const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+        name, subdirectory, "./data");
+    std::vector<ModelDetailMovingBlock> model_details{{}};
+    if (instance.has_route_for_every_train()) {
+      model_details.push_back({.fix_routes = true});
+    }
+    for (const auto& model_detail : model_details) {
+      std::vector<SolverStrategyMovingBlock> strategies{{}};
+      if (instance.get_const_train_list().size() <= 5) {
+        strategies.push_back({.use_lazy_constraints = false});
+        strategies.push_back({.use_indicator_constraints = true});
+      }
+      for (const auto& strategy : strategies) {
+        const auto description =
+            name + (model_detail.fix_routes ? " with fixed routes" : "") +
+            (strategy.use_lazy_constraints ? "" : " without lazy") +
+            (strategy.use_indicator_constraints ? " with indicators" : "");
+
+        cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+        cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback
+            callback(&solver);
+        if (strategy.use_lazy_constraints) {
+          solver.solve_init_general_mip(false, true, &callback);
+          solver.m_model->set(GRB_IntParam_LazyConstraints, 1);
+        } else {
+          solver.solve_init_general_mip(false, true);
+        }
+        solver.m_instance.discretize_stops();
+        solver.create_model({}, strategy, model_detail);
+        solver.set_warm_start();
+        solver.m_model->update();
+
+        size_t integer_vars = 0;
+        size_t start_vars   = 0;
+        for (const auto& [array_name, array] : solver.m_vars) {
+          for (auto var : array) {
+            if (var.sameAs(GRBVar())) {
+              continue;
+            }
+            const bool integer = var.get(GRB_CharAttr_VType) != GRB_CONTINUOUS;
+            const auto start   = var.get(GRB_DoubleAttr_Start);
+            integer_vars += integer ? 1 : 0;
+            if (start != GRB_UNDEFINED) {
+              start_vars++;
+              EXPECT_TRUE(integer) << description << ": " << array_name;
+              var.set(GRB_DoubleAttr_LB, start);
+              var.set(GRB_DoubleAttr_UB, start);
+            }
+          }
+        }
+        if (start_vars == 0) {
+          // As in the A* search, the trains cannot follow their quickest
+          // paths first come, first served
+          EXPECT_TRUE((name == "SimpleStation" || name == "SimpleNetwork") &&
+                      !model_detail.fix_routes)
+              << description;
+        } else {
+          EXPECT_EQ(start_vars, integer_vars) << description;
+          solver.m_model->set(GRB_IntParam_SolutionLimit, 1);
+          solver.m_model->optimize();
+          EXPECT_GT(solver.m_model->get(GRB_IntAttr_SolCount), 0)
+              << description;
+        }
+        solver.cleanup();
+      }
+    }
   }
 }
 

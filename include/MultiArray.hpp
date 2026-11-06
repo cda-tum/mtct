@@ -181,6 +181,11 @@ public:
    *         matrix, etc.).
    */
   [[nodiscard]] size_t dimensions() const { return m_shape.size(); }
+
+  /** @brief Iterates over all elements in row-major order. */
+  [[nodiscard]] const T* begin() const { return m_data.begin(); }
+  /** @brief The end of the iteration, see begin(). */
+  [[nodiscard]] const T* end() const { return m_data.end(); }
 };
 
 /**

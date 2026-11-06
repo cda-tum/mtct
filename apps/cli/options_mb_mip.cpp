@@ -18,8 +18,8 @@
 // The remaining letters are assigned to the MIP specific settings; since the
 // two solvers barely share any parameters, a letter may well have a different
 // meaning for the A* solver. Since all lowercase letters are used up,
-// --max-station-delay, --max-delay, --export-lp-model and --model-name are
-// long option only.
+// --max-station-delay, --max-delay, --use-warm-start, --export-lp-model and
+// --model-name are long option only.
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
@@ -173,6 +173,11 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
       ->check(CLI::NonNegativeNumber)
       ->capture_default_str()
       ->group("Solver Parameters");
+  app.add_flag("--use-warm-start", settings.use_warm_start,
+               "If this flag is set, the solver starts from the routes, "
+               "stops, orders and velocities of the simulated completion of "
+               "the initial A* state, if there is one.")
+      ->group("Solver Parameters");
 
   add_solving_options(app, settings.solving);
   add_export_options(app, settings.exporting, {.lp_model = true});
@@ -194,6 +199,8 @@ void cda_rail::cli::finalize_mb_mip_settings(CLI::App&      app,
 
 std::string
 cda_rail::cli::generate_mb_mip_identifier(const MbMipSettings& settings) {
+  // The warm start is only appended if it is used, so that the identifiers of
+  // all other settings stay as they were
   return concatenate_string_views(
       {bool_to_str(settings.fix_routes),
        "_",
@@ -230,7 +237,8 @@ cda_rail::cli::generate_mb_mip_identifier(const MbMipSettings& settings) {
        "_",
        format_double(settings.abs_mip_gap),
        "_",
-       std::to_string(settings.solving.time_limit)});
+       std::to_string(settings.solving.time_limit),
+       settings.use_warm_start ? "_t" : ""});
 }
 
 void cda_rail::cli::log_mb_mip_settings(const MbMipSettings& settings,
@@ -265,6 +273,7 @@ void cda_rail::cli::log_mb_mip_settings(const MbMipSettings& settings,
         << solver::mip_based::lazy_train_selection_strategy_to_string(
                settings.lazy_train_selection_strategy);
   PLOGD << "  Absolute MIP gap: " << settings.abs_mip_gap;
+  PLOGD << "  Use warm start: " << yes_no(settings.use_warm_start);
   log_solving_settings(settings.solving);
   log_export_settings(settings.exporting, working_directory);
 }
@@ -294,7 +303,8 @@ cda_rail::cli::mb_mip_solver_strategy(const MbMipSettings& settings) {
               settings.lazy_constraint_selection_strategy,
           .lazy_train_selection_strategy =
               settings.lazy_train_selection_strategy,
-          .abs_mip_gap = settings.abs_mip_gap};
+          .abs_mip_gap    = settings.abs_mip_gap,
+          .use_warm_start = settings.use_warm_start};
 }
 
 cda_rail::solver::mip_based::SolutionSettingsMovingBlock

@@ -1216,6 +1216,20 @@ TEST(CliOptions, MbMipGeneratedIdentifier) {
             cda_rail::cli::hash_identifier(all_settings));
 }
 
+TEST(CliOptions, MbMipWarmStart) {
+  cda_rail::cli::MbMipSettings settings;
+  CLI::App                     app;
+  cda_rail::cli::add_mb_mip_options(app, settings);
+  app.parse(std::string{"--use-warm-start"});
+
+  EXPECT_TRUE(cda_rail::cli::mb_mip_solver_strategy(settings).use_warm_start);
+  // Only part of the identifier if the warm start is used, see
+  // MbMipGeneratedIdentifier
+  EXPECT_EQ(cda_rail::cli::generate_mb_mip_identifier(settings),
+            "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_f_OnlyViolated_"
+            "OnlyAdjacent_10_-1_t");
+}
+
 TEST(CliOptions, HashIdentifier) {
   // 32-bit FNV-1a, so that the same settings give the same directory on
   // every platform

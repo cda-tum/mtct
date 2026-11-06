@@ -6,6 +6,7 @@
 #include "datastructure/Train.hpp"
 #include "gurobi_c++.h"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "simulator/GeneralSimulator.hpp"
 #include "solver/GeneralSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
@@ -15,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -34,6 +36,7 @@
 #if TEST_FRIENDS
 class GenPOMovingBlockMIPSolver;
 class GenPOMovingBlockMIPSolver_PrivateFillFunctions_Test;
+class GenPOMovingBlockMIPSolver_WarmStartIsFeasible_Test;
 #endif
 
 namespace cda_rail::solver::mip_based {
@@ -158,6 +161,12 @@ lazy_train_selection_strategy_to_string(LazyTrainSelectionStrategy strategy) {
  * The headway constraints are the ones there are too many of to add upfront,
  * which is why they are separated lazily by default. The remaining lazy
  * settings are ignored if they are not.
+ *
+ * If `use_warm_start` is set, the solver starts from the completion of the
+ * initial A* state, see astar_based::complete_state, if there is one. The MIP
+ * start fixes every integer variable as in the simulation of that completion,
+ * i.e., its routes, stops and orders, and the velocities closest to the
+ * simulated ones. Gurobi computes the times.
  */
 struct SolverStrategyMovingBlock {
   bool use_indicator_constraints = false;
@@ -169,7 +178,8 @@ struct SolverStrategyMovingBlock {
       LazyConstraintSelectionStrategy::OnlyViolated;
   LazyTrainSelectionStrategy lazy_train_selection_strategy =
       LazyTrainSelectionStrategy::OnlyAdjacent;
-  double abs_mip_gap = 10;
+  double abs_mip_gap    = 10;
+  bool   use_warm_start = false;
 };
 
 /**
@@ -188,6 +198,7 @@ class GenPOMovingBlockMIPSolver
 private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, WarmStartIsFeasible);
 #endif
 
   SolutionSettingsMovingBlock m_solution_settings = {};
@@ -303,6 +314,15 @@ private:
   [[nodiscard]] std::tuple<double, GRBLinExpr, double, GRBLinExpr>
   get_edge_headway_expressions(size_t tr, size_t e);
 
+  /**
+   * @brief Creates the variables, objective and constraints of the model.
+   *
+   * The model has to be initialized and the stops discretized, as solve()
+   * does.
+   */
+  void create_model(const SolutionSettingsMovingBlock& solution_settings_input,
+                    const SolverStrategyMovingBlock&   solver_strategy_input,
+                    const ModelDetailMovingBlock&      model_detail_input);
   /** @brief Creates all variables of the model. */
   void create_variables();
   /** @brief Creates the variables holding the times of the events. */
@@ -378,6 +398,72 @@ private:
    */
   static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
                         double v_1, bool entry_vertex = false);
+
+  /**
+   * @brief The initial A* state, completed by astar_based::complete_state.
+   *
+   * As in the A* search, the completion uses the greedy simulator, since only
+   * it decides orders first come, first served. With fixed routes, the
+   * initial state already has the routes and serves every stop at the first
+   * valid stop vertex, so that only the orders are decided.
+   *
+   * @return The final state, or `std::nullopt` if the completion fails.
+   */
+  [[nodiscard]] std::optional<simulator::SimulatorState>
+  completed_initial_state() const;
+  /**
+   * @brief When and how fast a train passes a vertex of its route in a
+   *        simulation.
+   *
+   * @param departure When its front leaves the vertex
+   * @param velocity Its velocity then
+   * @param stands_still Whether it stands still at the vertex, in particular
+   *        to serve a stop there. Never at its exit vertex, see
+   *        set_warm_start().
+   */
+  struct VertexPassing {
+    double departure;
+    double velocity;
+    bool   stands_still;
+  };
+  /**
+   * @brief For every vertex of a route, the index of the velocity in
+   *        m_velocity_extensions at which the train passes it.
+   *
+   * Among the velocities whose consecutive pairs all have a variable y, the
+   * ones with the least sum of squared differences to the simulated ones are
+   * chosen. A train that stands still at a vertex passes it at velocity 0, and
+   * it passes its exit vertex at a velocity from which it can reach its exit
+   * velocity.
+   *
+   * @param tr Index of the train
+   * @param route The edges of its route
+   * @param passings How the train passes the vertices of the route, starting
+   *        with its entry vertex
+   * @return The indices, or `std::nullopt` if no velocities form such a path.
+   */
+  [[nodiscard]] std::optional<std::vector<size_t>>
+  velocity_indices(size_t tr, const cda_rail::index_vector& route,
+                   const std::vector<VertexPassing>& passings) const;
+  /**
+   * @brief Sets the MIP start of SolverStrategyMovingBlock::use_warm_start.
+   *
+   * The completed initial state, see completed_initial_state(), is simulated
+   * by the greedy simulator. Every integer variable is set accordingly: the
+   * routes and stops are those of the state, the velocities those of
+   * velocity_indices(), and two trains are ordered on an edge, a TTD section
+   * or a bidirectional track by when their fronts enter it in the simulation.
+   * A train waits wherever it passes at velocity 0. Every other integer
+   * variable is 0. The model does not let a train stand still at its exit
+   * vertex, from where it could not reach its exit velocity. If it does so in
+   * the simulation, it passes its exit vertex at the closest velocity the
+   * model allows instead.
+   *
+   * Nothing is set if the completion fails or cannot be expressed by the
+   * variables of the model. Gurobi rejects the start if the times cannot be
+   * completed, e.g., since the velocities of the model are discrete.
+   */
+  void set_warm_start();
 
   class LazyCallback : public MessageCallback {
   private:
