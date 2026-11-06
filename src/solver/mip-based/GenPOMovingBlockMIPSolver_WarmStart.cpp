@@ -2,7 +2,6 @@
 #include "EOMHelper.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
-#include "gurobi_c.h"
 #include "plog/Log.h"
 #include "simulator/GeneralSimulator.hpp"
 #include "simulator/GreedySimulator.hpp"
@@ -111,12 +110,15 @@ std::optional<cda_rail::simulator::SimulatorState> cda_rail::solver::mip_based::
       for (size_t stop = 0;
            stop < m_instance.get_const_schedule(tr).get_stops().size();
            stop++) {
-        do {
+        bool valid_stop_pos = false;
+        while (!valid_stop_pos) {
           if (beginning.size() == route.size()) {
             return std::nullopt;
           }
           beginning.emplace_back(route.at(beginning.size()));
-        } while (!m_instance.is_route_end_valid_stop_pos(tr, beginning, stop));
+          valid_stop_pos =
+              m_instance.is_route_end_valid_stop_pos(tr, beginning, stop);
+        }
         state.stop_positions.at(tr).emplace_back(
             network.length_of_path(beginning));
       }
