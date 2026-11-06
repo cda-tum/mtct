@@ -243,6 +243,11 @@ public:
    * to the others before. Since a train of the given state that has not
    * gotten somewhere yet is no obstacle, a stretch of which each train holds
    * one end by the given state still goes to the train getting to it first.
+   *
+   * If a train misses its entry time that way, it passes before the train
+   * that kept it from entering last, at every TTD section and vertex at which
+   * the given state leaves their order open, and the orders are decided anew,
+   * at most MAX_FCFS_ATTEMPTS times.
    */
   [[nodiscard]] std::optional<SimulatorState> first_come_first_served_state(
       double dt, bool late_entry_possible,
@@ -251,6 +256,8 @@ public:
 private:
   /** @brief The orders built by first_come_first_served_state. */
   class FirstComeFirstServed;
+  /** @brief How often first_come_first_served_state simulates at most. */
+  static constexpr size_t MAX_FCFS_ATTEMPTS = 100;
 
   // ---------------------------
   // PRIVATE HELPER FUNCTIONS
@@ -379,7 +386,25 @@ private:
                  const std::vector<double>&        train_velocities,
                  const std::unordered_set<size_t>& trains_in_network,
                  const std::vector<std::unordered_set<size_t>>& tr_on_edges,
-                 const std::unordered_set<size_t>& trains_left = {}) const;
+                 const std::unordered_set<size_t>& trains_left = {}) const {
+    return !entry_blocker(tr, train_positions, train_velocities,
+                          trains_in_network, tr_on_edges, trains_left)
+                .has_value();
+  }
+  /**
+   * @brief The train that keeps a train from entering the network at the
+   *        current state, see is_ok_to_enter.
+   *
+   * @return The train occupying the track within the braking distance of the
+   *         entering train, or ahead of it in the order of a TTD section
+   *         there, or `std::nullopt` if the train can safely enter.
+   */
+  [[nodiscard]] std::optional<size_t>
+  entry_blocker(size_t tr, const std::vector<TrainPosition>& train_positions,
+                const std::vector<double>&        train_velocities,
+                const std::unordered_set<size_t>& trains_in_network,
+                const std::vector<std::unordered_set<size_t>>& tr_on_edges,
+                const std::unordered_set<size_t>& trains_left = {}) const;
 
   /**
    * @brief Determines which trains are due and able to enter at time @p t.
@@ -716,6 +741,12 @@ private:
    *        first_come_first_served_state; empty otherwise.
    */
   std::function<void(size_t tr, double pos)> m_order_request;
+  /**
+   * @brief Called with a train that misses its entry time, and the train that
+   *        kept it from entering last, if any, right before the simulation
+   *        fails, see first_come_first_served_state; empty otherwise.
+   */
+  std::function<void(size_t tr, std::optional<size_t> blocker)> m_entry_missed;
 };
 
 } // namespace cda_rail::simulator

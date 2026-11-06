@@ -76,9 +76,12 @@ cda_rail::solver::astar_based::complete_routes(
   });
 
   // When each platform was last used, counting the stops of the trains in the
-  // order of their entry times
+  // order of their entry times. A platform is used in both directions.
   std::map<size_t, size_t> last_use;
-  size_t                   uses = 0;
+  size_t                   uses     = 0;
+  const auto               track_of = [&network](size_t edge) {
+    return std::min(edge, network.get_reverse_edge_index(edge).value_or(edge));
+  };
   for (const auto tr : trains) {
     const auto& schedule       = instance.get_const_schedule(tr);
     const auto& stops          = schedule.get_stops();
@@ -88,7 +91,7 @@ cda_rail::solver::astar_based::complete_routes(
 
     // The stops of the state are on the platforms it chose
     for (const auto stop_position : stop_positions) {
-      last_use[stop_edge(network, route, stop_position)] = ++uses;
+      last_use[track_of(stop_edge(network, route, stop_position))] = ++uses;
     }
 
     const auto can_continue = [&](const cda_rail::index_vector& edges,
@@ -132,12 +135,13 @@ cda_rail::solver::astar_based::complete_routes(
       // The platform used least recently, so that trains take turns
       const auto platform =
           std::ranges::min(std::views::iota(size_t{0}, platforms.size()), {},
-                           [&last_use, &platforms](size_t i) {
-                             const auto it = last_use.find(platforms.at(i));
+                           [&last_use, &platforms, &track_of](size_t i) {
+                             const auto it =
+                                 last_use.find(track_of(platforms.at(i)));
                              return it == last_use.end() ? 0 : it->second;
                            });
-      last_use[platforms.at(platform)] = ++uses;
-      const auto& extension            = extensions.at(platform);
+      last_use[track_of(platforms.at(platform))] = ++uses;
+      const auto& extension                      = extensions.at(platform);
       route.insert(route.end(), extension.begin(), extension.end());
       stop_positions.emplace_back(network.length_of_path(route));
     }

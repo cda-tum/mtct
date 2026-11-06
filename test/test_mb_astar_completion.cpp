@@ -296,6 +296,111 @@ OppositeInstance opposite_instance(double entry_1, double entry_2,
           .left     = left,
           .right    = right};
 }
+
+// Train 1 runs from vL_in to vR_out and train 2 from vR_in to vL_out, both
+// entering at the same time right at their switches sL and sR, so that
+// neither can wait for the other. The single tracks a <-> c and d <-> b lead
+// to a passing loop between the switches s1 and s2, whose track ux <-> vx is
+// shorter than uy <-> vy. Every switch is a TTD section.
+struct PassingLoopInstance {
+  instances::GeneralPerformanceOptimizationInstance instance;
+  size_t                                            tr_1, tr_2;
+};
+PassingLoopInstance passing_loop_instance() {
+  Network    network;
+  const auto vl_in  = network.add_vertex("vL_in", VertexType::TTD);
+  const auto vl_out = network.add_vertex("vL_out", VertexType::TTD);
+  const auto vr_in  = network.add_vertex("vR_in", VertexType::TTD);
+  const auto vr_out = network.add_vertex("vR_out", VertexType::TTD);
+  const auto ql     = network.add_vertex("qL", VertexType::TTD);
+  const auto qr     = network.add_vertex("qR", VertexType::TTD);
+  const auto sl     = network.add_vertex("sL", VertexType::NoBorder);
+  const auto sr     = network.add_vertex("sR", VertexType::NoBorder);
+  const auto s1     = network.add_vertex("s1", VertexType::NoBorder);
+  const auto s2     = network.add_vertex("s2", VertexType::NoBorder);
+  const auto a      = network.add_vertex("a", VertexType::TTD);
+  const auto b      = network.add_vertex("b", VertexType::TTD);
+  const auto c      = network.add_vertex("c", VertexType::TTD);
+  const auto d      = network.add_vertex("d", VertexType::TTD);
+  const auto ux     = network.add_vertex("ux", VertexType::TTD);
+  const auto vx     = network.add_vertex("vx", VertexType::TTD);
+  const auto uy     = network.add_vertex("uy", VertexType::TTD);
+  const auto vy     = network.add_vertex("vy", VertexType::TTD);
+
+  // The edges of train 1
+  const auto in_l  = network.add_edge(vl_in, sl, 10, 20, false);
+  const auto sl_a  = network.add_edge(sl, a, 10, 20, false);
+  const auto a_c   = network.add_edge(a, c, 1000, 20);
+  const auto c_s1  = network.add_edge(c, s1, 10, 20, false);
+  const auto s1_ux = network.add_edge(s1, ux, 10, 20, false);
+  const auto s1_uy = network.add_edge(s1, uy, 10, 20, false);
+  const auto ux_vx = network.add_edge(ux, vx, 500, 20);
+  const auto uy_vy = network.add_edge(uy, vy, 700, 20);
+  const auto vx_s2 = network.add_edge(vx, s2, 10, 20, false);
+  const auto vy_s2 = network.add_edge(vy, s2, 10, 20, false);
+  const auto s2_d  = network.add_edge(s2, d, 10, 20, false);
+  const auto d_b   = network.add_edge(d, b, 1000, 20);
+  const auto b_sr  = network.add_edge(b, sr, 10, 20, false);
+  const auto sr_qr = network.add_edge(sr, qr, 10, 20, false);
+  const auto out_r = network.add_edge(qr, vr_out, 500, 20);
+  network.add_successor(in_l, sl_a);
+  network.add_successor(sl_a, a_c);
+  network.add_successor(a_c, c_s1);
+  network.add_successor(c_s1, s1_ux);
+  network.add_successor(c_s1, s1_uy);
+  network.add_successor(s1_ux, ux_vx);
+  network.add_successor(s1_uy, uy_vy);
+  network.add_successor(ux_vx, vx_s2);
+  network.add_successor(uy_vy, vy_s2);
+  network.add_successor(vx_s2, s2_d);
+  network.add_successor(vy_s2, s2_d);
+  network.add_successor(s2_d, d_b);
+  network.add_successor(d_b, b_sr);
+  network.add_successor(b_sr, sr_qr);
+  network.add_successor(sr_qr, out_r);
+
+  // The edges of train 2
+  const auto in_r  = network.add_edge(vr_in, sr, 10, 20, false);
+  const auto sr_b  = network.add_edge(sr, b, 10, 20, false);
+  const auto b_d   = network.add_edge(b, d, 1000, 20);
+  const auto d_s2  = network.add_edge(d, s2, 10, 20, false);
+  const auto s2_vx = network.add_edge(s2, vx, 10, 20, false);
+  const auto s2_vy = network.add_edge(s2, vy, 10, 20, false);
+  const auto vx_ux = network.add_edge(vx, ux, 500, 20);
+  const auto vy_uy = network.add_edge(vy, uy, 700, 20);
+  const auto ux_s1 = network.add_edge(ux, s1, 10, 20, false);
+  const auto uy_s1 = network.add_edge(uy, s1, 10, 20, false);
+  const auto s1_c  = network.add_edge(s1, c, 10, 20, false);
+  const auto c_a   = network.add_edge(c, a, 1000, 20);
+  const auto a_sl  = network.add_edge(a, sl, 10, 20, false);
+  const auto sl_ql = network.add_edge(sl, ql, 10, 20, false);
+  const auto out_l = network.add_edge(ql, vl_out, 500, 20);
+  network.add_successor(in_r, sr_b);
+  network.add_successor(sr_b, b_d);
+  network.add_successor(b_d, d_s2);
+  network.add_successor(d_s2, s2_vx);
+  network.add_successor(d_s2, s2_vy);
+  network.add_successor(s2_vx, vx_ux);
+  network.add_successor(s2_vy, vy_uy);
+  network.add_successor(vx_ux, ux_s1);
+  network.add_successor(vy_uy, uy_s1);
+  network.add_successor(ux_s1, s1_c);
+  network.add_successor(uy_s1, s1_c);
+  network.add_successor(s1_c, c_a);
+  network.add_successor(c_a, a_sl);
+  network.add_successor(a_sl, sl_ql);
+  network.add_successor(sl_ql, out_l);
+
+  Timetable  timetable;
+  const auto tr_1 = timetable.add_train("Train1", 100, 20, 2, 4, true, 0, 10,
+                                        vl_in, 60, 20, vr_out, network);
+  const auto tr_2 = timetable.add_train("Train2", 100, 20, 2, 4, true, 0, 10,
+                                        vr_in, 60, 20, vl_out, network);
+  return {.instance = instances::GeneralPerformanceOptimizationInstance(
+              network, timetable, RouteMap()),
+          .tr_1 = tr_1,
+          .tr_2 = tr_2};
+}
 } // namespace
 
 // ----------------------
@@ -586,6 +691,50 @@ TEST(CompletionHeuristic, FirstComeFirstServedOppositeDirections) {
   EXPECT_TRUE(is_feasible(first_far.instance, completed_far.value()));
 }
 
+TEST(CompletionHeuristic, TrainMissingItsEntryPassesFirst) {
+  // Train 1 gets to the single track first, but train 2 enters right at its
+  // switch, so that it cannot wait for train 1 without entering late. Hence,
+  // train 2 passes first, while train 1 waits in front of its switch.
+  const auto opposite  = opposite_instance(0, 30, true);
+  const auto completed = complete(opposite.instance);
+  ASSERT_TRUE(completed.has_value());
+  EXPECT_EQ(completed->ttd_orders.at(opposite.left),
+            (index_vector{opposite.tr_2, opposite.tr_1}));
+  EXPECT_EQ(completed->ttd_orders.at(opposite.right),
+            (index_vector{opposite.tr_2, opposite.tr_1}));
+  EXPECT_TRUE(is_feasible(opposite.instance, completed.value()));
+
+  // Unless the given state lets train 1 pass first
+  simulator::GreedySimulator simulator(
+      opposite.instance,
+      opposite.instance.get_const_network().unbreakable_sections());
+  auto partial                         = simulator.get_simulator_state();
+  partial.ttd_orders.at(opposite.left) = {opposite.tr_1, opposite.tr_2};
+  EXPECT_FALSE(complete(opposite.instance, partial).has_value());
+}
+
+TEST(CompletionHeuristic, PlatformsAreUsedInBothDirections) {
+  // tr2 and tr3 enter at the same time from opposite ends of the line through
+  // station Central, at which they can pass each other only on different
+  // platforms. Hence, tr3 does not take the reverse of the platform of tr2.
+  const instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  const auto completed = complete(instance);
+  ASSERT_TRUE(completed.has_value());
+  const auto& network = instance.get_const_network();
+  const auto& platforms =
+      instance.get_const_station_list().get_station("Central").tracks;
+  const auto& route_2 = completed->train_edges.at(
+      instance.get_const_train_list().get_train_index("tr2"));
+  for (const auto e : completed->train_edges.at(
+           instance.get_const_train_list().get_train_index("tr3"))) {
+    const auto reverse = network.get_reverse_edge_index(e);
+    EXPECT_FALSE(platforms.contains(e) && reverse.has_value() &&
+                 std::ranges::contains(route_2, reverse.value()));
+  }
+  EXPECT_TRUE(is_feasible(instance, completed.value()));
+}
+
 TEST(CompletionHeuristic, StretchOfWhichEachTrainHoldsOneEnd) {
   // By the partial state, as if each partial route ended in the switch at its
   // end of the single track, each train is in the order of that switch only.
@@ -720,12 +869,12 @@ COMPLETION_SOLVER_TEST(SameResultAsWithoutCompletions) {
 }
 
 COMPLETION_SOLVER_TEST(SearchContinuesAfterFailedCompletion) {
-  // Train 1 gets to the single track first, but without late entry, train 2
-  // cannot wait for it, since it enters right at its switch
-  const auto opposite = opposite_instance(0, 30, true);
-  EXPECT_FALSE(complete(opposite.instance).has_value());
+  // Both trains take the shorter track of the passing loop, on which they
+  // cannot pass each other, while neither of them can wait for the other one
+  const auto loop = passing_loop_instance();
+  EXPECT_FALSE(complete(loop.instance).has_value());
 
-  solver::astar_based::GenPOMovingBlockAStarSolver solver(opposite.instance);
+  solver::astar_based::GenPOMovingBlockAStarSolver solver(loop.instance);
   const auto                                       without =
       solver.solve({.simulator_type = simulator_type}, {}, {}, -1, false);
   const auto with = solver.solve({.simulator_type = simulator_type},

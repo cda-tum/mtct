@@ -15,10 +15,10 @@ namespace cda_rail::solver::astar_based {
  * the end of a station track on which it fits, and from which it can continue
  * to its next station, respectively its exit. Where there are several such
  * platforms, the trains take turns in using them in the order of their entry
- * times, i.e., a train takes the one used least recently, counting the stops
- * of the state. A train whose route ends at a valid stop position without a
- * stop there continues beyond it. The routes, stops and orders of the state
- * are kept.
+ * times, i.e., a train takes the one used least recently in either direction,
+ * counting the stops of the state. A train whose route ends at a valid stop
+ * position without a stop there continues beyond it. The routes, stops and
+ * orders of the state are kept.
  *
  * @param instance The problem instance.
  * @param state The state to complete.
