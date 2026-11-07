@@ -246,8 +246,9 @@ public:
    *
    * If a train misses its entry time that way, it passes before the train
    * that kept it from entering last, at every TTD section and vertex at which
-   * the given state leaves their order open, and the orders are decided anew,
-   * at most MAX_FCFS_ATTEMPTS times.
+   * the given state leaves their order open, and the orders are decided anew.
+   * Since every such retry adds a train to an order of the given state, there
+   * are only finitely many.
    */
   [[nodiscard]] std::optional<SimulatorState> first_come_first_served_state(
       double dt, bool late_entry_possible,
@@ -256,8 +257,6 @@ public:
 private:
   /** @brief The orders built by first_come_first_served_state. */
   class FirstComeFirstServed;
-  /** @brief How often first_come_first_served_state simulates at most. */
-  static constexpr size_t MAX_FCFS_ATTEMPTS = 100;
 
   // ---------------------------
   // PRIVATE HELPER FUNCTIONS

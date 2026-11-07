@@ -965,9 +965,11 @@ cda_rail::simulator::GreedySimulator::first_come_first_served_state(
     double dt, bool late_entry_possible,
     bool limit_speed_by_leaving_edges) const {
   // The given state, in which a train that misses its entry passes before the
-  // train keeping it from entering
+  // train keeping it from entering. The simulation only adds trains to its
+  // orders, and let_pass_first adds at least one of these to an order of the
+  // given state, hence there are only finitely many retries.
   auto given = get_simulator_state();
-  for (size_t attempt = 0; attempt < MAX_FCFS_ATTEMPTS; ++attempt) {
+  while (true) {
     // The copy's orders are extended while it simulates
     GreedySimulator simulator(*this);
     simulator.set_simulator_state(given);
@@ -993,7 +995,6 @@ cda_rail::simulator::GreedySimulator::first_come_first_served_state(
       return std::nullopt;
     }
   }
-  return std::nullopt;
 }
 
 // ----------------------------

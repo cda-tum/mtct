@@ -9,8 +9,10 @@
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <ranges>
@@ -36,39 +38,38 @@ struct FrontPassing {
   double vel;
 };
 
-// Between two samples of the trajectory, the train is assumed to accelerate
-// constantly, as the simulator moves it.
-std::optional<FrontPassing>
+// The trajectory of a successful simulation starts when the train enters at
+// position 0 and ends when its rear has left the network, beyond the end of its
+// route. Hence, its front passes every position of the route. Between two
+// samples, the train is assumed to accelerate constantly, as the simulator
+// moves it.
+FrontPassing
 front_passing(const std::map<double, cda_rail::simulator::PosVel>& trajectory,
               double pos, bool leaving) {
-  std::optional<std::pair<double, cda_rail::simulator::PosVel>> prev;
-  for (const auto& [t, sample] : trajectory) {
-    if (!leaving && std::abs(sample.pos - pos) < cda_rail::GRB_EPS) {
-      return FrontPassing{.t = t, .vel = sample.vel};
-    }
-    if (sample.pos > pos + cda_rail::GRB_EPS) {
-      if (!prev.has_value()) {
-        return FrontPassing{.t = t, .vel = sample.vel};
-      }
-      const auto& [prev_t, prev_sample] = prev.value();
-      const auto distance               = std::max(pos - prev_sample.pos, 0.0);
-      const auto share = distance / (sample.pos - prev_sample.pos);
-      // The squared velocity is linear in the position, and the average
-      // velocity is the mean of both velocities
-      const auto vel = std::sqrt(
-          std::max((prev_sample.vel * prev_sample.vel) +
-                       (share * ((sample.vel * sample.vel) -
-                                 (prev_sample.vel * prev_sample.vel))),
-                   0.0));
-      const auto mean_vel = (prev_sample.vel + vel) / 2;
-      return FrontPassing{.t   = mean_vel > cda_rail::EPS
-                                     ? prev_t + (distance / mean_vel)
-                                     : prev_t + (share * (t - prev_t)),
-                          .vel = vel};
-    }
-    prev = {t, sample};
+  const auto next = std::ranges::find_if(trajectory, [pos, leaving](
+                                                         const auto& entry) {
+    return entry.second.pos > pos + cda_rail::GRB_EPS ||
+           (!leaving && std::abs(entry.second.pos - pos) < cda_rail::GRB_EPS);
+  });
+  assert(next != trajectory.end());
+  const auto& [t, sample] = *next;
+  if (sample.pos <= pos + cda_rail::GRB_EPS) {
+    return {.t = t, .vel = sample.vel};
   }
-  return std::nullopt;
+  const auto& [prev_t, prev_sample] = *std::prev(next);
+  const auto distance               = std::max(pos - prev_sample.pos, 0.0);
+  const auto share                  = distance / (sample.pos - prev_sample.pos);
+  // The squared velocity is linear in the position, and the average velocity
+  // is the mean of both velocities
+  const auto vel =
+      std::sqrt(std::max((prev_sample.vel * prev_sample.vel) +
+                             (share * ((sample.vel * sample.vel) -
+                                       (prev_sample.vel * prev_sample.vel))),
+                         0.0));
+  const auto mean_vel = (prev_sample.vel + vel) / 2;
+  return {.t   = mean_vel > cda_rail::EPS ? prev_t + (distance / mean_vel)
+                                          : prev_t + (share * (t - prev_t)),
+          .vel = vel};
 }
 
 // The trains in the order of their times, ties broken by train index
@@ -187,8 +188,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::velocity_indices(
     }
   }
 
+  // Every vertex has at least one velocity
   const auto best = std::ranges::min_element(cost.back());
-  if (best == cost.back().end() || *best >= INF) {
+  if (*best >= INF) {
     return std::nullopt;
   }
   std::vector<size_t> indices(passings.size());
@@ -210,18 +212,18 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
   simulator.set_simulator_state(state.value());
   const auto results = simulator.simulate(
       WARM_START_DT, m_model_detail.allow_late_entry, true, true, true);
+  // The completion simulated the same state
+  assert(results.success);
   const auto& network = m_instance.get_const_network();
 
-  // The integer variables by their index in the model, with their values
+  // The integer variables by their index in the model, with their values. The
+  // model has a variable for every route, stop and order of the completed
+  // state, since the completion only uses edges on which a train can get from
+  // its entry to its exit vertex.
   std::map<int, std::pair<GRBVar, double>> values;
-  // A decision that has no variable cannot be expressed by the model
-  bool       expressible = results.success;
-  const auto set = [&values, &expressible](const GRBVar& var, double value) {
-    if (exists(var)) {
-      values.insert_or_assign(var.index(), std::pair{var, value});
-    } else {
-      expressible = false;
-    }
+  const auto set = [&values](const GRBVar& var, double value) {
+    assert(exists(var));
+    values.insert_or_assign(var.index(), std::pair{var, value});
   };
   // Every integer variable that is not set to 1 below is 0
   for (const auto* name : {"x", "y", "order", "x_ttd", "order_ttd", "stop",
@@ -237,7 +239,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
 
   // When the front of a train enters an edge of its route, by train and edge
   std::vector<std::map<size_t, double>> edge_entry_times(m_num_tr);
-  for (size_t tr = 0; tr < m_num_tr && expressible; tr++) {
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& route      = state->train_edges.at(tr);
     const auto& trajectory = results.train_trajectories.at(tr);
 
@@ -251,12 +253,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
         vertices.emplace_back(network.get_edge(route.at(i - 1)).target);
         pos += network.get_edge(route.at(i - 1)).length;
       }
-      const auto arrival   = front_passing(trajectory, pos, false);
-      const auto departure = front_passing(trajectory, pos, true);
-      if (!arrival.has_value() || !departure.has_value()) {
-        expressible = false;
-        break;
-      }
+      const auto  arrival        = front_passing(trajectory, pos, false);
+      const auto  departure      = front_passing(trajectory, pos, true);
       const auto& stop_positions = state->stop_positions.at(tr);
       const bool  stop = stop_idx < stop_positions.size() &&
                          std::abs(stop_positions.at(stop_idx) - pos) < GRB_EPS;
@@ -266,14 +264,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
       // The model does not let a train stand still at its exit vertex, see
       // set_warm_start
       passings.push_back(
-          {.departure = departure->t,
-           .velocity  = departure->vel,
-           .stands_still =
-               stop || (i < route.size() &&
-                        departure->t > arrival->t + TIME_TOLERANCE)});
-    }
-    if (!expressible) {
-      break;
+          {.departure    = departure.t,
+           .velocity     = departure.vel,
+           .stands_still = stop || (i < route.size() &&
+                                    departure.t > arrival.t + TIME_TOLERANCE)});
     }
 
     for (size_t i = 0; i < route.size(); i++) {
@@ -287,8 +281,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
     }
     const auto indices = velocity_indices(tr, route, passings);
     if (!indices.has_value()) {
-      expressible = false;
-      break;
+      PLOGD << "No MIP start, since the model has no velocities for how "
+            << m_instance.get_const_train_list().get_train(tr).get_name()
+            << " passes its route in the simulation";
+      return;
     }
     for (size_t i = 0; i < route.size(); i++) {
       set(m_vars["y"](tr, route.at(i), indices->at(i), indices->at(i + 1)), 1);
@@ -315,7 +311,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
       }
     }
   };
-  for (size_t e = 0; e < m_num_edges && expressible; e++) {
+  for (size_t e = 0; e < m_num_edges; e++) {
     std::vector<std::pair<double, size_t>> times;
     for (size_t tr = 0; tr < m_num_tr; tr++) {
       if (const auto it = edge_entry_times.at(tr).find(e);
@@ -325,7 +321,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
     }
     set_orders(m_vars["order"], e, std::move(times));
   }
-  for (size_t ttd = 0; ttd < m_num_ttd && expressible; ttd++) {
+  for (size_t ttd = 0; ttd < m_num_ttd; ttd++) {
     std::vector<std::pair<double, size_t>> times;
     for (size_t tr = 0; tr < m_num_tr; tr++) {
       std::optional<double> entry_time;
@@ -341,8 +337,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
     set_orders(m_vars["order_ttd"], ttd, std::move(times));
   }
   // On a bidirectional track, only trains in opposite directions are ordered
-  for (size_t idx = 0; idx < m_relevant_reverse_edges.size() && expressible;
-       idx++) {
+  for (size_t idx = 0; idx < m_relevant_reverse_edges.size(); idx++) {
     const auto& [e1, e2] = m_relevant_reverse_edges.at(idx);
     std::vector<std::pair<double, size_t>> times_1;
     std::vector<std::pair<double, size_t>> times_2;
@@ -364,11 +359,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
     }
   }
 
-  if (!expressible) {
-    PLOGD << "No MIP start, since the model cannot express the simulation of "
-             "the completed initial A* state";
-    return;
-  }
   PLOGD << "MIP start from the simulation of the completed initial A* state";
   for (const auto& [var, value] : values | std::views::values) {
     GRBVar(var).set(GRB_DoubleAttr_Start, value);

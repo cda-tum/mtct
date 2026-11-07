@@ -2750,4 +2750,134 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
   }
 }
 
+namespace {
+// Trains Tr1 and Tr2 enter at v0 and leave at v5. Between v1 and v4, they take
+// either the short route via v2 along the track of station S or the long one
+// via v3.
+struct TwoRoutes {
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  cda_rail::index_vector                                      short_route;
+  cda_rail::index_vector                                      long_route;
+};
+
+TwoRoutes two_routes() {
+  TwoRoutes  routes;
+  auto&      network = routes.instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const auto v4      = network.add_vertex("v4", cda_rail::VertexType::TTD);
+  const auto v5      = network.add_vertex("v5", cda_rail::VertexType::TTD);
+
+  const auto e01 = network.add_edge(v0, v1, 100, 10);
+  const auto e12 = network.add_edge(v1, v2, 100, 10);
+  const auto e24 = network.add_edge(v2, v4, 100, 10);
+  const auto e13 = network.add_edge(v1, v3, 300, 10);
+  const auto e34 = network.add_edge(v3, v4, 300, 10);
+  const auto e45 = network.add_edge(v4, v5, 100, 10);
+  network.add_successor(e01, e12);
+  network.add_successor(e01, e13);
+  network.add_successor(e12, e24);
+  network.add_successor(e13, e34);
+  network.add_successor(e24, e45);
+  network.add_successor(e34, e45);
+  routes.short_route = {e01, e12, e24, e45};
+  routes.long_route  = {e01, e13, e34, e45};
+
+  routes.instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v5, 1);
+  routes.instance.add_train("Tr2", 10, 10, 2, 2, true, 60, 10, v0, 60, 10, v5,
+                            1);
+  routes.instance.add_empty_station("S");
+  routes.instance.add_track_to_station("S", e12);
+  return routes;
+}
+} // namespace
+
+TEST(GenPOMovingBlockMIPSolver, WarmStartRoutesTrainWithoutRoute) {
+  // With fixed routes, Tr1 keeps its long route. Tr2 has no route, hence it
+  // can take any route in the model, and the completion gives it the short one.
+  auto routes = two_routes();
+  routes.instance.add_empty_route("Tr1");
+  for (const auto e : routes.long_route) {
+    routes.instance.push_back_edge_to_route("Tr1", e);
+  }
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(
+      routes.instance);
+  solver.solve_init_general_mip(false, true);
+  solver.create_model({}, {}, {.fix_routes = true});
+  const auto completed = solver.completed_initial_state();
+
+  ASSERT_TRUE(completed.has_value());
+  EXPECT_EQ(completed->train_edges.at(0), routes.long_route);
+  EXPECT_EQ(completed->train_edges.at(1), routes.short_route);
+}
+
+TEST(GenPOMovingBlockMIPSolver, NoWarmStartIfFixedRouteMissesStop) {
+  // Tr1 is to stop at S, but its fixed route takes the long way around S
+  auto routes = two_routes();
+  routes.instance.insert_stop("Tr1", "S", 0, 30);
+  routes.instance.add_empty_route("Tr1");
+  for (const auto e : routes.long_route) {
+    routes.instance.push_back_edge_to_route("Tr1", e);
+  }
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(
+      routes.instance);
+  solver.solve_init_general_mip(false, true);
+  solver.create_model({}, {}, {.fix_routes = true});
+
+  EXPECT_FALSE(solver.completed_initial_state().has_value());
+}
+
+TEST(GenPOMovingBlockMIPSolver, NoWarmStartWithoutModelVelocities) {
+  // Tr1 stops at v1, only 10 m before its exit vertex v2. Accelerating by
+  // 2 m/s^2 from there, it cannot reach its exit velocity of 10 m/s before its
+  // rear, 10 m behind its front, has left the network. The simulation lets it
+  // leave slower, but the model has no velocities for this.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto e01     = network.add_edge(v0, v1, 100, 10);
+  const auto e12     = network.add_edge(v1, v2, 10, 10);
+  network.add_successor(e01, e12);
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v2, 1);
+  instance.add_empty_station("S");
+  instance.add_track_to_station("S", e01);
+  instance.insert_stop("Tr1", "S", 0, 30);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  solver.solve_init_general_mip(false, true);
+  solver.create_model({}, {}, {});
+  ASSERT_TRUE(solver.completed_initial_state().has_value());
+  solver.set_warm_start();
+  solver.m_model->update();
+
+  EXPECT_EQ(solver.m_vars["x"](0, e01).get(GRB_DoubleAttr_Start),
+            GRB_UNDEFINED);
+}
+
+TEST(GenPOMovingBlockMIPSolver, WarmStartKeepsOptimum) {
+  // solve() finds the same optimum with the warm start as without it
+  const auto routes = two_routes();
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_with(
+      routes.instance);
+  const auto sol_with = solver_with.solve(
+      {}, {.abs_mip_gap = 1e-4, .use_warm_start = true}, {}, 60);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver_without(
+      routes.instance);
+  const auto sol_without =
+      solver_without.solve({}, {.abs_mip_gap = 1e-4}, {}, 60);
+
+  ASSERT_TRUE(sol_with.has_solution());
+  ASSERT_TRUE(sol_without.has_solution());
+  EXPECT_EQ(sol_with.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol_without.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_APPROX_EQ(sol_with.get_obj(), sol_without.get_obj());
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

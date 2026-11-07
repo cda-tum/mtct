@@ -37,6 +37,9 @@
 class GenPOMovingBlockMIPSolver;
 class GenPOMovingBlockMIPSolver_PrivateFillFunctions_Test;
 class GenPOMovingBlockMIPSolver_WarmStartIsFeasible_Test;
+class GenPOMovingBlockMIPSolver_WarmStartRoutesTrainWithoutRoute_Test;
+class GenPOMovingBlockMIPSolver_NoWarmStartIfFixedRouteMissesStop_Test;
+class GenPOMovingBlockMIPSolver_NoWarmStartWithoutModelVelocities_Test;
 #endif
 
 namespace cda_rail::solver::mip_based {
@@ -199,6 +202,9 @@ private:
 #if TEST_FRIENDS
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, PrivateFillFunctions);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, WarmStartIsFeasible);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, WarmStartRoutesTrainWithoutRoute);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartIfFixedRouteMissesStop);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartWithoutModelVelocities);
 #endif
 
   SolutionSettingsMovingBlock m_solution_settings = {};
@@ -404,10 +410,12 @@ private:
    *
    * As in the A* search, the completion uses the greedy simulator, since only
    * it decides orders first come, first served. With fixed routes, the
-   * initial state already has the routes and serves every stop at the first
-   * valid stop vertex, so that only the orders are decided.
+   * initial state already has the route of every train that has one, and it
+   * serves each of its stops at the first valid stop vertex. A train without
+   * a route can take any route in the model, hence the completion routes it.
    *
-   * @return The final state, or `std::nullopt` if the completion fails.
+   * @return The final state, or `std::nullopt` if the completion fails, e.g.,
+   *         since a fixed route misses a stop.
    */
   [[nodiscard]] std::optional<simulator::SimulatorState>
   completed_initial_state() const;
@@ -460,8 +468,9 @@ private:
    * exit velocity. If it does so in the simulation, it passes its exit vertex
    * at the closest velocity the model allows instead.
    *
-   * Nothing is set if the completion fails or cannot be expressed by the
-   * variables of the model. Gurobi rejects the start if the times cannot be
+   * Nothing is set if the completion fails, or if the model has no velocities
+   * for how a train passes its route in the simulation, see
+   * velocity_indices(). Gurobi rejects the start if the times cannot be
    * completed, e.g., since the velocities of the model are discrete.
    */
   void set_warm_start();
