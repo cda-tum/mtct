@@ -180,12 +180,14 @@ cda_rail::simulator::GreedySimulator::simulate(
   // The train that kept each train from entering last, see m_entry_missed
   std::vector<std::optional<size_t>> entry_blockers(number_of_trains);
   // The train ahead of tr in the order of its entry vertex, which keeps it
-  // from entering until it entered, respectively passed the vertex
+  // from entering until it entered, respectively passed the vertex. A train
+  // only tries to enter once the order contains it.
   const auto train_ahead_at_entry = [this](size_t tr) -> std::optional<size_t> {
     const auto& order = get_vertex_orders_of_vertex(
         get_instance()->get_const_schedule(tr).get_entry_vertex());
     const auto it = std::ranges::find(order, tr);
-    if (it == order.begin() || it == order.end()) {
+    assert(it != order.end());
+    if (it == order.begin()) {
       return std::nullopt;
     }
     return *(it - 1);
@@ -969,7 +971,8 @@ cda_rail::simulator::GreedySimulator::first_come_first_served_state(
   // orders, and let_pass_first adds at least one of these to an order of the
   // given state, hence there are only finitely many retries.
   auto given = get_simulator_state();
-  while (true) {
+  bool retry = true;
+  while (retry) {
     // The copy's orders are extended while it simulates
     GreedySimulator simulator(*this);
     simulator.set_simulator_state(given);
@@ -989,12 +992,11 @@ cda_rail::simulator::GreedySimulator::first_come_first_served_state(
     if (result.success && orders.all_requested()) {
       return simulator.get_simulator_state();
     }
-    if (!missed_entry.has_value() ||
-        !let_pass_first(given, simulator.get_simulator_state(),
-                        missed_entry->first, missed_entry->second)) {
-      return std::nullopt;
-    }
+    retry = missed_entry.has_value() &&
+            let_pass_first(given, simulator.get_simulator_state(),
+                           missed_entry->first, missed_entry->second);
   }
+  return std::nullopt;
 }
 
 // ----------------------------

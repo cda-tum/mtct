@@ -40,6 +40,7 @@ class GenPOMovingBlockMIPSolver_WarmStartIsFeasible_Test;
 class GenPOMovingBlockMIPSolver_WarmStartRoutesTrainWithoutRoute_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartIfFixedRouteMissesStop_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartWithoutModelVelocities_Test;
+class GenPOMovingBlockMIPSolver_SmallCoefficientsAreRemoved_Test;
 #endif
 
 namespace cda_rail::solver::mip_based {
@@ -205,6 +206,7 @@ private:
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, WarmStartRoutesTrainWithoutRoute);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartIfFixedRouteMissesStop);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartWithoutModelVelocities);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, SmallCoefficientsAreRemoved);
 #endif
 
   SolutionSettingsMovingBlock m_solution_settings = {};
@@ -329,6 +331,14 @@ private:
   void create_model(const SolutionSettingsMovingBlock& solution_settings_input,
                     const SolverStrategyMovingBlock&   solver_strategy_input,
                     const ModelDetailMovingBlock&      model_detail_input);
+  /**
+   * @brief Sets every constraint coefficient of the model whose absolute value
+   *        is below the integrality tolerance to 0, since such coefficients
+   *        cause numerical issues.
+   *
+   * The model has to be updated before.
+   */
+  void remove_small_coefficients();
   /** @brief Creates all variables of the model. */
   void create_variables();
   /** @brief Creates the variables holding the times of the events. */

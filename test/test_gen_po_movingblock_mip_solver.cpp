@@ -2880,4 +2880,21 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartKeepsOptimum) {
   EXPECT_APPROX_EQ(sol_with.get_obj(), sol_without.get_obj());
 }
 
+TEST(GenPOMovingBlockMIPSolver, SmallCoefficientsAreRemoved) {
+  // The coefficient of x is below the integrality tolerance of 1e-5, the one
+  // of y is not
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver;
+  solver.solve_init_general_mip(false, true);
+  auto       x = solver.m_model->addVar(0, 1, 0, GRB_BINARY, "x");
+  auto       y = solver.m_model->addVar(0, 1, 0, GRB_BINARY, "y");
+  const auto c = solver.m_model->addConstr((1e-7 * x) + (1e-3 * y) <= 1);
+  solver.m_model->update();
+
+  solver.remove_small_coefficients();
+  solver.m_model->update();
+
+  EXPECT_EQ(solver.m_model->getCoeff(c, x), 0);
+  EXPECT_EQ(solver.m_model->getCoeff(c, y), 1e-3);
+}
+
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

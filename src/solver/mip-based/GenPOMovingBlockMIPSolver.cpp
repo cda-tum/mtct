@@ -208,9 +208,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::create_model(
   create_constraints();
 
   m_model->update();
+  remove_small_coefficients();
+}
 
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    remove_small_coefficients() {
   PLOGD << "Fix numerical issues with small coefficients";
-  // On the other hand, this does not take long to fix.
   size_t       num_fixed   = 0;
   const double integer_tol = m_model->getEnv().get(GRB_DoubleParam_IntFeasTol);
   const std::unique_ptr<GRBVar[]> vars_tmp(m_model->getVars());

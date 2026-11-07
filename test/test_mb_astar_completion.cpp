@@ -802,6 +802,24 @@ TEST(CompletionHeuristic, TrainMissingItsEntryPassesFirst) {
   EXPECT_FALSE(complete(opposite.instance, partial).has_value());
 }
 
+TEST(CompletionHeuristic, TrainMissingItsEntryWithoutTrainAheadFails) {
+  // A position bound keeps the only train from entering. No train is ahead of
+  // it at its entry vertex, hence there is none that could let it pass first.
+  const auto                 line = line_instance();
+  simulator::GreedySimulator simulator(
+      line.instance, line.instance.get_const_network().unbreakable_sections());
+  simulator.set_position_bound(
+      [](size_t /*tr*/, double /*t*/)
+          -> std::optional<simulator::GreedySimulator::PositionBound> {
+        return simulator::GreedySimulator::PositionBound{.front         = 0,
+                                                         .braking_point = 0};
+      });
+
+  EXPECT_FALSE(solver::astar_based::complete_state(
+                   simulator, simulator.get_simulator_state(), DT, false, true)
+                   .has_value());
+}
+
 TEST(CompletionHeuristic, PlatformsAreUsedInBothDirections) {
   // tr2 and tr3 enter at the same time from opposite ends of the line through
   // station Central, at which they can pass each other only on different
