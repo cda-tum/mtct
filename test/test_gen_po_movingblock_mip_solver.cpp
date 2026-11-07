@@ -2711,11 +2711,12 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
             }
           }
         }
-        size_t                          start_vars = 0;
-        std::vector<std::string>        integers_without_start;
-        const std::unique_ptr<GRBVar[]> vars(solver.m_model->getVars());
+        size_t                                           start_vars = 0;
+        std::vector<std::string>                         integers_without_start;
+        const std::unique_ptr<GRBVar, void (*)(GRBVar*)> vars(
+            solver.m_model->getVars(), [](GRBVar* vars) { delete[] vars; });
         for (int i = 0; i < solver.m_model->get(GRB_IntAttr_NumVars); ++i) {
-          auto&      var     = vars[i];
+          auto&      var     = vars.get()[i];
           const bool integer = var.get(GRB_CharAttr_VType) != GRB_CONTINUOUS;
           const auto start   = var.get(GRB_DoubleAttr_Start);
           if (start != GRB_UNDEFINED) {
