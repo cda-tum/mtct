@@ -46,8 +46,9 @@ double highest_allowed_speed(double v_high, const TooEarly& too_early) {
 // Lets tr pass every TTD section and vertex before blocker at which the
 // realized state, which extends the given one, lets blocker pass first, unless
 // the given state decides their order there. Only these two trains are added
-// to the given order, where the realized one has them. Returns whether the
-// given state changed.
+// to the given order, where the realized one has them, and only the one that
+// the given order does not contain yet is moved, so that the given order is
+// kept. Returns whether the given state changed.
 bool let_pass_first(cda_rail::simulator::SimulatorState&       given,
                     const cda_rail::simulator::SimulatorState& realized,
                     size_t tr, size_t blocker) {
@@ -63,12 +64,17 @@ bool let_pass_first(cda_rail::simulator::SimulatorState&       given,
           return;
         }
         auto order = realized_order;
-        std::erase(order, tr);
-        order.insert(std::ranges::find(order, blocker), tr);
         std::erase_if(order, [&given_order, tr, blocker](size_t other) {
           return other != tr && other != blocker &&
                  !std::ranges::contains(given_order, other);
         });
+        if (std::ranges::contains(given_order, tr)) {
+          std::erase(order, blocker);
+          order.insert(std::next(std::ranges::find(order, tr)), blocker);
+        } else {
+          std::erase(order, tr);
+          order.insert(std::ranges::find(order, blocker), tr);
+        }
         given_order = std::move(order);
         changed     = true;
       };

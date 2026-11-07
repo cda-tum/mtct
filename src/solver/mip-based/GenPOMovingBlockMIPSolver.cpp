@@ -82,6 +82,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   create_model(solution_settings_input, solver_strategy_input,
                model_detail_input);
+  // As the model, the warm start counts towards the time limit
+  if (m_solver_strategy.use_warm_start) {
+    set_warm_start();
+  }
 
   PLOGI << "Model created. Optimize.";
   m_model_created = std::chrono::high_resolution_clock::now();
@@ -129,10 +133,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   PLOGD << "Set integrality tolerance to " << integrality_tolerance
         << " for a time horizon of " << max_horizon << " s";
   m_model->set(GRB_DoubleParam_IntFeasTol, integrality_tolerance);
-
-  if (m_solver_strategy.use_warm_start) {
-    set_warm_start();
-  }
 
   m_model->optimize();
 

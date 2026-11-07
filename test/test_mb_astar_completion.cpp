@@ -30,14 +30,46 @@ namespace {
 // uses by default
 constexpr double DT = 6.0;
 
+// Whether the trains of every order of the given state pass in the same order
+// in the completed state
+bool keeps_orders(const simulator::SimulatorState& given,
+                  const simulator::SimulatorState& completed) {
+  const auto keeps = [](const index_vector& given_order,
+                        const index_vector& order) {
+    auto it = order.begin();
+    for (const auto tr : given_order) {
+      it = std::find(it, order.end(), tr);
+      if (it == order.end()) {
+        return false;
+      }
+      ++it;
+    }
+    return true;
+  };
+  for (size_t v = 0; v < given.vertex_orders.size(); ++v) {
+    if (!keeps(given.vertex_orders.at(v), completed.vertex_orders.at(v))) {
+      return false;
+    }
+  }
+  for (size_t ttd = 0; ttd < given.ttd_orders.size(); ++ttd) {
+    if (!keeps(given.ttd_orders.at(ttd), completed.ttd_orders.at(ttd))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// The completion of the given state, which keeps its orders
 std::optional<simulator::SimulatorState>
 complete(const instances::GeneralPerformanceOptimizationInstance& instance,
          const std::optional<simulator::SimulatorState>&          state = {}) {
   simulator::GreedySimulator simulator(
       instance, instance.get_const_network().unbreakable_sections());
-  return solver::astar_based::complete_state(
-      simulator, state.value_or(simulator.get_simulator_state()), DT, false,
-      true);
+  const auto given = state.value_or(simulator.get_simulator_state());
+  auto       completed =
+      solver::astar_based::complete_state(simulator, given, DT, false, true);
+  EXPECT_TRUE(!completed.has_value() || keeps_orders(given, completed.value()));
+  return completed;
 }
 
 // Simulates a state as the A* search does by default
@@ -131,13 +163,16 @@ LineInstance line_instance() {
 }
 
 // A line v0 -> v1 -> v3 -> v4, with the platforms a1 and b1 of station S
-// between v1 and v3, of which b1 is 500 m long. The early and the late train
-// of 100 m both stop at S; the one with the smaller index enters later.
+// between v1 and v3, of which b1 is 500 m long. With two_track_platforms, the
+// tracks a2 and b2 behind them belong to S as well, so that each platform
+// consists of two tracks. The early and the late train of 100 m both stop at
+// S; the one with the smaller index enters later.
 struct StationInstance {
   instances::GeneralPerformanceOptimizationInstance instance;
   size_t tr_late, tr_early, v0, in, a1, a2, b1, b2, out;
 };
-StationInstance station_instance(double a1_length = 500) {
+StationInstance station_instance(double a1_length           = 500,
+                                 bool   two_track_platforms = false) {
   Network    network;
   const auto v0  = network.add_vertex("v0", VertexType::TTD);
   const auto v1  = network.add_vertex("v1", VertexType::TTD);
@@ -162,6 +197,10 @@ StationInstance station_instance(double a1_length = 500) {
   timetable.add_empty_station("S");
   timetable.add_track_to_station("S", a1, network);
   timetable.add_track_to_station("S", b1, network);
+  if (two_track_platforms) {
+    timetable.add_track_to_station("S", a2, network);
+    timetable.add_track_to_station("S", b2, network);
+  }
   const auto tr_late = timetable.add_train("Late", 100, 20, 2, 4, true, 200, 10,
                                            v0, 300, 20, v4, network);
   const auto tr_early = timetable.add_train("Early", 100, 20, 2, 4, true, 0, 10,
@@ -541,18 +580,68 @@ TEST(CompletionHeuristic, PartialRoutesThatCannotBeCompleted) {
 }
 
 TEST(CompletionHeuristic, PlatformsInTurnsByEntryTime) {
-  const auto station   = station_instance();
-  const auto completed = complete(station.instance);
+  // Where a platform consists of two tracks, the late train does not take the
+  // track a2 of the platform that the early train used, and both stop at the
+  // end of their platform
+  for (const bool two_track_platforms : {false, true}) {
+    const auto station   = station_instance(500, two_track_platforms);
+    const auto completed = complete(station.instance);
+    ASSERT_TRUE(completed.has_value());
+    EXPECT_EQ(completed->train_edges.at(station.tr_early),
+              (index_vector{station.in, station.a1, station.a2, station.out}));
+    EXPECT_EQ(completed->train_edges.at(station.tr_late),
+              (index_vector{station.in, station.b1, station.b2, station.out}));
+    const double stop = two_track_platforms ? 1600 : 1500;
+    EXPECT_EQ(completed->stop_positions.at(station.tr_early),
+              std::vector<double>{stop});
+    EXPECT_EQ(completed->stop_positions.at(station.tr_late),
+              std::vector<double>{stop});
+    EXPECT_TRUE(is_feasible(station.instance, completed.value()));
+  }
+}
+
+TEST(CompletionHeuristic, PlatformLeftInTheMiddle) {
+  // The platform v1 -> v2 -> v3a of station S can be left at v2 towards v4b.
+  // Train A to v4a stops at the end of the platform, while train B to v4b
+  // stops at v2, since it cannot continue from the end.
+  Network    network;
+  const auto v0   = network.add_vertex("v0", VertexType::TTD);
+  const auto v1   = network.add_vertex("v1", VertexType::TTD);
+  const auto v2   = network.add_vertex("v2", VertexType::TTD);
+  const auto v3a  = network.add_vertex("v3a", VertexType::TTD);
+  const auto v3b  = network.add_vertex("v3b", VertexType::TTD);
+  const auto v4a  = network.add_vertex("v4a", VertexType::TTD);
+  const auto v4b  = network.add_vertex("v4b", VertexType::TTD);
+  const auto e01  = network.add_edge(v0, v1, 1000, 20);
+  const auto e12  = network.add_edge(v1, v2, 500, 20);
+  const auto e23a = network.add_edge(v2, v3a, 500, 20);
+  const auto e23b = network.add_edge(v2, v3b, 500, 20);
+  const auto e34a = network.add_edge(v3a, v4a, 1000, 20);
+  const auto e34b = network.add_edge(v3b, v4b, 1000, 20);
+  network.add_successor(e01, e12);
+  network.add_successor(e12, e23a);
+  network.add_successor(e12, e23b);
+  network.add_successor(e23a, e34a);
+  network.add_successor(e23b, e34b);
+
+  Timetable timetable;
+  timetable.add_empty_station("S");
+  timetable.add_track_to_station("S", e12, network);
+  timetable.add_track_to_station("S", e23a, network);
+  const auto tr_a = timetable.add_train("A", 100, 20, 2, 4, true, 0, 10, v0, 60,
+                                        20, v4a, network);
+  const auto tr_b = timetable.add_train("B", 100, 20, 2, 4, true, 300, 10, v0,
+                                        360, 20, v4b, network);
+  timetable.insert_stop(tr_a, "S", 0, 30);
+  timetable.insert_stop(tr_b, "S", 0, 30);
+  const instances::GeneralPerformanceOptimizationInstance instance(
+      network, timetable, RouteMap());
+
+  const auto completed = complete(instance);
   ASSERT_TRUE(completed.has_value());
-  EXPECT_EQ(completed->train_edges.at(station.tr_early),
-            (index_vector{station.in, station.a1, station.a2, station.out}));
-  EXPECT_EQ(completed->train_edges.at(station.tr_late),
-            (index_vector{station.in, station.b1, station.b2, station.out}));
-  EXPECT_EQ(completed->stop_positions.at(station.tr_early),
-            std::vector<double>{1500});
-  EXPECT_EQ(completed->stop_positions.at(station.tr_late),
-            std::vector<double>{1500});
-  EXPECT_TRUE(is_feasible(station.instance, completed.value()));
+  EXPECT_EQ(completed->stop_positions.at(tr_a), std::vector<double>{2000});
+  EXPECT_EQ(completed->stop_positions.at(tr_b), std::vector<double>{1500});
+  EXPECT_TRUE(is_feasible(instance, completed.value()));
 }
 
 TEST(CompletionHeuristic, PlatformsTooShortForTheTrainAreSkipped) {

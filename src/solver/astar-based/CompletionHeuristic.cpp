@@ -10,7 +10,7 @@
 #include <map>
 #include <numeric>
 #include <optional>
-#include <ranges>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -61,6 +61,39 @@ size_t stop_edge(const cda_rail::Network&      network,
   }
   return route.back();
 }
+
+// The platform of a station track, identified by its smallest track: the
+// tracks of the station that follow each other, in either direction, such as
+// the edges into which Network::separate_stop_edges splits a track
+size_t platform_of(const cda_rail::Network&   network,
+                   const cda_rail::index_set& station_tracks, size_t track) {
+  size_t                 platform = track;
+  cda_rail::index_set    visited{track};
+  cda_rail::index_vector to_visit{track};
+  while (!to_visit.empty()) {
+    const auto edge = to_visit.back();
+    to_visit.pop_back();
+    platform       = std::min(platform, edge);
+    auto neighbors = network.get_successors(edge);
+    for (const auto previous :
+         network.in_edges(network.get_edge(edge).source)) {
+      if (network.get_successors(previous).contains(edge)) {
+        neighbors.insert(previous);
+      }
+    }
+    if (const auto reverse = network.get_reverse_edge_index(edge);
+        reverse.has_value()) {
+      neighbors.insert(reverse.value());
+    }
+    for (const auto neighbor : neighbors) {
+      if (station_tracks.contains(neighbor) &&
+          visited.insert(neighbor).second) {
+        to_visit.emplace_back(neighbor);
+      }
+    }
+  }
+  return platform;
+}
 } // namespace
 
 std::optional<cda_rail::simulator::SimulatorState>
@@ -76,12 +109,9 @@ cda_rail::solver::astar_based::complete_routes(
   });
 
   // When each platform was last used, counting the stops of the trains in the
-  // order of their entry times. A platform is used in both directions.
+  // order of their entry times
   std::map<size_t, size_t> last_use;
-  size_t                   uses     = 0;
-  const auto               track_of = [&network](size_t edge) {
-    return std::min(edge, network.get_reverse_edge_index(edge).value_or(edge));
-  };
+  size_t                   uses = 0;
   for (const auto tr : trains) {
     const auto& schedule       = instance.get_const_schedule(tr);
     const auto& stops          = schedule.get_stops();
@@ -90,8 +120,10 @@ cda_rail::solver::astar_based::complete_routes(
     auto&       stop_positions = state.stop_positions.at(tr);
 
     // The stops of the state are on the platforms it chose
-    for (const auto stop_position : stop_positions) {
-      last_use[track_of(stop_edge(network, route, stop_position))] = ++uses;
+    for (size_t stop = 0; stop < stop_positions.size(); ++stop) {
+      last_use[platform_of(
+          network, stops.at(stop).get_station().tracks,
+          stop_edge(network, route, stop_positions.at(stop)))] = ++uses;
     }
 
     const auto can_continue = [&](const cda_rail::index_vector& edges,
@@ -112,7 +144,9 @@ cda_rail::solver::astar_based::complete_routes(
       cda_rail::index_vector tracks(station_tracks.begin(),
                                     station_tracks.end());
       std::ranges::sort(tracks);
-      cda_rail::index_vector              platforms;
+      // The station tracks at whose end the train can stop, with the extension
+      // of its route up to there
+      cda_rail::index_vector              stop_tracks;
       std::vector<cda_rail::index_vector> extensions;
       for (const auto track : tracks) {
         auto extension =
@@ -125,23 +159,32 @@ cda_rail::solver::astar_based::complete_routes(
                               extension.end());
         if (instance.is_route_end_valid_stop_pos(tr, extended_route, stop) &&
             can_continue(extended_route, stop)) {
-          platforms.emplace_back(track);
+          stop_tracks.emplace_back(track);
           extensions.emplace_back(std::move(extension));
         }
       }
-      if (platforms.empty()) {
+      if (stop_tracks.empty()) {
         return std::nullopt;
       }
-      // The platform used least recently, so that trains take turns
-      const auto platform =
-          std::ranges::min(std::views::iota(size_t{0}, platforms.size()), {},
-                           [&last_use, &platforms, &track_of](size_t i) {
-                             const auto it =
-                                 last_use.find(track_of(platforms.at(i)));
-                             return it == last_use.end() ? 0 : it->second;
-                           });
-      last_use[track_of(platforms.at(platform))] = ++uses;
-      const auto& extension                      = extensions.at(platform);
+      // The platform used least recently, so that trains take turns, and on it
+      // the track furthest ahead, so that the train stops at the end of the
+      // platform, unless it has to leave the platform before
+      size_t                             chosen = 0;
+      std::tuple<size_t, size_t, double> chosen_key;
+      for (size_t i = 0; i < stop_tracks.size(); ++i) {
+        const auto platform =
+            platform_of(network, station_tracks, stop_tracks.at(i));
+        const auto       it = last_use.find(platform);
+        const std::tuple key{it == last_use.end() ? size_t{0} : it->second,
+                             platform,
+                             -network.length_of_path(extensions.at(i))};
+        if (i == 0 || key < chosen_key) {
+          chosen     = i;
+          chosen_key = key;
+        }
+      }
+      last_use[std::get<1>(chosen_key)] = ++uses;
+      const auto& extension             = extensions.at(chosen);
       route.insert(route.end(), extension.begin(), extension.end());
       stop_positions.emplace_back(network.length_of_path(route));
     }

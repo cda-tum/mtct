@@ -16,8 +16,11 @@
 #include <algorithm>
 #include <filesystem>
 #include <limits>
+#include <memory>
+#include <ranges>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -2648,10 +2651,12 @@ TEST(GenPOMovingBlockMIPSolver, TrainWaitingAtTtdBorderDoesNotOccupySection) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
-  // The warm start sets every integer variable of the model, and only those.
-  // Fixing them leaves a feasible model, including the lazy constraints, i.e.,
-  // Gurobi finds the times. On the smaller instances with every solver
-  // strategy that changes the integer variables.
+  // The warm start sets every integer variable of the model, and only those,
+  // but the helper binaries of indicator constraints, which are not part of
+  // m_vars. Fixing them leaves a feasible model, including the lazy
+  // constraints, i.e., Gurobi finds the times and these helpers. On the
+  // smaller instances with every solver strategy that changes the integer
+  // variables.
   using cda_rail::solver::mip_based::ModelDetailMovingBlock;
   using cda_rail::solver::mip_based::SolverStrategyMovingBlock;
   const std::vector<std::pair<std::string, std::string>> instances{
@@ -2698,32 +2703,42 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
         solver.set_warm_start();
         solver.m_model->update();
 
-        size_t integer_vars = 0;
-        size_t start_vars   = 0;
-        for (const auto& [array_name, array] : solver.m_vars) {
+        std::unordered_set<int> m_vars_indices;
+        for (const auto& array : solver.m_vars | std::views::values) {
           for (auto var : array) {
-            if (var.sameAs(GRBVar())) {
-              continue;
+            if (!var.sameAs(GRBVar())) {
+              m_vars_indices.insert(var.index());
             }
-            const bool integer = var.get(GRB_CharAttr_VType) != GRB_CONTINUOUS;
-            const auto start   = var.get(GRB_DoubleAttr_Start);
-            integer_vars += integer ? 1 : 0;
-            if (start != GRB_UNDEFINED) {
-              start_vars++;
-              EXPECT_TRUE(integer) << description << ": " << array_name;
-              var.set(GRB_DoubleAttr_LB, start);
-              var.set(GRB_DoubleAttr_UB, start);
-            }
+          }
+        }
+        size_t                          start_vars = 0;
+        std::vector<std::string>        integers_without_start;
+        const std::unique_ptr<GRBVar[]> vars(solver.m_model->getVars());
+        for (int i = 0; i < solver.m_model->get(GRB_IntAttr_NumVars); ++i) {
+          auto&      var     = vars[i];
+          const bool integer = var.get(GRB_CharAttr_VType) != GRB_CONTINUOUS;
+          const auto start   = var.get(GRB_DoubleAttr_Start);
+          if (start != GRB_UNDEFINED) {
+            start_vars++;
+            EXPECT_TRUE(integer)
+                << description << ": " << var.get(GRB_StringAttr_VarName);
+            var.set(GRB_DoubleAttr_LB, start);
+            var.set(GRB_DoubleAttr_UB, start);
+          } else if (integer && (!strategy.use_indicator_constraints ||
+                                 m_vars_indices.contains(var.index()))) {
+            integers_without_start.emplace_back(
+                var.get(GRB_StringAttr_VarName));
           }
         }
         if (start_vars == 0) {
           // As in the A* search, the trains cannot follow their quickest
-          // paths first come, first served
-          EXPECT_TRUE((name == "SimpleStation" || name == "SimpleNetwork") &&
-                      !model_detail.fix_routes)
+          // paths first come, first served, since these meet on the same
+          // track of the passing loop
+          EXPECT_TRUE(name == "SimpleNetwork" && !model_detail.fix_routes)
               << description;
         } else {
-          EXPECT_EQ(start_vars, integer_vars) << description;
+          EXPECT_TRUE(integers_without_start.empty())
+              << description << ": " << integers_without_start.front();
           solver.m_model->set(GRB_IntParam_SolutionLimit, 1);
           solver.m_model->optimize();
           EXPECT_GT(solver.m_model->get(GRB_IntAttr_SolCount), 0)

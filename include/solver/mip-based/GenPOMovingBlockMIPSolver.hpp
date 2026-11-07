@@ -454,10 +454,11 @@ private:
    * velocity_indices(), and two trains are ordered on an edge, a TTD section
    * or a bidirectional track by when their fronts enter it in the simulation.
    * A train waits wherever it passes at velocity 0. Every other integer
-   * variable is 0. The model does not let a train stand still at its exit
-   * vertex, from where it could not reach its exit velocity. If it does so in
-   * the simulation, it passes its exit vertex at the closest velocity the
-   * model allows instead.
+   * variable of m_vars is 0. The helper binaries of indicator constraints,
+   * which are not part of m_vars, are left to Gurobi. The model does not let a
+   * train stand still at its exit vertex, from where it could not reach its
+   * exit velocity. If it does so in the simulation, it passes its exit vertex
+   * at the closest velocity the model allows instead.
    *
    * Nothing is set if the completion fails or cannot be expressed by the
    * variables of the model. Gurobi rejects the start if the times cannot be
