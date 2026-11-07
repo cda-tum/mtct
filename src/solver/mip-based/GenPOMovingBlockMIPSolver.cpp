@@ -80,38 +80,12 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     }
   }
 
-  this->initialize_variables(solution_settings_input, solver_strategy_input,
-                             model_detail_input);
-
-  PLOGD << "Create variables";
-  create_variables();
-  PLOGD << "Set objective";
-  set_objective();
-  PLOGD << "Create constraints";
-  create_constraints();
-
-  m_model->update();
-
-  PLOGD << "Fix numerical issues with small coefficients";
-  // On the other hand, this does not take long to fix.
-  // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-  size_t       num_fixed   = 0;
-  const double integer_tol = m_model->getEnv().get(GRB_DoubleParam_IntFeasTol);
-  auto*        vars_tmp    = m_model->getVars();
-  const int    num_vars    = m_model->get(GRB_IntAttr_NumVars);
-  for (size_t i = 0; i < num_vars; i++) {
-    auto col_v = m_model->getCol(vars_tmp[i]);
-    for (size_t j = 0; j < col_v.size(); j++) {
-      if (std::abs(col_v.getCoeff(static_cast<int>(j))) < integer_tol &&
-          col_v.getCoeff(static_cast<int>(j)) != 0) {
-        auto c = col_v.getConstr(static_cast<int>(j));
-        m_model->chgCoeff(c, vars_tmp[i], 0);
-        num_fixed++;
-      }
-    }
+  create_model(solution_settings_input, solver_strategy_input,
+               model_detail_input);
+  // As the model, the warm start counts towards the time limit
+  if (m_solver_strategy.use_warm_start) {
+    set_warm_start();
   }
-  // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-  PLOGD << "Fixed " << num_fixed << " coefficients";
 
   PLOGI << "Model created. Optimize.";
   m_model_created = std::chrono::high_resolution_clock::now();
@@ -216,6 +190,45 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   this->m_instance = old_instance;
 
   return solution;
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::create_model(
+    const SolutionSettingsMovingBlock& solution_settings_input,
+    const SolverStrategyMovingBlock&   solver_strategy_input,
+    const ModelDetailMovingBlock&      model_detail_input) {
+  this->initialize_variables(solution_settings_input, solver_strategy_input,
+                             model_detail_input);
+
+  PLOGD << "Create variables";
+  create_variables();
+  PLOGD << "Set objective";
+  set_objective();
+  PLOGD << "Create constraints";
+  create_constraints();
+
+  m_model->update();
+  remove_small_coefficients();
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    remove_small_coefficients() {
+  PLOGD << "Fix numerical issues with small coefficients";
+  size_t       num_fixed   = 0;
+  const double integer_tol = m_model->getEnv().get(GRB_DoubleParam_IntFeasTol);
+  const int    num_vars    = m_model->get(GRB_IntAttr_NumVars);
+  for (int i = 0; i < num_vars; i++) {
+    auto var   = m_model->getVar(i);
+    auto col_v = m_model->getCol(var);
+    for (size_t j = 0; j < col_v.size(); j++) {
+      if (std::abs(col_v.getCoeff(static_cast<int>(j))) < integer_tol &&
+          col_v.getCoeff(static_cast<int>(j)) != 0) {
+        auto c = col_v.getConstr(static_cast<int>(j));
+        m_model->chgCoeff(c, var, 0);
+        num_fixed++;
+      }
+    }
+  }
+  PLOGD << "Fixed " << num_fixed << " coefficients";
 }
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
@@ -669,22 +682,23 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
     const SolverStrategyMovingBlock&   solver_strategy,
     const SolutionSettingsMovingBlock& solution_settings, int time_limit) {
   return {
-      .bool_data = {{"fix_routes", model_detail.fix_routes},
-                    {"simplify_headway_constraints",
-                     model_detail.simplify_headway_constraints},
-                    {"strengthen_vertex_headway_constraints",
-                     model_detail.strengthen_vertex_headway_constraints},
-                    {"allow_late_entry", model_detail.allow_late_entry},
-                    {"use_minimum_time_bounds",
-                     model_detail.use_minimum_time_bounds},
-                    {"use_indicator_constraints",
-                     solver_strategy.use_indicator_constraints},
-                    {"use_lazy_constraints",
-                     solver_strategy.use_lazy_constraints},
-                    {"include_reverse_headways",
-                     solver_strategy.include_reverse_headways},
-                    {"include_higher_velocities_in_edge_expr",
-                     solver_strategy.include_higher_velocities_in_edge_expr}},
+      .bool_data    = {{"fix_routes", model_detail.fix_routes},
+                       {"simplify_headway_constraints",
+                        model_detail.simplify_headway_constraints},
+                       {"strengthen_vertex_headway_constraints",
+                        model_detail.strengthen_vertex_headway_constraints},
+                       {"allow_late_entry", model_detail.allow_late_entry},
+                       {"use_minimum_time_bounds",
+                        model_detail.use_minimum_time_bounds},
+                       {"use_indicator_constraints",
+                        solver_strategy.use_indicator_constraints},
+                       {"use_lazy_constraints",
+                        solver_strategy.use_lazy_constraints},
+                       {"include_reverse_headways",
+                        solver_strategy.include_reverse_headways},
+                       {"include_higher_velocities_in_edge_expr",
+                        solver_strategy.include_higher_velocities_in_edge_expr},
+                       {"use_warm_start", solver_strategy.use_warm_start}},
       .integer_data = {{"time_limit", time_limit}},
       .double_data  = {{"max_velocity_delta", model_detail.max_velocity_delta},
                        {"max_exit_delay", model_detail.max_exit_delay},
