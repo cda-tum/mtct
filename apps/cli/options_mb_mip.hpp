@@ -41,6 +41,7 @@ struct MbMipSettings {
   solver::mip_based::LazyTrainSelectionStrategy lazy_train_selection_strategy{
       solver::mip_based::LazyTrainSelectionStrategy::OnlyAdjacent};
   double abs_mip_gap{10};
+  bool   use_warm_start{false};
 
   SolvingSettings solving{};
   ExportSettings  exporting{};

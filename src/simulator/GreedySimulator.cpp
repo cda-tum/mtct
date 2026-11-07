@@ -42,6 +42,50 @@ double highest_allowed_speed(double v_high, const TooEarly& too_early) {
   }
   return v_low;
 }
+
+// Lets tr pass every TTD section and vertex before blocker at which the
+// realized state, which extends the given one, lets blocker pass first, unless
+// the given state decides their order there. Only these two trains are added
+// to the given order, where the realized one has them, and only the one that
+// the given order does not contain yet is moved, so that the given order is
+// kept. Returns whether the given state changed.
+bool let_pass_first(cda_rail::simulator::SimulatorState&       given,
+                    const cda_rail::simulator::SimulatorState& realized,
+                    size_t tr, size_t blocker) {
+  bool       changed = false;
+  const auto let_pass_at =
+      [&changed, tr, blocker](cda_rail::index_vector&       given_order,
+                              const cda_rail::index_vector& realized_order) {
+        const auto tr_it      = std::ranges::find(realized_order, tr);
+        const auto blocker_it = std::ranges::find(realized_order, blocker);
+        if (tr_it == realized_order.end() || blocker_it > tr_it ||
+            (std::ranges::contains(given_order, tr) &&
+             std::ranges::contains(given_order, blocker))) {
+          return;
+        }
+        auto order = realized_order;
+        std::erase_if(order, [&given_order, tr, blocker](size_t other) {
+          return other != tr && other != blocker &&
+                 !std::ranges::contains(given_order, other);
+        });
+        if (std::ranges::contains(given_order, tr)) {
+          std::erase(order, blocker);
+          order.insert(std::next(std::ranges::find(order, tr)), blocker);
+        } else {
+          std::erase(order, tr);
+          order.insert(std::ranges::find(order, blocker), tr);
+        }
+        given_order = std::move(order);
+        changed     = true;
+      };
+  for (size_t v = 0; v < given.vertex_orders.size(); ++v) {
+    let_pass_at(given.vertex_orders.at(v), realized.vertex_orders.at(v));
+  }
+  for (size_t ttd = 0; ttd < given.ttd_orders.size(); ++ttd) {
+    let_pass_at(given.ttd_orders.at(ttd), realized.ttd_orders.at(ttd));
+  }
+  return changed;
+}
 } // namespace
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -133,6 +177,21 @@ cda_rail::simulator::GreedySimulator::simulate(
   std::vector<double> vertex_headways(
       get_instance()->get_const_network().number_of_vertices(),
       0.0); // headways for vertices
+  // The train that kept each train from entering last, see m_entry_missed
+  std::vector<std::optional<size_t>> entry_blockers(number_of_trains);
+  // The train ahead of tr in the order of its entry vertex, which keeps it
+  // from entering until it entered, respectively passed the vertex. A train
+  // only tries to enter once the order contains it.
+  const auto train_ahead_at_entry = [this](size_t tr) -> std::optional<size_t> {
+    const auto& order = get_vertex_orders_of_vertex(
+        get_instance()->get_const_schedule(tr).get_entry_vertex());
+    const auto it = std::ranges::find(order, tr);
+    assert(it != order.end());
+    if (it == order.begin()) {
+      return std::nullopt;
+    }
+    return *(it - 1);
+  };
 
   auto build_results = [&exit_times, &stop_times, &vertex_headways,
                         &train_trajectories](bool success) {
@@ -517,6 +576,12 @@ cda_rail::simulator::GreedySimulator::simulate(
       PLOGV
           << "Simulation failed: Not all trains can enter the network at time "
           << t;
+      if (m_entry_missed) {
+        const auto tr = *tr_to_enter.begin();
+        m_entry_missed(tr, entry_blockers.at(tr).has_value()
+                               ? entry_blockers.at(tr)
+                               : train_ahead_at_entry(tr));
+      }
       return build_results(false);
     }
     for (const auto& tr : tr_to_enter) {
@@ -525,14 +590,24 @@ cda_rail::simulator::GreedySimulator::simulate(
           train_schedule.get_entry_vertex());
       const auto entry_bound =
           m_position_bound ? m_position_bound(tr, t) : std::nullopt;
-      if (vertex_headways.at(train_schedule.get_entry_vertex()) > t) {
+      // The moving authority is only checked once the headway has passed,
+      // which the train ahead at the entry vertex imposes
+      const bool blocked_by_headway =
+          vertex_headways.at(train_schedule.get_entry_vertex()) > t;
+      const auto blocker =
+          blocked_by_headway
+              ? train_ahead_at_entry(tr)
+              : entry_blocker(tr, train_positions, train_velocities,
+                              trains_in_network, trains_on_edges, trains_left);
+      if (blocked_by_headway || blocker.has_value()) {
+        entry_blockers.at(tr) = blocker;
+      }
+      if (blocked_by_headway) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " cannot enter the network at " << entry_vertex.name
               << " due to vertex headway constraints until time "
               << vertex_headways.at(train_schedule.get_entry_vertex());
-      } else if (!is_ok_to_enter(tr, train_positions, train_velocities,
-                                 trains_in_network, trains_on_edges,
-                                 trains_left)) {
+      } else if (blocker.has_value()) {
         PLOGV << "At time " << t << ", " << train_list.get_train(tr).get_name()
               << " cannot enter the network at " << entry_vertex.name
               << " due to moving authority constraints.";
@@ -891,18 +966,37 @@ std::optional<cda_rail::simulator::SimulatorState>
 cda_rail::simulator::GreedySimulator::first_come_first_served_state(
     double dt, bool late_entry_possible,
     bool limit_speed_by_leaving_edges) const {
-  // The copy's orders are extended while it simulates
-  GreedySimulator      simulator(*this);
-  FirstComeFirstServed orders(simulator);
-  simulator.m_order_request = [&orders](size_t tr, double pos) {
-    orders.request(tr, pos);
-  };
-  const auto result = simulator.simulate(
-      dt, late_entry_possible, limit_speed_by_leaving_edges, false, true);
-  if (!result.success || !orders.all_requested()) {
-    return std::nullopt;
+  // The given state, in which a train that misses its entry passes before the
+  // train keeping it from entering. The simulation only adds trains to its
+  // orders, and let_pass_first adds at least one of these to an order of the
+  // given state, hence there are only finitely many retries.
+  auto given = get_simulator_state();
+  bool retry = true;
+  while (retry) {
+    // The copy's orders are extended while it simulates
+    GreedySimulator simulator(*this);
+    simulator.set_simulator_state(given);
+    FirstComeFirstServed orders(simulator);
+    simulator.m_order_request = [&orders](size_t tr, double pos) {
+      orders.request(tr, pos);
+    };
+    std::optional<std::pair<size_t, size_t>> missed_entry;
+    simulator.m_entry_missed = [&missed_entry](size_t                tr,
+                                               std::optional<size_t> blocker) {
+      if (blocker.has_value()) {
+        missed_entry = {tr, blocker.value()};
+      }
+    };
+    const auto result = simulator.simulate(
+        dt, late_entry_possible, limit_speed_by_leaving_edges, false, true);
+    if (result.success && orders.all_requested()) {
+      return simulator.get_simulator_state();
+    }
+    retry = missed_entry.has_value() &&
+            let_pass_first(given, simulator.get_simulator_state(),
+                           missed_entry->first, missed_entry->second);
   }
-  return simulator.get_simulator_state();
+  return std::nullopt;
 }
 
 // ----------------------------
@@ -1022,7 +1116,7 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
   return potentially_behind; // Train is not on the TTD section
 }
 
-bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
+std::optional<size_t> cda_rail::simulator::GreedySimulator::entry_blocker(
     size_t tr, const std::vector<TrainPosition>& train_positions,
     const std::vector<double>&                     train_velocities,
     const std::unordered_set<size_t>&              trains_in_network,
@@ -1044,8 +1138,8 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
       [[maybe_unused]] const auto [occ, pos] =
           get_position_on_edge(other_tr, other_pos, edge_id);
       if (occ.tr_on_edge && pos.rear + EPS <= bd - milestones.at(i)) {
-        return false; // Other train is occupying the edge within the braking
-                      // distance
+        return other_tr; // Other train is occupying the edge within the
+                         // braking distance
       }
     }
 
@@ -1071,8 +1165,8 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
             reverse_edge_id.value());
         // NOLINTEND(bugprone-unchecked-optional-access)
         if (occ_rev.tr_on_edge) {
-          return false; // Other train is occupying the reverse edge within the
-                        // braking distance
+          return other_tr; // Other train is occupying the reverse edge
+                           // within the braking distance
         }
       }
     }
@@ -1093,11 +1187,11 @@ bool cda_rail::simulator::GreedySimulator::is_ok_to_enter(
       if (!trains_left.contains(other_tr) &&
           (!trains_in_network.contains(other_tr) ||
            !is_behind_ttd(other_tr, ttd_sec.value(), other_pos))) {
-        return false; // Other train is occupying the TTD section
+        return other_tr; // Other train is occupying the TTD section
       }
     }
   }
-  return true;
+  return std::nullopt;
 }
 
 std::pair<bool, std::unordered_set<size_t>>
