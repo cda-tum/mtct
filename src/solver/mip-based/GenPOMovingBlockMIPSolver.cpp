@@ -216,16 +216,17 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   PLOGD << "Fix numerical issues with small coefficients";
   size_t       num_fixed   = 0;
   const double integer_tol = m_model->getEnv().get(GRB_DoubleParam_IntFeasTol);
-  const std::unique_ptr<GRBVar, void (*)(GRBVar*)> vars_tmp(
-      m_model->getVars(), [](GRBVar* vars) { delete[] vars; });
-  const int num_vars = m_model->get(GRB_IntAttr_NumVars);
+  // Gurobi returns an owning array.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
+  const std::unique_ptr<GRBVar[]> vars_tmp(m_model->getVars());
+  const int                       num_vars = m_model->get(GRB_IntAttr_NumVars);
   for (size_t i = 0; i < num_vars; i++) {
-    auto col_v = m_model->getCol(vars_tmp.get()[i]);
+    auto col_v = m_model->getCol(vars_tmp[i]);
     for (size_t j = 0; j < col_v.size(); j++) {
       if (std::abs(col_v.getCoeff(static_cast<int>(j))) < integer_tol &&
           col_v.getCoeff(static_cast<int>(j)) != 0) {
         auto c = col_v.getConstr(static_cast<int>(j));
-        m_model->chgCoeff(c, vars_tmp.get()[i], 0);
+        m_model->chgCoeff(c, vars_tmp[i], 0);
         num_fixed++;
       }
     }
