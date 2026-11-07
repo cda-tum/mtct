@@ -217,7 +217,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
   size_t       num_fixed   = 0;
   const double integer_tol = m_model->getEnv().get(GRB_DoubleParam_IntFeasTol);
   // Gurobi returns an owning array.
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   const std::unique_ptr<GRBVar[]> vars_tmp(m_model->getVars());
   const int                       num_vars = m_model->get(GRB_IntAttr_NumVars);
   for (size_t i = 0; i < num_vars; i++) {
