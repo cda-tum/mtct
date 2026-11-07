@@ -16,7 +16,6 @@
 #include <algorithm>
 #include <filesystem>
 #include <limits>
-#include <memory>
 #include <ranges>
 #include <string>
 #include <tuple>
@@ -2713,11 +2712,8 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
         }
         size_t                   start_vars = 0;
         std::vector<std::string> integers_without_start;
-        // Gurobi returns an owning array.
-        // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-        const std::unique_ptr<GRBVar[]> vars(solver.m_model->getVars());
         for (int i = 0; i < solver.m_model->get(GRB_IntAttr_NumVars); ++i) {
-          auto&      var     = vars[i];
+          auto       var     = solver.m_model->getVar(i);
           const bool integer = var.get(GRB_CharAttr_VType) != GRB_CONTINUOUS;
           const auto start   = var.get(GRB_DoubleAttr_Start);
           if (start != GRB_UNDEFINED) {
