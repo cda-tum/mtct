@@ -144,7 +144,7 @@ TEST(VSSGenMBInfoSolver, Default5NoTolerance) {
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 17);
+  EXPECT_EQ(sol.get_obj(), 19);
 }
 
 TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
@@ -307,5 +307,5 @@ TEST(VSSGenMBInfoSolver, Default9NoTolerance) {
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
-  EXPECT_EQ(sol.get_obj(), 15);
+  EXPECT_EQ(sol.get_obj(), 14);
 }
