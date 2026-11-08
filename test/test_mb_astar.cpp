@@ -1301,21 +1301,24 @@ SOLVER_TEST(DesiredOrderInstanceClassical) {
                     .a_star_weight                = 2},
                    {}, -1, true);
 
-  EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_single.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 0);
   EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
   EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
   EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
-  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 2);
 
   auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
-  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+  // The factor holds for the exit times the search counts, not for the delays
+  EXPECT_LE(sol_obj_ttd_3.get_obj() + instance_weighted_sum,
+            (sol_obj_ttd_3.get_lower_bound() + instance_weighted_sum) * 2);
+
+  EXPECT_GE(sol_obj_single.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), 0);
 
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
@@ -1450,21 +1453,24 @@ SOLVER_TEST(DesiredOrderInstanceTimeAware) {
                     .a_star_weight                = 3},
                    {}, -1, true);
 
-  EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
-  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300 + 3 * 400);
+  EXPECT_EQ(sol_obj_single.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 0);
   EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
   EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
   EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
-  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 3);
 
   auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
-  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+  // The factor holds for the exit times the search counts, not for the delays
+  EXPECT_LE(sol_obj_ttd_3.get_obj() + instance_weighted_sum,
+            (sol_obj_ttd_3.get_lower_bound() + instance_weighted_sum) * 3);
+
+  EXPECT_GE(sol_obj_single.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), 0);
 
   auto const v2_v3 =
       sol_obj_single.get_instance()->get_const_network().get_edge_index({"v2"},
@@ -1620,21 +1626,24 @@ SOLVER_TEST(DesiredOrderInstanceClassical2) {
                     .a_star_weight                = 4},
                    {}, -1, true);
 
-  EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300);
-  EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300);
-  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300);
-  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_EQ(sol_obj_single.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 0);
   EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
   EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
   EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
-  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 4);
 
   auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
-  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+  // The factor holds for the exit times the search counts, not for the delays
+  EXPECT_LE(sol_obj_ttd_3.get_obj() + instance_weighted_sum,
+            (sol_obj_ttd_3.get_lower_bound() + instance_weighted_sum) * 4);
+
+  EXPECT_GE(sol_obj_single.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), 0);
 
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
@@ -1779,21 +1788,24 @@ SOLVER_TEST(DesiredOrderInstanceTimeAware2) {
                     .a_star_weight                = 5},
                    {}, -1, true);
 
-  EXPECT_EQ(sol_obj_single.get_obj(), 1 * 500 + 2 * 300);
-  EXPECT_EQ(sol_obj_ttd.get_obj(), 1 * 500 + 2 * 300);
-  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 1 * 500 + 2 * 300);
-  EXPECT_GE(sol_obj_ttd_3.get_obj(), 1 * 500 + 2 * 300);
+  EXPECT_EQ(sol_obj_single.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd.get_obj(), 0);
+  EXPECT_EQ(sol_obj_ttd_2.get_obj(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_obj(), 0);
   EXPECT_EQ(sol_obj_single.get_lower_bound(), sol_obj_single.get_obj());
   EXPECT_EQ(sol_obj_ttd.get_lower_bound(), sol_obj_ttd.get_obj());
   EXPECT_EQ(sol_obj_ttd_2.get_lower_bound(), sol_obj_ttd_2.get_obj());
   EXPECT_LE(sol_obj_ttd_3.get_lower_bound(), sol_obj_ttd_3.get_obj());
-  EXPECT_LE(sol_obj_ttd_3.get_obj(), sol_obj_ttd_3.get_lower_bound() * 5);
 
   auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
-  EXPECT_GE(sol_obj_single.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), instance_weighted_sum);
+  // The factor holds for the exit times the search counts, not for the delays
+  EXPECT_LE(sol_obj_ttd_3.get_obj() + instance_weighted_sum,
+            (sol_obj_ttd_3.get_lower_bound() + instance_weighted_sum) * 5);
+
+  EXPECT_GE(sol_obj_single.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_2.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_ttd_3.get_lower_bound(), 0);
 
   auto const tr1_time_single =
       sol_obj_single.get_time_at_pos("Train1", 170, true);
@@ -2711,16 +2723,19 @@ SOLVER_TEST(SimpleNetwork) {
 
   EXPECT_GE(sol_obj_7.get_obj(), sol_obj.get_obj());
   EXPECT_LE(sol_obj_7.get_lower_bound(), sol_obj.get_obj());
-  EXPECT_LE(sol_obj_7.get_obj(), sol_obj_7.get_lower_bound() * 10);
 
   auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
-  EXPECT_GE(sol_obj.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_2.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_3.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_5.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_6.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_7.get_lower_bound(), instance_weighted_sum);
+  // The factor holds for the exit times the search counts, not for the delays
+  EXPECT_LE(sol_obj_7.get_obj() + instance_weighted_sum,
+            (sol_obj_7.get_lower_bound() + instance_weighted_sum) * 10);
+
+  EXPECT_GE(sol_obj.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_2.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_3.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_4.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_5.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_6.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_7.get_lower_bound(), 0);
 }
 
 SOLVER_TEST(Stammstrecke4Trains) {
@@ -2775,13 +2790,16 @@ SOLVER_TEST(Stammstrecke4Trains) {
   EXPECT_EQ(sol_obj.get_obj(), sol_obj_3.get_obj());
   EXPECT_GE(sol_obj_4.get_obj(), sol_obj.get_obj());
   EXPECT_LE(sol_obj_4.get_lower_bound(), sol_obj.get_obj());
-  EXPECT_LE(sol_obj_4.get_obj(), sol_obj_4.get_lower_bound() * 2);
 
   auto const instance_weighted_sum = instance.sum_of_weighted_exit_times();
-  EXPECT_GE(sol_obj.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_2.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_3.get_lower_bound(), instance_weighted_sum);
-  EXPECT_GE(sol_obj_4.get_lower_bound(), instance_weighted_sum);
+  // The factor holds for the exit times the search counts, not for the delays
+  EXPECT_LE(sol_obj_4.get_obj() + instance_weighted_sum,
+            (sol_obj_4.get_lower_bound() + instance_weighted_sum) * 2);
+
+  EXPECT_GE(sol_obj.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_2.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_3.get_lower_bound(), 0);
+  EXPECT_GE(sol_obj_4.get_lower_bound(), 0);
 }
 
 SOLVER_TEST(HighWeightTrain) {

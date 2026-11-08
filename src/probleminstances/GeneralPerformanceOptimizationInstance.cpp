@@ -66,7 +66,8 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
   for (size_t tr = 0; tr < train_count; ++tr) {
     auto const& tr_schedule = get_const_schedule(tr);
 
-    obj += get_train_weight(tr) * tr_exit_times.at(tr);
+    obj += get_train_weight(tr) *
+           (tr_exit_times.at(tr) - tr_schedule.get_exit_time());
 
     auto const& tr_stop_times   = stop_times.at(tr);
     auto const& scheduled_stops = tr_schedule.get_stops();

@@ -2125,17 +2125,19 @@ TEST(GeneralPerformanceOptimizationInstances, ObjectiveValue) {
   EXPECT_EQ(instance.sum_of_weighted_exit_times(), 1.5 * 100 + 2 * 100);
   EXPECT_EQ(instance.sum_of_train_weights(), 1.5 + 2);
 
+  // The objective counts the exit delays, i.e., the exit times minus the
+  // scheduled exit times of 100
   auto const obj1 =
       instance.get_objective_val({110, 120.5}, {{}, {9.5, 25, 44.3}});
-  EXPECT_APPROX_EQ_6(obj1, 1.5 * 110 + 2 * 120.5);
+  EXPECT_APPROX_EQ_6(obj1, 1.5 * 10 + 2 * 20.5);
 
   auto const obj2 =
       instance.get_objective_val({110, 120.5}, {{}, {11, 27, 44.2}});
-  EXPECT_APPROX_EQ_6(obj2, 1.5 * 110 + 2 * 120.5 + 3.5 * 2 * (1.5 + 2 + 0) / 3);
+  EXPECT_APPROX_EQ_6(obj2, 1.5 * 10 + 2 * 20.5 + 3.5 * 2 * (1.5 + 2 + 0) / 3);
 
   auto const obj3 =
       instance.get_objective_val({110, 120.5}, {{}, {11, 28}}, false);
-  EXPECT_APPROX_EQ_6(obj3, 1.5 * 110 + 2 * 120.5 + 3.5 * 2 * (1.5 + 3 + 0) / 3);
+  EXPECT_APPROX_EQ_6(obj3, 1.5 * 10 + 2 * 20.5 + 3.5 * 2 * (1.5 + 3 + 0) / 3);
 
   EXPECT_THROW((void)instance.get_objective_val({110, 120.5}, {{}, {11, 28}}),
                cda_rail::exceptions::InvalidInputException);

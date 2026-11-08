@@ -122,6 +122,11 @@ namespace cda_rail::solver::astar_based {
  * the remaining objective is estimated by a heuristic, see
  * simulator::greedy_heuristic. The first final state that is dequeued is
  * therefore an optimal solution.
+ *
+ * Since partial states and the heuristic rely on actual times, the search adds
+ * the weighted scheduled exit times to the objective, i.e., it counts exit
+ * times rather than exit delays. This constant does not affect the search and
+ * is subtracted from every reported value, including the lower bound.
  */
 class GenPOMovingBlockAStarSolver
     : public GeneralSolver<
