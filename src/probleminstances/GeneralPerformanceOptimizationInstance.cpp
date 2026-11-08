@@ -20,6 +20,7 @@
 #include <limits>
 #include <map>
 #include <optional>
+#include <plog/Log.h>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -558,6 +559,52 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
           .next_time_step     = t1};
 }
 
+namespace {
+struct ReachableDistance {
+  double min;
+  double max;
+  double vel_at_min;
+};
+
+// Distances that a train entering an edge of length s with speed v_entry and
+// leaving it with speed v_exit can have covered after time dt, together with
+// the speed of the slowest such movement. The slowest movement brakes right
+// away until standstill if stopping is allowed, and otherwise follows the
+// maximal travel time profile; the fastest movement follows the minimal travel
+// time profile.
+[[nodiscard]] ReachableDistance
+reachable_distance(double v_entry, double v_exit, double v_max, double a,
+                   double d, double s, double dt, bool stopping_allowed) {
+  ReachableDistance result{};
+
+  if (stopping_allowed) {
+    const double rel_t = std::min(v_entry / d, dt);
+    result.min         = (v_entry * rel_t) - (0.5 * d * rel_t * rel_t);
+    result.vel_at_min  = v_entry - (d * rel_t);
+  } else {
+    const double v_line =
+        cda_rail::minimal_line_speed(v_entry, v_exit, cda_rail::V_MIN, a, d, s);
+    const double rel_t =
+        std::min(dt, cda_rail::time_on_edge(v_entry, v_exit, v_line, a, d, s));
+    result.min =
+        cda_rail::pos_on_edge_at_time(v_entry, v_exit, v_line, a, d, s, rel_t);
+    result.vel_at_min =
+        cda_rail::vel_on_edge_at_time(v_entry, v_exit, v_line, a, d, s, rel_t);
+  }
+
+  if (dt >= cda_rail::min_travel_time(v_entry, v_exit, v_max, a, d, s)) {
+    result.max = s;
+  } else {
+    const double v_line =
+        cda_rail::maximal_line_speed(v_entry, v_exit, v_max, a, d, s);
+    result.max =
+        cda_rail::pos_on_edge_at_time(v_entry, v_exit, v_line, a, d, s, dt);
+  }
+
+  return result;
+}
+} // namespace
+
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::PosVelBound
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
@@ -588,46 +635,49 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const auto max_speed =
       tr_leaving_route ? tr_obj.get_max_speed()
                        : std::min(edge_obj.max_speed, tr_obj.get_max_speed());
+  const auto a = tr_obj.get_acceleration();
+  const auto d = tr_obj.get_deceleration();
+  const auto s = pos2 - pos1;
 
-  const auto max_t = max_travel_time(v1, v2, V_MIN, tr_obj.get_acceleration(),
-                                     tr_obj.get_deceleration(), pos2 - pos1,
-                                     edge_obj.breakable);
-  const auto min_t =
-      min_travel_time(v1, v2, max_speed, tr_obj.get_acceleration(),
-                      tr_obj.get_deceleration(), pos2 - pos1);
-  double ub   = pos1;
-  double lb   = pos1;
-  double v_lb = 0;
-  double v_ub = max_speed;
+  const bool stopping_allowed =
+      max_travel_time(v1, v2, V_MIN, a, d, s, edge_obj.breakable) >=
+      std::numeric_limits<double>::infinity();
+  const auto max_line_speed = maximal_line_speed(v1, v2, max_speed, a, d, s);
 
-  if (max_t >= std::numeric_limits<double>::infinity()) {
-    const auto t_to_stop = v1 / tr_obj.get_deceleration();
-    const auto rel_t     = std::min(t_to_stop, t - t1);
-    lb += (v1 * rel_t) - (0.5 * tr_obj.get_deceleration() * rel_t * rel_t);
-    v_lb = v1 - (tr_obj.get_deceleration() * rel_t);
-  } else {
-    const auto min_speed =
-        minimal_line_speed(v1, v2, V_MIN, tr_obj.get_acceleration(),
-                           tr_obj.get_deceleration(), pos2 - pos1);
-    lb += pos_on_edge_at_time(v1, v2, min_speed, tr_obj.get_acceleration(),
-                              tr_obj.get_deceleration(), pos2 - pos1, t - t1);
-    v_lb = vel_on_edge_at_time(v1, v2, min_speed, tr_obj.get_acceleration(),
-                               tr_obj.get_deceleration(), pos2 - pos1, t - t1);
+  const auto fwd =
+      reachable_distance(v1, v2, max_speed, a, d, s, t - t1, stopping_allowed);
+  const PosVelBound fwd_bounds{
+      .pos = {.lb = pos1 + fwd.min, .ub = pos1 + fwd.max},
+      .vel = {.lb = fwd.vel_at_min,
+              .ub = std::min(max_line_speed, v1 + (a * (t - t1)))}};
+
+  // Going backward in time from the exit state is the same problem with the
+  // entry and exit speeds as well as the acceleration and deceleration swapped.
+  const auto bwd =
+      reachable_distance(v2, v1, max_speed, d, a, s, t2 - t, stopping_allowed);
+  const PosVelBound bounds{
+      .pos = {.lb = std::max(fwd_bounds.pos.lb, pos2 - bwd.max),
+              .ub = std::min(fwd_bounds.pos.ub, pos2 - bwd.min)},
+      .vel = {.lb = std::max({fwd_bounds.vel.lb, v2 - (a * (t2 - t)), 0.0}),
+              .ub = std::min(fwd_bounds.vel.ub, v2 + (d * (t2 - t)))}};
+
+  // The stored times stem from a solution that may only be feasible within
+  // the solver's tolerances, in which case they can be marginally shorter or
+  // longer than physically possible. Moreover, the travel time functions round
+  // times to GRB_EPS. Hence, both bounds may be off by what corresponds to
+  // GRB_EPS in time.
+  const double pos_tol = 2 * GRB_EPS * max_speed;
+  const double vel_tol = 2 * GRB_EPS * std::max(a, d);
+  if (bounds.pos.lb > bounds.pos.ub + pos_tol ||
+      bounds.vel.lb > bounds.vel.ub + vel_tol) {
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+    PLOGW << "Bounds of train " << tr_name << " at time " << t
+          << " from its states at times " << t1 << " and " << t2
+          << " are inconsistent; using the bounds from time " << t1 << " only";
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+    return fwd_bounds;
   }
-
-  if (t >= t1 + min_t) {
-    ub += pos2 - pos1;
-  } else {
-    const auto max_line_speed =
-        maximal_line_speed(v1, v2, max_speed, tr_obj.get_acceleration(),
-                           tr_obj.get_deceleration(), pos2 - pos1);
-    ub += pos_on_edge_at_time(v1, v2, max_line_speed, tr_obj.get_acceleration(),
-                              tr_obj.get_deceleration(), pos2 - pos1, t - t1);
-    v_ub =
-        vel_on_edge_at_time(v1, v2, max_line_speed, tr_obj.get_acceleration(),
-                            tr_obj.get_deceleration(), pos2 - pos1, t - t1);
-  }
-  return {.pos = {.lb = lb, .ub = ub}, .vel = {.lb = v_lb, .ub = v_ub}};
+  return bounds;
 }
 
 std::optional<

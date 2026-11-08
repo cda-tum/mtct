@@ -760,6 +760,13 @@ public:
   /**
    * @brief Returns exact lower and upper bounds on position and velocity.
    *
+   * The bounds intersect the states reachable from the stored state before
+   * @p t with the states from which the stored state after @p t is still
+   * reachable, given the train's acceleration, deceleration and speed limit.
+   * Up to what corresponds to GRB_EPS in time for each bound, the lower bounds
+   * do not exceed the upper bounds. Otherwise, e.g., if the stored times are
+   * not physically possible, only the former are used.
+   *
    * @param tr_name Name of the train.
    * @param t Query time.
    * @return Position/velocity bounds at time @p t.
