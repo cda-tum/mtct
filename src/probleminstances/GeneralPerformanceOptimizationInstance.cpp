@@ -560,6 +560,37 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 }
 
 namespace {
+struct EdgeLimits {
+  double max_speed;
+  bool   breakable;
+};
+
+// The highest speed limit of the route's edges between the positions pos1 and
+// pos2, starting from that of the edge at pos1, and whether any of them is
+// breakable. Stored states need not be on the same edge, e.g., if they stem
+// from a simulation, and the train may drive as fast as on the fastest edge in
+// between and may stop if it may do so on any of these edges.
+[[nodiscard]] EdgeLimits edge_limits_between(const cda_rail::Route&   route,
+                                             const cda_rail::Network& network,
+                                             size_t edge, double pos1,
+                                             double pos2) {
+  const auto& edge_obj = network.get_edge(edge);
+  EdgeLimits  limits{.max_speed = edge_obj.max_speed,
+                     .breakable = edge_obj.breakable};
+  double      edge_source = 0;
+  for (const auto& e : route.get_edges()) {
+    const auto&  e_obj       = network.get_edge(e);
+    const double edge_target = edge_source + e_obj.length;
+    if (edge_source < pos2 - cda_rail::GRB_EPS &&
+        edge_target > pos1 + cda_rail::GRB_EPS) {
+      limits.max_speed = std::max(limits.max_speed, e_obj.max_speed);
+      limits.breakable = limits.breakable || e_obj.breakable;
+    }
+    edge_source = edge_target;
+  }
+  return limits;
+}
+
 struct ReachableDistance {
   double min;
   double max;
@@ -622,26 +653,10 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
             .vel = {.lb = std::min(v1, v2), .ub = std::max(v1, v2)}};
   }
 
-  const auto& network  = this->get_instance()->get_const_network();
-  const auto& edge_obj = network.get_edge(edge);
   const auto& tr_obj =
       this->get_instance()->get_const_train_list().get_train(tr_name);
-
-  // The stored states need not be on the same edge, e.g., if they stem from a
-  // simulation. Hence, the train may drive as fast as on the fastest edge in
-  // between and may stop if it may do so on any of these edges.
-  double speed_limit = edge_obj.max_speed;
-  bool   breakable   = edge_obj.breakable;
-  double edge_source = 0;
-  for (const auto& e : tr_route.get_edges()) {
-    const auto&  e_obj       = network.get_edge(e);
-    const double edge_target = edge_source + e_obj.length;
-    if (edge_source < pos2 - GRB_EPS && edge_target > pos1 + GRB_EPS) {
-      speed_limit = std::max(speed_limit, e_obj.max_speed);
-      breakable   = breakable || e_obj.breakable;
-    }
-    edge_source = edge_target;
-  }
+  const auto [speed_limit, breakable] = edge_limits_between(
+      tr_route, this->get_instance()->get_const_network(), edge, pos1, pos2);
 
   const auto max_speed = tr_leaving_route
                              ? tr_obj.get_max_speed()
@@ -710,13 +725,14 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const auto pos_2 = get_train_pos(tr_name, t2);
   const auto v2    = get_train_speed(tr_name, t2);
 
-  const auto& edge_obj =
-      this->get_instance()->get_const_network().get_edge(edge);
   const auto& tr_obj =
       this->get_instance()->get_const_train_list().get_train(tr_name);
+  const auto edge_limits = edge_limits_between(
+      this->get_const_solution_routes().get_route(tr_name),
+      this->get_instance()->get_const_network(), edge, pos_1, pos_2);
   // Within the solver's tolerances, the speeds can marginally exceed the speed
   // limit.
-  auto max_speed = std::min(tr_obj.get_max_speed(), edge_obj.max_speed);
+  auto max_speed = std::min(tr_obj.get_max_speed(), edge_limits.max_speed);
   if (std::max(v1, v2) <= max_speed + GRB_EPS) {
     max_speed = std::max({max_speed, v1, v2});
   }

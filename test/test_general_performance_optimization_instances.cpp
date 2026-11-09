@@ -3250,6 +3250,11 @@ TEST(GeneralPerformanceOptimizationInstances, ExactBoundsAcrossFasterEdge) {
   EXPECT_APPROX_EQ_6(pos_bounds.ub, 268.75);
   EXPECT_APPROX_EQ_6(vel_bounds.lb, 0);
   EXPECT_APPROX_EQ_6(vel_bounds.ub, 20);
+
+  // The approximate trajectory uses the same speed limit, so that it can cover
+  // the distance in time and stays within the bounds.
+  expect_exact_bounds_contain_approximate_trajectory(sol, 0.01,
+                                                     "across faster edge");
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
