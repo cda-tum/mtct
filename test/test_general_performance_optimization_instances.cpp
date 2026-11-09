@@ -3258,6 +3258,38 @@ TEST(GeneralPerformanceOptimizationInstances, ExactBoundsAcrossFasterEdge) {
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
+     ExactBoundsInconsistentStatesUseForwardBounds) {
+  // tr enters an edge of length 300 with speed limit 10 at speed 10 and is
+  // stored to leave it 10 s later, although this takes at least 30 s. It
+  // accelerates and decelerates at rate 2.
+  instances::GeneralPerformanceOptimizationInstance instance;
+  const auto                                        v0 =
+      instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  const auto v1 =
+      instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 300, 10, false);
+  instance.add_train("tr", 10, 10, 2, 2, 0.0, 10.0, v0, 30.0, 10.0, v1);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol(instance);
+  sol.add_empty_route("tr");
+  sol.push_back_edge_to_route("tr", {"v0", "v1"});
+  add_train_state(sol, "tr", 0, 0, 10);
+  add_train_state(sol, "tr", 10, 300, 10);
+
+  // At time 5, the train is at most at position 50 when coming from the first
+  // state, but at least at position 250 when reaching the second one. Hence,
+  // only the bounds from the first state are used, i.e., between braking to
+  // V_MIN right away, (10^2 - V_MIN^2) / (2 * 2) + 0.15 * V_MIN = 25.0225, and
+  // driving at speed 10. Its speed is between 10 - 2 * 5 = 0 and 10.
+  const auto [pos_bounds, vel_bounds] =
+      sol.get_exact_pos_and_vel_bounds("tr", 5);
+  EXPECT_APPROX_EQ_6(pos_bounds.lb, 25.0225);
+  EXPECT_APPROX_EQ_6(pos_bounds.ub, 50);
+  EXPECT_APPROX_EQ_6(vel_bounds.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds.ub, 10);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
      ExactBoundsCollapseAtStoredStates) {
   expect_exact_bounds_collapse_at_stored_states(sol_instance_with_two_trains());
   expect_exact_bounds_collapse_at_stored_states(
