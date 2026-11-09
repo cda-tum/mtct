@@ -86,8 +86,9 @@ struct MinimumRunningTimes {
  * The objective is the weighted sum of the exit delay and the average station
  * delay of every train, where the weight of each train and the weight of the
  * station delays relative to the exit delays are part of the instance. Hence,
- * it is never negative and 0 if and only if every train serves its stations
- * and leaves the network on time.
+ * it is never negative and, since the train weights are positive, 0 if and only
+ * if every train leaves the network on time and, if the station delay weight is
+ * positive, serves its stations on time.
  */
 class GeneralPerformanceOptimizationInstance
     : public GeneralProblemInstanceWithScheduleAndRoutes {
@@ -762,7 +763,8 @@ public:
    *
    * The bounds intersect the states reachable from the stored state before
    * @p t with the states from which the stored state after @p t is still
-   * reachable, given the train's acceleration, deceleration and speed limit.
+   * reachable, given the train's acceleration, deceleration and speed limit as
+   * well as the highest speed limit of the edges between both states.
    * Up to what corresponds to GRB_EPS in time for each bound, the lower bounds
    * do not exceed the upper bounds. Otherwise, e.g., if the stored times are
    * not physically possible, only the former are used.

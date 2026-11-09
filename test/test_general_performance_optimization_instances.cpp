@@ -16,6 +16,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -382,12 +383,13 @@ TEST(GeneralPerformanceOptimizationInstances,
   // At the speed limit 10, the first edge takes at least 100 / 10 = 10 s,
   // which is exactly how long the train takes. Hence, it is at position 50 at
   // time 5. The speed bounds only use the time to both states, in which the
-  // train cannot exceed the speed limit but could have braked to V_MIN.
+  // train cannot exceed the speed limit but could have braked from 10 to
+  // 10 - 2 * 5 = 0 and accelerated back to 10.
   const auto [pos2_bounds, vel2_bounds] =
       sol_instance.get_exact_pos_and_vel_bounds("tr1", 5);
   EXPECT_APPROX_EQ_6(pos2_bounds.lb, 50);
   EXPECT_APPROX_EQ_6(pos2_bounds.ub, 50);
-  EXPECT_APPROX_EQ_6(vel2_bounds.lb, V_MIN);
+  EXPECT_APPROX_EQ_6(vel2_bounds.lb, 0);
   EXPECT_APPROX_EQ_6(vel2_bounds.ub, 10);
 
   // Time 10 with speed 10 at position 100
@@ -3062,15 +3064,22 @@ void expect_exact_bounds_collapse_at_stored_states(
 
 // The approximate trajectory between two stored states rounds its line speed
 // up, so that it reaches the latter's position up to some time early and then
-// stays there. Shortly before the latter's time, it might instead throw,
-// since it only extends its trajectory by some tolerance.
+// stays there. Shortly before the latter's time, it might instead throw that
+// the time exceeds its travel time, since it only extends its trajectory by
+// some tolerance. Any other exception is unexpected. Its states before
+// arriving are checked directly in
+// SolGeneralPerformanceOptimizationInstanceConsistency.
 std::optional<instances::SolGeneralPerformanceOptimizationInstance::PosVel>
 approximate_state(
     const instances::SolGeneralPerformanceOptimizationInstance& sol,
     const std::string& tr_name, double t, double t2) {
   try {
     return sol.get_approximate_train_pos_and_vel(tr_name, t);
-  } catch (const exceptions::InvalidInputException&) {
+  } catch (const exceptions::InvalidInputException& e) {
+    if (!std::string_view(e.what()).starts_with(
+            "Time exceeds total travel time")) {
+      throw;
+    }
     return {{.pos = sol.get_train_pos(tr_name, t2),
              .vel = sol.get_train_speed(tr_name, t2)}};
   }
@@ -3100,10 +3109,7 @@ double approximate_trajectory_lead(
 // the approximate trajectory, both up to what corresponds to GRB_EPS in time
 // for each bound. Since the approximate trajectory follows the dynamics for
 // reaching the next stored position early by its lead, its position is bounded
-// above by the upper bound that much later. The lower speed bound assumes a
-// speed of at least V_MIN in the middle of an edge on which the train may not
-// stop, which the approximate trajectory undercuts when braking to an exit
-// speed below V_MIN.
+// above by the upper bound that much later.
 void expect_exact_bounds_contain_approximate_trajectory(
     const instances::SolGeneralPerformanceOptimizationInstance& sol,
     double step, const std::string& context) {
@@ -3137,7 +3143,7 @@ void expect_exact_bounds_contain_approximate_trajectory(
             << context << ", " << tr_name << " at " << t;
         EXPECT_LE(approx->pos, later_bounds.pos.ub + pos_tol)
             << context << ", " << tr_name << " at " << t;
-        EXPECT_GE(approx->vel, bounds.vel.lb - V_MIN - vel_tol)
+        EXPECT_GE(approx->vel, bounds.vel.lb - vel_tol)
             << context << ", " << tr_name << " at " << t;
         EXPECT_LE(approx->vel, bounds.vel.ub + vel_tol)
             << context << ", " << tr_name << " at " << t;
@@ -3204,6 +3210,46 @@ TEST(GeneralPerformanceOptimizationInstances, ExactBoundsStoppingAllowed) {
   EXPECT_APPROX_EQ_6(pos_bounds_29.ub, 98.5);
   EXPECT_APPROX_EQ_6(vel_bounds_29.lb, 1);
   EXPECT_APPROX_EQ_6(vel_bounds_29.ub, 4);
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ExactBoundsAcrossFasterEdge) {
+  // Stored states need not lie on the same edge, e.g., if they stem from a
+  // simulation. Here, tr enters an edge of length 50 with speed limit 10 at
+  // speed 10 and is 20 s later 250 m into the following edge with speed limit
+  // 20, again at speed 10. It accelerates and decelerates at rate 2.
+  instances::GeneralPerformanceOptimizationInstance instance;
+  const auto                                        v0 =
+      instance.get_editable_network().add_vertex("v0", VertexType::TTD);
+  instance.get_editable_network().add_vertex("v1", VertexType::TTD);
+  const auto v2 =
+      instance.get_editable_network().add_vertex("v2", VertexType::TTD);
+  instance.get_editable_network().add_edge({"v0"}, {"v1"}, 50, 10, false);
+  instance.get_editable_network().add_edge({"v1"}, {"v2"}, 300, 20, false);
+  instance.get_editable_network().add_successor({"v0", "v1"}, {"v1", "v2"});
+  instance.add_train("tr", 10, 20, 2, 2, 0.0, 10.0, v0, 60.0, 10.0, v2);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol(instance);
+  sol.add_empty_route("tr");
+  sol.push_back_edge_to_route("tr", {"v0", "v1"});
+  sol.push_back_edge_to_route("tr", {"v1", "v2"});
+  add_train_state(sol, "tr", 0, 0, 10);
+  add_train_state(sol, "tr", 20, 300, 10);
+
+  // The train can drive the first 50 m at speed 10 within 5 s, accelerate to
+  // 20 within 5 s and 75 m, drive at that speed for 5 s to position 225 and
+  // decelerate to 10 within the last 5 s and 75 m. Hence, it can be at
+  // position 225 at speed 20 at time 15, which is the lowest position from
+  // which it reaches position 300 in time. Its highest position assumes speed
+  // limit 20 all the way, i.e., accelerating to 20 within 5 s and 75 m,
+  // driving at that speed for 7.5 s and decelerating for 2.5 s, i.e.,
+  // 75 + 150 + 20 * 2.5 - 2.5^2 = 268.75. Its speed is at most 10 + 2 * 5 =
+  // 20 and at least 10 - 2 * 5 = 0.
+  const auto [pos_bounds, vel_bounds] =
+      sol.get_exact_pos_and_vel_bounds("tr", 15);
+  EXPECT_APPROX_EQ_6(pos_bounds.lb, 225);
+  EXPECT_APPROX_EQ_6(pos_bounds.ub, 268.75);
+  EXPECT_APPROX_EQ_6(vel_bounds.lb, 0);
+  EXPECT_APPROX_EQ_6(vel_bounds.ub, 20);
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
