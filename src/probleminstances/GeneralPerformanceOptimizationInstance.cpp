@@ -20,6 +20,7 @@
 #include <limits>
 #include <map>
 #include <optional>
+#include <plog/Log.h>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -66,7 +67,8 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
   for (size_t tr = 0; tr < train_count; ++tr) {
     auto const& tr_schedule = get_const_schedule(tr);
 
-    obj += get_train_weight(tr) * tr_exit_times.at(tr);
+    obj += get_train_weight(tr) *
+           (tr_exit_times.at(tr) - tr_schedule.get_exit_time());
 
     auto const& tr_stop_times   = stop_times.at(tr);
     auto const& scheduled_stops = tr_schedule.get_stops();
@@ -557,6 +559,78 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
           .next_time_step     = t1};
 }
 
+namespace {
+struct EdgeLimits {
+  double max_speed;
+  bool   breakable;
+};
+
+// The highest speed limit of the route's edges between the positions pos1 and
+// pos2, starting from that of the edge at pos1, and whether any of them is
+// breakable. Stored states need not be on the same edge, e.g., if they stem
+// from a simulation, and the train may drive as fast as on the fastest edge in
+// between and may stop if it may do so on any of these edges.
+[[nodiscard]] EdgeLimits edge_limits_between(const cda_rail::Route&   route,
+                                             const cda_rail::Network& network,
+                                             size_t edge, double pos1,
+                                             double pos2) {
+  const auto& edge_obj = network.get_edge(edge);
+  EdgeLimits  limits{.max_speed = edge_obj.max_speed,
+                     .breakable = edge_obj.breakable};
+  double      edge_source = 0;
+  for (const auto& e : route.get_edges()) {
+    const auto&  e_obj       = network.get_edge(e);
+    const double edge_target = edge_source + e_obj.length;
+    if (edge_source < pos2 - cda_rail::GRB_EPS &&
+        edge_target > pos1 + cda_rail::GRB_EPS) {
+      limits.max_speed = std::max(limits.max_speed, e_obj.max_speed);
+      limits.breakable = limits.breakable || e_obj.breakable;
+    }
+    edge_source = edge_target;
+  }
+  return limits;
+}
+
+struct ReachableDistance {
+  double min;
+  double max;
+};
+
+// Distances that a train entering an edge of length s with speed v_entry and
+// leaving it with speed v_exit can have covered after time dt. The slowest
+// movement brakes right away until standstill if stopping is allowed, and
+// otherwise follows the maximal travel time profile; the fastest movement
+// follows the minimal travel time profile.
+[[nodiscard]] ReachableDistance
+reachable_distance(double v_entry, double v_exit, double v_max, double a,
+                   double d, double s, double dt, bool stopping_allowed) {
+  ReachableDistance result{};
+
+  if (stopping_allowed) {
+    const double rel_t = std::min(v_entry / d, dt);
+    result.min         = (v_entry * rel_t) - (0.5 * d * rel_t * rel_t);
+  } else {
+    const double v_line =
+        cda_rail::minimal_line_speed(v_entry, v_exit, cda_rail::V_MIN, a, d, s);
+    const double rel_t =
+        std::min(dt, cda_rail::time_on_edge(v_entry, v_exit, v_line, a, d, s));
+    result.min =
+        cda_rail::pos_on_edge_at_time(v_entry, v_exit, v_line, a, d, s, rel_t);
+  }
+
+  if (dt >= cda_rail::min_travel_time(v_entry, v_exit, v_max, a, d, s)) {
+    result.max = s;
+  } else {
+    const double v_line =
+        cda_rail::maximal_line_speed(v_entry, v_exit, v_max, a, d, s);
+    result.max =
+        cda_rail::pos_on_edge_at_time(v_entry, v_exit, v_line, a, d, s, dt);
+  }
+
+  return result;
+}
+} // namespace
+
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::PosVelBound
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
@@ -579,54 +653,57 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
             .vel = {.lb = std::min(v1, v2), .ub = std::max(v1, v2)}};
   }
 
-  const auto& edge_obj =
-      this->get_instance()->get_const_network().get_edge(edge);
   const auto& tr_obj =
       this->get_instance()->get_const_train_list().get_train(tr_name);
+  const auto [speed_limit, breakable] = edge_limits_between(
+      tr_route, this->get_instance()->get_const_network(), edge, pos1, pos2);
 
-  const auto max_speed =
-      tr_leaving_route ? tr_obj.get_max_speed()
-                       : std::min(edge_obj.max_speed, tr_obj.get_max_speed());
+  const auto max_speed = tr_leaving_route
+                             ? tr_obj.get_max_speed()
+                             : std::min(speed_limit, tr_obj.get_max_speed());
+  const auto a         = tr_obj.get_acceleration();
+  const auto d         = tr_obj.get_deceleration();
+  const auto s         = pos2 - pos1;
 
-  const auto max_t = max_travel_time(v1, v2, V_MIN, tr_obj.get_acceleration(),
-                                     tr_obj.get_deceleration(), pos2 - pos1,
-                                     edge_obj.breakable);
-  const auto min_t =
-      min_travel_time(v1, v2, max_speed, tr_obj.get_acceleration(),
-                      tr_obj.get_deceleration(), pos2 - pos1);
-  double ub   = pos1;
-  double lb   = pos1;
-  double v_lb = 0;
-  double v_ub = max_speed;
+  const bool stopping_allowed =
+      max_travel_time(v1, v2, V_MIN, a, d, s, breakable) >=
+      std::numeric_limits<double>::infinity();
+  const auto max_line_speed = maximal_line_speed(v1, v2, max_speed, a, d, s);
 
-  if (max_t >= std::numeric_limits<double>::infinity()) {
-    const auto t_to_stop = v1 / tr_obj.get_deceleration();
-    const auto rel_t     = std::min(t_to_stop, t - t1);
-    lb += (v1 * rel_t) - (0.5 * tr_obj.get_deceleration() * rel_t * rel_t);
-    v_lb = v1 - (tr_obj.get_deceleration() * rel_t);
-  } else {
-    const auto min_speed =
-        minimal_line_speed(v1, v2, V_MIN, tr_obj.get_acceleration(),
-                           tr_obj.get_deceleration(), pos2 - pos1);
-    lb += pos_on_edge_at_time(v1, v2, min_speed, tr_obj.get_acceleration(),
-                              tr_obj.get_deceleration(), pos2 - pos1, t - t1);
-    v_lb = vel_on_edge_at_time(v1, v2, min_speed, tr_obj.get_acceleration(),
-                               tr_obj.get_deceleration(), pos2 - pos1, t - t1);
+  const auto fwd =
+      reachable_distance(v1, v2, max_speed, a, d, s, t - t1, stopping_allowed);
+  const PosVelBound fwd_bounds{
+      .pos = {.lb = pos1 + fwd.min, .ub = pos1 + fwd.max},
+      .vel = {.lb = std::max(v1 - (d * (t - t1)), 0.0),
+              .ub = std::min(max_line_speed, v1 + (a * (t - t1)))}};
+
+  // Going backward in time from the exit state is the same problem with the
+  // entry and exit speeds as well as the acceleration and deceleration swapped.
+  const auto bwd =
+      reachable_distance(v2, v1, max_speed, d, a, s, t2 - t, stopping_allowed);
+  const PosVelBound bounds{
+      .pos = {.lb = std::max(fwd_bounds.pos.lb, pos2 - bwd.max),
+              .ub = std::min(fwd_bounds.pos.ub, pos2 - bwd.min)},
+      .vel = {.lb = std::max(fwd_bounds.vel.lb, v2 - (a * (t2 - t))),
+              .ub = std::min(fwd_bounds.vel.ub, v2 + (d * (t2 - t)))}};
+
+  // The stored times stem from a solution that may only be feasible within
+  // the solver's tolerances, in which case they can be marginally shorter or
+  // longer than physically possible. Moreover, the travel time functions round
+  // times to GRB_EPS. Hence, both bounds may be off by what corresponds to
+  // GRB_EPS in time.
+  const double pos_tol = 2 * GRB_EPS * max_speed;
+  const double vel_tol = 2 * GRB_EPS * std::max(a, d);
+  if (bounds.pos.lb > bounds.pos.ub + pos_tol ||
+      bounds.vel.lb > bounds.vel.ub + vel_tol) {
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+    PLOGW << "Bounds of train " << tr_name << " at time " << t
+          << " from its states at times " << t1 << " and " << t2
+          << " are inconsistent; using the bounds from time " << t1 << " only";
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+    return fwd_bounds;
   }
-
-  if (t >= t1 + min_t) {
-    ub += pos2 - pos1;
-  } else {
-    const auto max_line_speed =
-        maximal_line_speed(v1, v2, max_speed, tr_obj.get_acceleration(),
-                           tr_obj.get_deceleration(), pos2 - pos1);
-    ub += pos_on_edge_at_time(v1, v2, max_line_speed, tr_obj.get_acceleration(),
-                              tr_obj.get_deceleration(), pos2 - pos1, t - t1);
-    v_ub =
-        vel_on_edge_at_time(v1, v2, max_line_speed, tr_obj.get_acceleration(),
-                            tr_obj.get_deceleration(), pos2 - pos1, t - t1);
-  }
-  return {.pos = {.lb = lb, .ub = ub}, .vel = {.lb = v_lb, .ub = v_ub}};
+  return bounds;
 }
 
 std::optional<
@@ -648,13 +725,14 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const auto pos_2 = get_train_pos(tr_name, t2);
   const auto v2    = get_train_speed(tr_name, t2);
 
-  const auto& edge_obj =
-      this->get_instance()->get_const_network().get_edge(edge);
   const auto& tr_obj =
       this->get_instance()->get_const_train_list().get_train(tr_name);
+  const auto edge_limits = edge_limits_between(
+      this->get_const_solution_routes().get_route(tr_name),
+      this->get_instance()->get_const_network(), edge, pos_1, pos_2);
   // Within the solver's tolerances, the speeds can marginally exceed the speed
   // limit.
-  auto max_speed = std::min(tr_obj.get_max_speed(), edge_obj.max_speed);
+  auto max_speed = std::min(tr_obj.get_max_speed(), edge_limits.max_speed);
   if (std::max(v1, v2) <= max_speed + GRB_EPS) {
     max_speed = std::max({max_speed, v1, v2});
   }

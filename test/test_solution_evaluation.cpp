@@ -253,7 +253,7 @@ TEST(SolutionEvaluation, SlowSolutionIsNotOvertaken) {
   EXPECT_LE(trajectory.exit_times.at(0), 202 + 16.25);
   EXPECT_NEAR(trajectory.exit_delays.at(0), trajectory.exit_times.at(0) - 100,
               GRB_EPS);
-  EXPECT_NEAR(trajectory.obj, trajectory.exit_times.at(0), GRB_EPS);
+  EXPECT_NEAR(trajectory.obj, trajectory.exit_delays.at(0), GRB_EPS);
 
   // Greedily, the train accelerates to 10 m/s within 5 s, i.e., 37.5 m, and
   // brakes back to its exit speed of 5 m/s within another 5 s and 37.5 m, by
@@ -465,10 +465,10 @@ TEST(SolutionEvaluation, StationDelay) {
   EXPECT_NEAR(trajectory.stop_delays.at(0).at(0), 15, 1);
   EXPECT_NEAR(trajectory.exit_times.at(0), 185, 1);
   EXPECT_NEAR(trajectory.exit_delays.at(0), 85, 1);
-  // With all weights being 1, the objective is the exit time plus the average
+  // With all weights being 1, the objective is the exit delay plus the average
   // station delay
   EXPECT_NEAR(trajectory.obj,
-              trajectory.exit_times.at(0) + trajectory.stop_delays.at(0).at(0),
+              trajectory.exit_delays.at(0) + trajectory.stop_delays.at(0).at(0),
               GRB_EPS);
 
   // Greedily, the train leaves the station after its service at 85 instead.

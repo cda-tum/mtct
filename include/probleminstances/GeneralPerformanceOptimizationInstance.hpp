@@ -83,9 +83,12 @@ struct MinimumRunningTimes {
  *
  * The times given in the timetable are lower bounds, i.e., no train may enter
  * the network, serve a station or leave the network earlier than scheduled.
- * The objective is the weighted sum of the exit times and the average station
+ * The objective is the weighted sum of the exit delay and the average station
  * delay of every train, where the weight of each train and the weight of the
- * station delays relative to the exit times are part of the instance.
+ * station delays relative to the exit delays are part of the instance. Hence,
+ * it is never negative and, since the train weights are positive, 0 if and only
+ * if every train leaves the network on time and, if the station delay weight is
+ * positive, serves its stations on time.
  */
 class GeneralPerformanceOptimizationInstance
     : public GeneralProblemInstanceWithScheduleAndRoutes {
@@ -133,6 +136,13 @@ public:
       std::filesystem::path const& working_directory);
   /**
    * @brief Evaluates the objective for explicit exit and stop times.
+   *
+   * Every train contributes its weight times the sum of its exit delay, i.e.,
+   * its exit time minus its scheduled exit time, and the station delay weight
+   * times its average station delay. A stop time before the scheduled service
+   * time counts as no delay, whereas an exit time before the scheduled exit
+   * time is not rounded up, so that times at which partial routes end yield
+   * the same value up to the constant sum_of_weighted_exit_times().
    *
    * @param tr_exit_times Exit times per train.
    * @param stop_times Stop times per train and stop.
@@ -750,6 +760,14 @@ public:
   };
   /**
    * @brief Returns exact lower and upper bounds on position and velocity.
+   *
+   * The bounds intersect the states reachable from the stored state before
+   * @p t with the states from which the stored state after @p t is still
+   * reachable, given the train's acceleration, deceleration and speed limit as
+   * well as the highest speed limit of the edges between both states.
+   * Up to what corresponds to GRB_EPS in time for each bound, the lower bounds
+   * do not exceed the upper bounds. Otherwise, e.g., if the stored times are
+   * not physically possible, only the former are used.
    *
    * @param tr_name Name of the train.
    * @param t Query time.
