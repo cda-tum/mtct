@@ -42,8 +42,8 @@ const std::map<std::string, LazyConstraintSelectionStrategy>&
 lazy_constraint_selection_strategy_map() {
   static const std::map<std::string, LazyConstraintSelectionStrategy>
       LAZY_CONSTRAINT_SELECTION_STRATEGY_MAP{
-          {"OnlyViolated", LazyConstraintSelectionStrategy::OnlyViolated},
           {"OnlyFirstFound", LazyConstraintSelectionStrategy::OnlyFirstFound},
+          {"OnlyViolated", LazyConstraintSelectionStrategy::OnlyViolated},
           {"AllChecked", LazyConstraintSelectionStrategy::AllChecked}};
   return LAZY_CONSTRAINT_SELECTION_STRATEGY_MAP;
 }
@@ -59,10 +59,10 @@ lazy_train_selection_strategy_map() {
 } // namespace
 
 void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
-  app.add_flag("-f,--fix-routes", settings.fix_routes,
-               "If this flag is set, the routes given by the instance are "
-               "fixed. Otherwise (by default) the routes are optimized as "
-               "well.")
+  app.add_flag("-f,--fix-routes,!--free-routes", settings.fix_routes,
+               "The routes are optimized as well by default (--free-routes). "
+               "If this flag is set (-f or --fix-routes), the routes given by "
+               "the instance are fixed.")
       ->group("Model Parameters");
   app.add_option("-m,--max-velocity-delta", settings.max_velocity_delta,
                  "Maximal velocity difference (in m/s) between two "
@@ -89,8 +89,9 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
                "strengthened.")
       ->group("Model Parameters");
   app.add_flag("-l,--allow-late-entry", settings.late_entry_possible,
-               "Allow late entry (delays) in the solution (default without "
-               "flag is false)")
+               "If this flag is set, trains may enter the network later than "
+               "scheduled. Otherwise (by default) they enter exactly at their "
+               "scheduled time.")
       ->group("Model Parameters");
   app.add_flag("!--no-minimum-time-bounds,--use-minimum-time-bounds",
                settings.use_minimum_time_bounds,
@@ -151,9 +152,10 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
       ->group("Solver Parameters");
   app.add_option("-j,--lazy-constraint-selection-strategy",
                  settings.lazy_constraint_selection_strategy,
-                 "Strategy deciding which violated lazy constraints are "
-                 "added. Currently supports 'OnlyViolated', 'OnlyFirstFound', "
-                 "and 'AllChecked'.")
+                 "Strategy deciding which lazy constraints are added. "
+                 "Currently supports 'OnlyFirstFound' (only the first violated "
+                 "one), 'OnlyViolated' (all violated ones), and 'AllChecked' "
+                 "(all checked ones, violated or not).")
       ->transform(CLI::CheckedTransformer(
           lazy_constraint_selection_strategy_map(), CLI::ignore_case))
       ->capture_default_str()

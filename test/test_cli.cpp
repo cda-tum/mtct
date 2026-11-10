@@ -1057,6 +1057,15 @@ TEST(CliOptions, MbMipStrategies) {
   EXPECT_EQ(settings.solving.time_limit, 60);
 }
 
+TEST(CliOptions, MbMipFreeRoutesCanBeSetExplicitly) {
+  cda_rail::cli::MbMipSettings settings;
+  CLI::App                     app;
+  cda_rail::cli::add_mb_mip_options(app, settings);
+  app.parse(std::string{"--free-routes"});
+
+  EXPECT_FALSE(settings.fix_routes);
+}
+
 TEST(CliOptions, ExportSubdirectoryIsRequired) {
   cda_rail::cli::MbMipSettings settings;
   CLI::App                     app;

@@ -105,15 +105,16 @@ struct ModelDetailMovingBlock {
 /**
  * @brief Which of the headway constraints the lazy callback adds.
  *
- * `OnlyViolated` adds every constraint that the incumbent violates,
- * `OnlyFirstFound` stops after the first of them, and `AllChecked` adds every
- * constraint it looked at, whether it was violated or not. With every
- * strategy, a constraint that was already added is only added again if the
- * incumbent violates it.
+ * The strategies are ordered by how many constraints they add:
+ * `OnlyFirstFound` adds only the first constraint that the incumbent violates,
+ * `OnlyViolated` adds every constraint that the incumbent violates, and
+ * `AllChecked` adds every constraint it looked at, whether it was violated or
+ * not. With every strategy, a constraint that was already added is only added
+ * again if the incumbent violates it.
  */
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
-  OnlyViolated   = 0,
-  OnlyFirstFound = 1,
+  OnlyFirstFound = 0,
+  OnlyViolated   = 1,
   AllChecked     = 2,
 };
 
@@ -121,10 +122,10 @@ enum class LazyConstraintSelectionStrategy : std::uint8_t {
 constexpr std::string lazy_constraint_selection_strategy_to_string(
     LazyConstraintSelectionStrategy strategy) {
   switch (strategy) {
-  case LazyConstraintSelectionStrategy::OnlyViolated:
-    return "OnlyViolated";
   case LazyConstraintSelectionStrategy::OnlyFirstFound:
     return "OnlyFirstFound";
+  case LazyConstraintSelectionStrategy::OnlyViolated:
+    return "OnlyViolated";
   case LazyConstraintSelectionStrategy::AllChecked:
     return "AllChecked";
   default:

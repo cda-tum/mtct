@@ -472,7 +472,7 @@ The two apps only differ in the method used to solve this problem.
 ##### MILP Based
 
 `rail_gen_po_moving_block_mip_testing` uses a MILP in which the headway constraints are separated lazily [[5]](#references).
-Which violated constraints are added is controlled by `--lazy-constraint-selection-strategy`, and which train pairs are checked at all by `--lazy-train-selection-strategy`.
+Which constraints are added is controlled by `--lazy-constraint-selection-strategy`, and which train pairs are checked at all by `--lazy-train-selection-strategy`.
 Lazy separation can also be switched off by `--no-lazy-constraints`, in which case the full model is passed to Gurobi upfront.
 Alternatively, `--simplify-headway-constraints` uses simplified headway constraints, which are faster to solve but might not separate the trains accurately.
 This is worth considering if the results are only used to make preliminary decisions.
@@ -513,8 +513,10 @@ Instance:
                               working_directory/instances/instance_subdirectory/instance_name.
 
 Model Parameters:
-  -f,     --fix-routes        If this flag is set, the routes given by the instance are fixed.
-                              Otherwise (by default) the routes are optimized as well.
+  -f,     --fix-routes, --free-routes{false}
+                              The routes are optimized as well by default (--free-routes). If
+                              this flag is set (-f or --fix-routes), the routes given by the
+                              instance are fixed.
   -m,     --max-velocity-delta FLOAT:POSITIVE [5.55]
                               Maximal velocity difference (in m/s) between two consecutive
                               velocity extensions of a train.
@@ -527,8 +529,9 @@ Model Parameters:
   -q,     --strengthen-vertex-headway-constraints
                               If this flag is set, the vertex headway constraints are
                               strengthened.
-  -l,     --allow-late-entry  Allow late entry (delays) in the solution (default without flag
-                              is false)
+  -l,     --allow-late-entry  If this flag is set, trains may enter the network later than
+                              scheduled. Otherwise (by default) they enter exactly at their
+                              scheduled time.
           --no-minimum-time-bounds{false}, --use-minimum-time-bounds
                               Every timing variable is bounded by the minimal running time the
                               train needs to reach the corresponding event by default. If this
@@ -561,10 +564,11 @@ Solver Parameters:
   -u,     --include-higher-velocities-in-edge-expr
                               If this flag is set, higher velocities are included in the edge
                               expressions of the lazy headway constraints.
-  -j,     --lazy-constraint-selection-strategy ENUM:value in {AllChecked->2,OnlyFirstFound->1,OnlyViolated->0} OR {2,1,0} [0]
-                              Strategy deciding which violated lazy constraints are added.
-                              Currently supports 'OnlyViolated', 'OnlyFirstFound', and
-                              'AllChecked'.
+  -j,     --lazy-constraint-selection-strategy ENUM:value in {AllChecked->2,OnlyFirstFound->0,OnlyViolated->1} OR {2,0,1} [1]
+                              Strategy deciding which lazy constraints are added. Currently
+                              supports 'OnlyFirstFound' (only the first violated one),
+                              'OnlyViolated' (all violated ones), and 'AllChecked' (all checked
+                              ones, violated or not).
   -k,     --lazy-train-selection-strategy ENUM:value in {All->1,OnlyAdjacent->0} OR {1,0} [0]
                               Strategy deciding which train pairs are checked when separating
                               lazy constraints. Currently supports 'OnlyAdjacent' and 'All'.
@@ -671,18 +675,20 @@ Model Parameters:
           --simulator ENUM:value in {EventBased->1,Greedy->0} OR {1,0} [0]
                               Simulator used to evaluate the states of the search. Currently
                               supports 'Greedy' and 'EventBased'.
-  -l,     --allow-late-entry  Allow late entry (delays) in the solution (default without flag
-                              is false)
+  -l,     --allow-late-entry  If this flag is set, trains may enter the network later than
+                              scheduled. Otherwise (by default) they enter exactly at their
+                              scheduled time.
   -f{false}, --speed-limit-only-on-train-front{false}, --limit-speed-by-leaving-edges
-                              If this flag is set, trains only respect the limit of their front
-                              position. Otherwise (by default) any edge's speed limit any part
-                              of the train is on applies, i.e., by default speed limits of
-                              edges the train is leaving (and the front already left) are also
-                              relevant.
+                              The speed limit of every edge any part of the train is on applies
+                              by default, i.e., also the limits of edges the train is leaving
+                              (and the front already left). If this flag is negated (-f or
+                              --speed-limit-only-on-train-front), trains only respect the limit
+                              at their front position.
   -y{false}, --allow-early-exit{false}, --consider-earliest-exit
-                              Allow to leave stations and the network early. By defaults trains
-                              cannot leave before the scheduled time, i.e., the earliest exit
-                              times imposed by the schedule are respected.
+                              The earliest exit times imposed by the schedule are respected by
+                              default, i.e., trains cannot leave stations and the network
+                              before their scheduled time. If this flag is negated (-y or
+                              --allow-early-exit), they may leave early.
 
 Solver Parameters:
   -a,     --time-aware-state-transitions
