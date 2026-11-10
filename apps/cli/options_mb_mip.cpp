@@ -28,6 +28,7 @@
 namespace {
 using cda_rail::solver::mip_based::LazyConstraintSelectionStrategy;
 using cda_rail::solver::mip_based::LazyTrainSelectionStrategy;
+using cda_rail::solver::mip_based::LazyVelocitySelectionStrategy;
 
 const std::map<std::string, cda_rail::VelocityRefinementStrategy>&
 velocity_refinement_strategy_map() {
@@ -36,6 +37,16 @@ velocity_refinement_strategy_map() {
           {"None", cda_rail::VelocityRefinementStrategy::None},
           {"MinOneStep", cda_rail::VelocityRefinementStrategy::MinOneStep}};
   return VELOCITY_REFINEMENT_STRATEGY_MAP;
+}
+
+const std::map<std::string, LazyVelocitySelectionStrategy>&
+lazy_velocity_selection_strategy_map() {
+  static const std::map<std::string, LazyVelocitySelectionStrategy>
+      LAZY_VELOCITY_SELECTION_STRATEGY_MAP{
+          {"OnlyCurrent", LazyVelocitySelectionStrategy::OnlyCurrent},
+          {"ExtendToHigher", LazyVelocitySelectionStrategy::ExtendToHigher},
+          {"All", LazyVelocitySelectionStrategy::All}};
+  return LAZY_VELOCITY_SELECTION_STRATEGY_MAP;
 }
 
 const std::map<std::string, LazyConstraintSelectionStrategy>&
@@ -145,10 +156,18 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
                "as well. Only possible together with lazy constraints using "
                "the 'AllChecked' lazy constraint selection strategy.")
       ->group("Solver Parameters");
-  app.add_flag("-u,--include-higher-velocities-in-edge-expr",
-               settings.include_higher_velocities_in_edge_expr,
-               "If this flag is set, higher velocities are included in the "
-               "edge expressions of the lazy headway constraints.")
+  app.add_option("-u,--lazy-velocity-selection-strategy",
+                 settings.lazy_velocity_selection_strategy,
+                 "Strategy deciding for which velocities a lazy headway "
+                 "constraint on an edge is added, once it is added for the "
+                 "velocity of the current solution. Currently supports "
+                 "'OnlyCurrent' (only for that velocity), 'ExtendToHigher' "
+                 "(the same single constraint, extended to every higher "
+                 "velocity), and 'All' (one constraint for every velocity). "
+                 "Has no effect on simplified headway constraints.")
+      ->transform(CLI::CheckedTransformer(
+          lazy_velocity_selection_strategy_map(), CLI::ignore_case))
+      ->capture_default_str()
       ->group("Solver Parameters");
   app.add_option("-j,--lazy-constraint-selection-strategy",
                  settings.lazy_constraint_selection_strategy,
@@ -229,7 +248,8 @@ cda_rail::cli::generate_mb_mip_identifier(const MbMipSettings& settings) {
        "_",
        bool_to_str(settings.include_reverse_headways),
        "_",
-       bool_to_str(settings.include_higher_velocities_in_edge_expr),
+       solver::mip_based::lazy_velocity_selection_strategy_to_string(
+           settings.lazy_velocity_selection_strategy),
        "_",
        solver::mip_based::lazy_constraint_selection_strategy_to_string(
            settings.lazy_constraint_selection_strategy),
@@ -266,8 +286,9 @@ void cda_rail::cli::log_mb_mip_settings(const MbMipSettings& settings,
   PLOGD << "  Use lazy constraints: " << yes_no(settings.use_lazy_constraints);
   PLOGD << "  Include reverse headways: "
         << yes_no(settings.include_reverse_headways);
-  PLOGD << "  Include higher velocities in edge expressions: "
-        << yes_no(settings.include_higher_velocities_in_edge_expr);
+  PLOGD << "  Lazy velocity selection strategy: "
+        << solver::mip_based::lazy_velocity_selection_strategy_to_string(
+               settings.lazy_velocity_selection_strategy);
   PLOGD << "  Lazy constraint selection strategy: "
         << solver::mip_based::lazy_constraint_selection_strategy_to_string(
                settings.lazy_constraint_selection_strategy);
@@ -299,8 +320,8 @@ cda_rail::cli::mb_mip_solver_strategy(const MbMipSettings& settings) {
   return {.use_indicator_constraints = settings.use_indicator_constraints,
           .use_lazy_constraints      = settings.use_lazy_constraints,
           .include_reverse_headways  = settings.include_reverse_headways,
-          .include_higher_velocities_in_edge_expr =
-              settings.include_higher_velocities_in_edge_expr,
+          .lazy_velocity_selection_strategy =
+              settings.lazy_velocity_selection_strategy,
           .lazy_constraint_selection_strategy =
               settings.lazy_constraint_selection_strategy,
           .lazy_train_selection_strategy =

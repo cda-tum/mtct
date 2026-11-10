@@ -327,6 +327,23 @@ TEST(GenPOMovingBlockMIPSolver, LazyTrainSelectionStrategyToString) {
                cda_rail::exceptions::ConsistencyException);
 }
 
+TEST(GenPOMovingBlockMIPSolver, LazyVelocitySelectionStrategyToString) {
+  using cda_rail::solver::mip_based::lazy_velocity_selection_strategy_to_string;
+  using cda_rail::solver::mip_based::LazyVelocitySelectionStrategy;
+  EXPECT_EQ(lazy_velocity_selection_strategy_to_string(
+                LazyVelocitySelectionStrategy::OnlyCurrent),
+            "OnlyCurrent");
+  EXPECT_EQ(lazy_velocity_selection_strategy_to_string(
+                LazyVelocitySelectionStrategy::ExtendToHigher),
+            "ExtendToHigher");
+  EXPECT_EQ(lazy_velocity_selection_strategy_to_string(
+                LazyVelocitySelectionStrategy::All),
+            "All");
+  EXPECT_THROW(lazy_velocity_selection_strategy_to_string(
+                   static_cast<LazyVelocitySelectionStrategy>(255)),
+               cda_rail::exceptions::ConsistencyException);
+}
+
 // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 // NOLINTBEGIN (clang-analyzer-deadcode.DeadStores)
@@ -451,30 +468,34 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_THROW(
       solver.initialize_variables(
           {},
-          {.use_lazy_constraints                   = true,
-           .include_reverse_headways               = true,
-           .include_higher_velocities_in_edge_expr = true,
+          {.use_lazy_constraints             = true,
+           .include_reverse_headways         = true,
+           .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+               LazyVelocitySelectionStrategy::ExtendToHigher,
            .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
                LazyConstraintSelectionStrategy::OnlyFirstFound},
           {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
       cda_rail::exceptions::InvalidInputException);
 
-  EXPECT_THROW(solver.initialize_variables(
-                   {},
-                   {.use_lazy_constraints                   = false,
-                    .include_reverse_headways               = true,
-                    .include_higher_velocities_in_edge_expr = true,
-                    .lazy_constraint_selection_strategy     = cda_rail::solver::
-                        mip_based::LazyConstraintSelectionStrategy::AllChecked},
-                   {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
-               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(
+      solver.initialize_variables(
+          {},
+          {.use_lazy_constraints             = false,
+           .include_reverse_headways         = true,
+           .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+               LazyVelocitySelectionStrategy::ExtendToHigher,
+           .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
+               LazyConstraintSelectionStrategy::AllChecked},
+          {true, 5.55, cda_rail::VelocityRefinementStrategy::None}),
+      cda_rail::exceptions::InvalidInputException);
 
   solver.initialize_variables(
       {},
-      {.use_lazy_constraints                   = true,
-       .include_reverse_headways               = false,
-       .include_higher_velocities_in_edge_expr = true,
-       .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+      {.use_lazy_constraints             = true,
+       .include_reverse_headways         = false,
+       .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+           LazyVelocitySelectionStrategy::ExtendToHigher,
+       .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
            LazyConstraintSelectionStrategy::OnlyFirstFound},
       {true, 5.55, cda_rail::VelocityRefinementStrategy::None});
 
@@ -488,7 +509,9 @@ TEST(GenPOMovingBlockMIPSolver, PrivateFillFunctions) {
   EXPECT_EQ(solver.m_num_ttd, 1);
   EXPECT_TRUE(solver.m_solver_strategy.use_lazy_constraints);
   EXPECT_FALSE(solver.m_solver_strategy.include_reverse_headways);
-  EXPECT_TRUE(solver.m_solver_strategy.include_higher_velocities_in_edge_expr);
+  EXPECT_EQ(solver.m_solver_strategy.lazy_velocity_selection_strategy,
+            cda_rail::solver::mip_based::LazyVelocitySelectionStrategy::
+                ExtendToHigher);
   EXPECT_EQ(solver.m_solver_strategy.lazy_constraint_selection_strategy,
             cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::
                 OnlyFirstFound);
@@ -1230,10 +1253,11 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
          .velocity_refinement_strategy =
              cda_rail::VelocityRefinementStrategy::None,
          .max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = false,
-         .include_higher_velocities_in_edge_expr = true,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = false,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::ExtendToHigher,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
         {}, 240);
@@ -1258,10 +1282,11 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = false,
-         .include_higher_velocities_in_edge_expr = true,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = false,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::ExtendToHigher,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
         {}, 240);
@@ -1285,10 +1310,11 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = false,
-         .include_higher_velocities_in_edge_expr = true,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = false,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::ExtendToHigher,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
         {}, 700);
@@ -1312,10 +1338,11 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = false,
-         .include_higher_velocities_in_edge_expr = true,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = false,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::ExtendToHigher,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
          .abs_mip_gap = 10},
         {}, 700);
@@ -1339,11 +1366,90 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = false,
-         .include_higher_velocities_in_edge_expr = true,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = false,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::ExtendToHigher,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
+         .abs_mip_gap = 10},
+        {}, 700);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    check_objective_if_optimal_or_warn(sol, p, 10);
+
+    check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, AllVelocities1) {
+  const std::vector<std::string> paths{
+      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {.fix_routes         = false,
+         .max_velocity_delta = 5.55,
+         .velocity_refinement_strategy =
+             cda_rail::VelocityRefinementStrategy::None,
+         .max_exit_delay = 0.0},
+        {.lazy_velocity_selection_strategy =
+             cda_rail::solver::mip_based::LazyVelocitySelectionStrategy::All,
+         .abs_mip_gap = 10},
+        {}, 240);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    check_objective_if_optimal_or_warn(sol, p, 10);
+
+    check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, AllVelocities2) {
+  const std::vector<std::string> paths{"SimpleStation", "SingleTrack",
+                                       "SingleTrackWithStation"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {.max_exit_delay = 0.0},
+        {.lazy_velocity_selection_strategy =
+             cda_rail::solver::mip_based::LazyVelocitySelectionStrategy::All,
+         .abs_mip_gap = 10},
+        {}, 240);
+
+    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
+    check_objective_if_optimal_or_warn(sol, p, 10);
+
+    check_last_train_pos(instance, sol, p);
+    check_trajectory(instance, sol, p);
+    check_schedule(instance, sol, p, 0.0);
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, AllVelocities3_4Trains) {
+  const std::vector<std::string> paths{"Stammstrecke4Trains"};
+
+  for (const auto& p : paths) {
+    const auto instance =
+        cda_rail::instances::GeneralPerformanceOptimizationInstance(
+            p, "atmos2023", "data");
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol = solver.solve(
+        {.max_exit_delay = 0.0},
+        {.lazy_velocity_selection_strategy =
+             cda_rail::solver::mip_based::LazyVelocitySelectionStrategy::All,
          .abs_mip_gap = 10},
         {}, 700);
 
@@ -1371,10 +1477,11 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
          .velocity_refinement_strategy =
              cda_rail::VelocityRefinementStrategy::None,
          .max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = true,
-         .include_higher_velocities_in_edge_expr = false,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = true,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::OnlyCurrent,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
@@ -1404,10 +1511,11 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
          .velocity_refinement_strategy =
              cda_rail::VelocityRefinementStrategy::None,
          .max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = true,
-         .include_higher_velocities_in_edge_expr = false,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = true,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::OnlyCurrent,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
@@ -1434,10 +1542,11 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = true,
-         .include_higher_velocities_in_edge_expr = false,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = true,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::OnlyCurrent,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
@@ -1463,10 +1572,11 @@ TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = true,
-         .include_higher_velocities_in_edge_expr = false,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = true,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::OnlyCurrent,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
@@ -1492,10 +1602,11 @@ TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = true,
-         .include_higher_velocities_in_edge_expr = false,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = true,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::OnlyCurrent,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,
@@ -1521,10 +1632,11 @@ TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
     cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
     const auto                                             sol = solver.solve(
         {.max_exit_delay = 0.0},
-        {.use_lazy_constraints                   = true,
-         .include_reverse_headways               = true,
-         .include_higher_velocities_in_edge_expr = false,
-         .lazy_constraint_selection_strategy     = cda_rail::solver::mip_based::
+        {.use_lazy_constraints             = true,
+         .include_reverse_headways         = true,
+         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
+             LazyVelocitySelectionStrategy::OnlyCurrent,
+         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::AllChecked,
          .lazy_train_selection_strategy =
              cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All,

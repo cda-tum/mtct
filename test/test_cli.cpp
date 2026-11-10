@@ -1040,8 +1040,8 @@ TEST(CliOptions, MbMipStrategies) {
   cda_rail::cli::MbMipSettings settings;
   CLI::App                     app;
   cda_rail::cli::add_mb_mip_options(app, settings);
-  app.parse(std::string{"-f -j AllChecked -k All -r None -z -a 0.5 -t 60 "
-                        "--no-minimum-time-bounds"});
+  app.parse(std::string{"-f -j AllChecked -k All -u ExtendToHigher -r None "
+                        "-z -a 0.5 -t 60 --no-minimum-time-bounds"});
 
   EXPECT_TRUE(settings.fix_routes);
   EXPECT_EQ(
@@ -1049,6 +1049,9 @@ TEST(CliOptions, MbMipStrategies) {
       cda_rail::solver::mip_based::LazyConstraintSelectionStrategy::AllChecked);
   EXPECT_EQ(settings.lazy_train_selection_strategy,
             cda_rail::solver::mip_based::LazyTrainSelectionStrategy::All);
+  EXPECT_EQ(settings.lazy_velocity_selection_strategy,
+            cda_rail::solver::mip_based::LazyVelocitySelectionStrategy::
+                ExtendToHigher);
   EXPECT_EQ(settings.velocity_refinement_strategy,
             cda_rail::VelocityRefinementStrategy::None);
   EXPECT_FALSE(settings.use_lazy_constraints);
@@ -1217,9 +1220,10 @@ TEST(CliOptions, MbMipGeneratedIdentifier) {
 
   // The defaults, in the order in which the identifier concatenates them.
   const auto all_settings = cda_rail::cli::generate_mb_mip_identifier(settings);
-  EXPECT_EQ(all_settings,
-            "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_f_OnlyViolated_"
-            "OnlyAdjacent_10_-1");
+  EXPECT_EQ(
+      all_settings,
+      "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_OnlyCurrent_OnlyViolated_"
+      "OnlyAdjacent_10_-1");
   ASSERT_TRUE(settings.exporting.parameter_identifier.has_value());
   EXPECT_EQ(settings.exporting.parameter_identifier.value_or(""),
             cda_rail::cli::hash_identifier(all_settings));
@@ -1234,9 +1238,10 @@ TEST(CliOptions, MbMipWarmStart) {
   EXPECT_TRUE(cda_rail::cli::mb_mip_solver_strategy(settings).use_warm_start);
   // Only part of the identifier if the warm start is used, see
   // MbMipGeneratedIdentifier
-  EXPECT_EQ(cda_rail::cli::generate_mb_mip_identifier(settings),
-            "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_f_OnlyViolated_"
-            "OnlyAdjacent_10_-1_t");
+  EXPECT_EQ(
+      cda_rail::cli::generate_mb_mip_identifier(settings),
+      "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_OnlyCurrent_OnlyViolated_"
+      "OnlyAdjacent_10_-1_t");
 }
 
 TEST(CliOptions, HashIdentifier) {
@@ -1469,7 +1474,7 @@ TEST(CliOptions, MbMipSettingsReachTheSolver) {
   cda_rail::cli::MbMipSettings settings;
   CLI::App                     app;
   cda_rail::cli::add_mb_mip_options(app, settings);
-  app.parse(std::string{"-f -m 3 -y -q -l -c -w -u -a 0.25 -x 10 "
+  app.parse(std::string{"-f -m 3 -y -q -l -c -w -u All -a 0.25 -x 10 "
                         "--max-station-delay 20 -t 30 -v -i -e sub "
                         "--export-lp-model --model-name my-model"});
   cda_rail::cli::finalize_mb_mip_settings(app, settings);
@@ -1486,7 +1491,8 @@ TEST(CliOptions, MbMipSettingsReachTheSolver) {
   const auto strategy = cda_rail::cli::mb_mip_solver_strategy(settings);
   EXPECT_TRUE(strategy.use_indicator_constraints);
   EXPECT_TRUE(strategy.include_reverse_headways);
-  EXPECT_TRUE(strategy.include_higher_velocities_in_edge_expr);
+  EXPECT_EQ(strategy.lazy_velocity_selection_strategy,
+            cda_rail::solver::mip_based::LazyVelocitySelectionStrategy::All);
   EXPECT_DOUBLE_EQ(strategy.abs_mip_gap, 0.25);
 
   const auto solution =

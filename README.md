@@ -561,9 +561,13 @@ Solver Parameters:
                               If this flag is set, headways on reverse edges are separated as
                               well. Only possible together with lazy constraints using the
                               'AllChecked' lazy constraint selection strategy.
-  -u,     --include-higher-velocities-in-edge-expr
-                              If this flag is set, higher velocities are included in the edge
-                              expressions of the lazy headway constraints.
+  -u,     --lazy-velocity-selection-strategy ENUM:value in {All->2,ExtendToHigher->1,OnlyCurrent->0} OR {2,1,0} [0]
+                              Strategy deciding for which velocities a lazy headway constraint
+                              on an edge is added, once it is added for the velocity of the
+                              current solution. Currently supports 'OnlyCurrent' (only for that
+                              velocity), 'ExtendToHigher' (the same single constraint, extended
+                              to every higher velocity), and 'All' (one constraint for every
+                              velocity). Has no effect on simplified headway constraints.
   -j,     --lazy-constraint-selection-strategy ENUM:value in {AllChecked->2,OnlyFirstFound->0,OnlyViolated->1} OR {2,0,1} [1]
                               Strategy deciding which lazy constraints are added. Currently
                               supports 'OnlyFirstFound' (only the first violated one),
