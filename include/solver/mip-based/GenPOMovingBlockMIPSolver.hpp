@@ -571,10 +571,13 @@ private:
      *        i.e., equal keys always lead to equal constraints
      * @param create Creates the constraints as a std::vector<LazyConstraint>,
      *        only called for a new key
+     * @return Whether one of the added constraints is violated by the current
+     *         solution, i.e., whether the solution is rejected
      */
     template <typename CreateConstraints>
-    void add_lazy_constraints(LazyConstraintKind kind, std::vector<size_t> key,
-                              const CreateConstraints& create);
+    [[nodiscard]] bool add_lazy_constraints(LazyConstraintKind       kind,
+                                            std::vector<size_t>      key,
+                                            const CreateConstraints& create);
     /** @brief The value of an expression in the current solution. */
     [[nodiscard]] double get_solution_value(const GRBLinExpr& expr);
     /** @brief The index of a velocity among those of a train at a vertex. */
@@ -617,10 +620,13 @@ private:
      * @param vel The velocity at which tr passes v_idx
      * @param ma_end Where the moving authority of tr ends at this velocity,
      *        see moving_authority_end()
+     * @return Whether the current solution violates one of the added
+     *         constraints, see add_lazy_constraints()
      */
-    void add_lazy_edge_headway_constraints(size_t tr, size_t other_tr,
-                                           size_t v_idx, double vel,
-                                           const MovingAuthorityEnd& ma_end);
+    [[nodiscard]] bool
+    add_lazy_edge_headway_constraints(size_t tr, size_t other_tr, size_t v_idx,
+                                      double                    vel,
+                                      const MovingAuthorityEnd& ma_end);
 
     /**
      * @brief The routes of the current solution.

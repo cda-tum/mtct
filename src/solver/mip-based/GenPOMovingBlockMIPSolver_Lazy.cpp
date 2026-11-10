@@ -71,29 +71,37 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
 }
 
 template <typename CreateConstraints>
-void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
+bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     add_lazy_constraints(LazyConstraintKind kind, std::vector<size_t> key,
                          const CreateConstraints& create) {
+  const auto violated = [this](const GRBLinExpr& lhs, const GRBLinExpr& rhs) {
+    return get_solution_value(lhs) - get_solution_value(rhs) <
+           -m_feasibility_tolerance;
+  };
+
   key.insert(key.begin(), static_cast<size_t>(kind));
+  bool violated_added = false;
   if (const auto it = m_added_lazy_constraints.find(key);
       it != m_added_lazy_constraints.end()) {
     for (const auto& [lhs, rhs] : it->second) {
-      if (get_solution_value(lhs) - get_solution_value(rhs) <
-          -m_feasibility_tolerance) {
+      if (violated(lhs, rhs)) {
         addLazy(lhs >= rhs);
+        violated_added = true;
       }
     }
-    return;
+    return violated_added;
   }
 
   auto constraints = create();
   for (const auto& [lhs, rhs] : constraints) {
     addLazy(lhs >= rhs);
+    violated_added = violated_added || violated(lhs, rhs);
     if (solver->m_solution_settings.export_lp_model) {
       solver->m_lazy_constraints.push_back(lhs >= rhs);
     }
   }
   m_added_lazy_constraints.emplace(std::move(key), std::move(constraints));
+  return violated_added;
 }
 
 double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
@@ -146,7 +154,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   return ma_end;
 }
 
-void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
+bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     add_lazy_edge_headway_constraints(size_t tr, size_t other_tr, size_t v_idx,
                                       double                    vel,
                                       const MovingAuthorityEnd& ma_end) {
@@ -160,7 +168,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   // and on the path to the end of the moving authority
   std::vector<size_t> key{tr, other_tr, velocity_index(tr, v_idx, vel)};
   key.insert(key.end(), p.begin(), p.end());
-  add_lazy_constraints(LazyConstraintKind::EdgeHeadway, std::move(key), [&]() {
+  const auto create = [&]() {
     const auto& other_tr_object =
         solver->m_instance.get_const_train_list().get_train(other_tr);
     const auto other_tr_max_speed =
@@ -184,6 +192,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         solver->m_vars["t_front_arrival"](tr, v_idx) +
         t_bound * (static_cast<double>(p.size()) - edge_path_expr) +
         t_bound * (1 - solver->m_vars["order"](tr, other_tr, rel_e_idx));
+
+    // The rear of other_tr has to have passed the end of the moving
+    // authority. If it ends at a vertex, this is the departure from that
+    // vertex. Otherwise, the departures from source and target bound it via
+    // the travel times of every velocity pair of other_tr on the edge.
     std::vector<GRBLinExpr> rhs;
     if (std::abs(rel_e_obj.length - rel_pos_on_edge) < EPS) {
       rhs.emplace_back(other_tr_target_var);
@@ -198,6 +211,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto& v_other_tr_target_velocities =
           solver->m_velocity_extensions.at(other_tr).at(rel_e_obj.target);
 
+      // Only velocities within the speed limit of the edge have y
+      // variables, e.g., a switch at the source can allow more than the
+      // edge itself
       for (size_t v_other_tr_source_index = 0;
            v_other_tr_source_index < v_other_tr_source_velocities.size();
            v_other_tr_source_index++) {
@@ -251,7 +267,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       constraints.push_back({.lhs = lhs, .rhs = rhs_expr});
     }
     return constraints;
-  });
+  };
+  return add_lazy_constraints(LazyConstraintKind::EdgeHeadway, std::move(key),
+                              create);
 }
 
 std::vector<std::vector<std::pair<size_t, double>>> cda_rail::solver::
@@ -533,16 +551,20 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                    GRB_EPS) {
             add_constr = true;
           }
-          if (!add_constr && rel_pos_on_edge > EPS &&
-              tr_t_var_value <
-                  getSolution(tr_other_target_var) -
-                      cda_rail::max_travel_time_to_end(
+          if (!add_constr && rel_pos_on_edge > EPS) {
+            // If the moving authority ends at the target, the rear of tr_other
+            // has to have left it. The maximal travel time to the end does not
+            // express this, since it is unbounded if tr_other stops there.
+            const auto max_time_to_target =
+                std::abs(rel_e_obj.length - rel_pos_on_edge) < EPS
+                    ? 0
+                    : cda_rail::max_travel_time_to_end(
                           tr_other_source_speed, tr_other_target_speed, V_MIN,
                           tr_other_object.get_acceleration(),
                           tr_other_object.get_deceleration(), rel_e_obj.length,
-                          rel_pos_on_edge, rel_e_obj.breakable) -
-                      GRB_EPS) {
-            add_constr = true;
+                          rel_pos_on_edge, rel_e_obj.breakable);
+            add_constr = tr_t_var_value < getSolution(tr_other_target_var) -
+                                              max_time_to_target - GRB_EPS;
           }
 
           if (!add_constr) {
@@ -565,16 +587,17 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   moving_authority_end(routes.at(tr), r_v_idx,
                                        candidate_vel * candidate_vel /
                                            (2 * tr_object.get_deceleration()));
-              if (candidate_ma_end.has_value()) {
-                add_lazy_edge_headway_constraints(
-                    tr, tr_other_idx, v_idx, candidate_vel, *candidate_ma_end);
+              if (candidate_ma_end.has_value() &&
+                  add_lazy_edge_headway_constraints(tr, tr_other_idx, v_idx,
+                                                    candidate_vel,
+                                                    *candidate_ma_end)) {
+                violated_constraint_found = true;
               }
             }
-          } else {
-            add_lazy_edge_headway_constraints(tr, tr_other_idx, v_idx, vel,
-                                              *ma_end);
+          } else if (add_lazy_edge_headway_constraints(tr, tr_other_idx, v_idx,
+                                                       vel, *ma_end)) {
+            violated_constraint_found = true;
           }
-          violated_constraint_found = true;
         }
 
         // Is there a conflict with TTD constraints
@@ -728,7 +751,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                     vel_idx,     prev_v_idx.value_or(none),
                                     prev_vel_idx};
             key.insert(key.end(), p_tmp.begin(), p_tmp.end());
-            add_lazy_constraints(
+            const bool violated_added = add_lazy_constraints(
                 LazyConstraintKind::TtdHeadway, std::move(key), [&]() {
                   const auto t_bound_tmp =
                       std::max(t_bound, solver->latest_exit_time(other_tr));
@@ -774,7 +797,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   }
                   return constraints;
                 });
-            violated_constraint_found = true;
+            violated_constraint_found =
+                violated_constraint_found || violated_added;
           }
         }
       }
@@ -895,12 +919,16 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
         assert(other_tr_idx_target < rel_tr_order_target.size());
         const bool same_order = other_tr_idx_target <
                                 tr_idx_target; // Because < at source by design
-        const auto wrong_order_var_is_one =
+        // The order variables have to state that tr follows other_tr, since
+        // they also activate the edge headway constraints
+        const auto wrong_order_vars =
+            getSolution(solver->m_vars["order"](tr, other_tr, edge_index)) <
+                0.5 ||
             getSolution(solver->m_vars["order"](other_tr, tr, edge_index)) >
-            0.5;
+                0.5;
 
         // Check if specified vertex headway is fulfilled
-        if (!same_order || wrong_order_var_is_one ||
+        if (!same_order || wrong_order_vars ||
             solver->m_solver_strategy.lazy_constraint_selection_strategy ==
                 LazyConstraintSelectionStrategy::AllChecked ||
             getSolution(tr_t_var_source_front) -
@@ -911,7 +939,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 hw_t1_value - GRB_EPS) {
           // The constraints stay the same if the roles of the trains are
           // swapped
-          add_lazy_constraints(
+          const bool violated_added = add_lazy_constraints(
               LazyConstraintKind::VertexHeadway,
               {std::min(tr, other_tr), std::max(tr, other_tr), edge_index},
               [&]() {
@@ -976,7 +1004,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                     {.lhs = lhs_source_2, .rhs = rhs_source_2},
                     {.lhs = lhs_target_2, .rhs = rhs_target_2}};
               });
-          violated_constraint_found = true;
+          violated_constraint_found =
+              violated_constraint_found || violated_added;
         }
       }
     }
@@ -1056,7 +1085,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             // The constraints stay the same if the roles of the trains are
             // swapped, and since they travel in opposite directions, the edge
             // of one train also determines the edge of the other
-            add_lazy_constraints(
+            const bool violated_added = add_lazy_constraints(
                 LazyConstraintKind::ReverseEdge,
                 {idx, std::min(tr1, tr2), std::max(tr1, tr2),
                  tr1 < tr2 ? tr1_edge : tr2_edge},
@@ -1090,7 +1119,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                       {.lhs = lhs2, .rhs = rhs2},
                       {.lhs = lhs3, .rhs = rhs3}};
                 });
-            violated_constraint_found = true;
+            violated_constraint_found =
+                violated_constraint_found || violated_added;
           }
         }
       }
@@ -1190,7 +1220,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             std::max(tr_t_bound, solver->latest_exit_time(tr_other_idx));
 
         if (add_constr) {
-          add_lazy_constraints(
+          const bool violated_added = add_lazy_constraints(
               LazyConstraintKind::SimplifiedEdge,
               {tr, tr_other_idx, edge_index}, [&]() {
                 return std::vector<LazyConstraint>{
@@ -1200,7 +1230,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                                              edge_index)),
                      .rhs = headway_tr_on_e}};
               });
-          violated_constraint_found = true;
+          violated_constraint_found =
+              violated_constraint_found || violated_added;
         }
       }
 
@@ -1275,7 +1306,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 std::max(tr_t_bound, solver->latest_exit_time(tr_other_ttd));
 
             if (add_constr) {
-              add_lazy_constraints(
+              const bool violated_added = add_lazy_constraints(
                   LazyConstraintKind::SimplifiedTtd,
                   {tr, tr_other_ttd, ttd_index, edge_index}, [&]() {
                     return std::vector<LazyConstraint>{
@@ -1285,7 +1316,8 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                                              tr, tr_other_ttd, ttd_index)),
                          .rhs = headway_tr_on_ttd}};
                   });
-              violated_constraint_found = true;
+              violated_constraint_found =
+                  violated_constraint_found || violated_added;
             }
           }
         }

@@ -256,6 +256,128 @@ void check_trajectory(
 }
 
 // Only usable within this translation unit.
+// Verifies what the headway constraints of the moving block MILP guarantee in
+// any case, unless they are simplified. Whenever the front of a train passes a
+// vertex of its route other than the exit, its moving authority, i.e., its
+// braking distance ahead, ends on some edge of its route. Every other train
+// that reaches the source of this edge before it has to have its rear beyond
+// the source by then, or beyond the target if the moving authority ends there.
+// Within the edge, the model only estimates the position of the rear by travel
+// times, which different headway models may do differently, so this is not
+// checked. Positions are bounded by every trajectory consistent with the
+// recorded states, and the time tolerance applies.
+void check_headways(
+    const cda_rail::instances::GeneralPerformanceOptimizationInstance& instance,
+    const cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol,
+    const std::string& instance_path, double time_tolerance = 1e-3) {
+  if (!sol.has_solution()) {
+    return;
+  }
+
+  const auto& network    = instance.get_const_network();
+  const auto& train_list = instance.get_const_train_list();
+  const auto& routes     = sol.get_const_solution_routes();
+
+  // Positions of the sources of the edges on the route of a train
+  const auto edge_starts = [&](const std::string& tr_name) {
+    std::vector<double> starts;
+    double              pos = 0;
+    for (const auto& e : routes.get_route(tr_name).get_edges()) {
+      starts.push_back(pos);
+      pos += network.get_edge(e).length;
+    }
+    return starts;
+  };
+
+  for (size_t tr = 0; tr < train_list.size(); tr++) {
+    const auto& tr_object = train_list.get_train(tr);
+    const auto& tr_name   = tr_object.get_name();
+    const auto& tr_edges  = routes.get_route(tr_name).get_edges();
+    const auto  tr_starts = edge_starts(tr_name);
+    const auto  route_len = routes.get_route(tr_name).length(network);
+
+    for (const auto& t : sol.get_train_times(tr_name)) {
+      const auto pos       = sol.get_train_pos(tr_name, t);
+      const auto vertex_it = std::ranges::find_if(tr_starts, [&](double start) {
+        return std::abs(start - pos) < cda_rail::GRB_EPS;
+      });
+      if (vertex_it == tr_starts.end()) {
+        // Not at a vertex, or at the exit
+        continue;
+      }
+
+      const auto vel = sol.get_train_speed(tr_name, t);
+      const auto ma_end =
+          pos + (vel * vel / (2 * tr_object.get_deceleration()));
+      if (ma_end > route_len) {
+        // The moving authority leaves the network
+        continue;
+      }
+
+      // The edge in which the moving authority ends
+      auto ma_idx = static_cast<size_t>(vertex_it - tr_starts.begin());
+      while (ma_idx + 1 < tr_edges.size() &&
+             tr_starts.at(ma_idx + 1) < ma_end - cda_rail::EPS) {
+        ma_idx++;
+      }
+      const auto  ma_edge        = tr_edges.at(ma_idx);
+      const auto& ma_edge_length = network.get_edge(ma_edge).length;
+      const auto  ma_pos_on_edge = ma_end - tr_starts.at(ma_idx);
+      const bool  ma_ends_at_target =
+          std::abs(ma_edge_length - ma_pos_on_edge) < cda_rail::EPS;
+      const auto tr_time_at_edge =
+          sol.get_time_at_pos(tr_name, tr_starts.at(ma_idx), false);
+
+      for (size_t other = 0; other < train_list.size(); other++) {
+        if (other == tr) {
+          continue;
+        }
+        const auto& other_object  = train_list.get_train(other);
+        const auto& other_name    = other_object.get_name();
+        const auto& other_edges   = routes.get_route(other_name).get_edges();
+        const auto  other_edge_it = std::ranges::find(other_edges, ma_edge);
+        if (other_edge_it == other_edges.end()) {
+          continue;
+        }
+        const auto other_edge_start =
+            edge_starts(other_name)
+                .at(static_cast<size_t>(other_edge_it - other_edges.begin()));
+        if (sol.get_time_at_pos(other_name, other_edge_start, false) >=
+            tr_time_at_edge) {
+          // The other train follows
+          continue;
+        }
+
+        // The other train's front has to be this far on its route for its rear
+        // to have left the source, or the target, of the edge
+        const auto required_pos = other_edge_start +
+                                  (ma_ends_at_target ? ma_edge_length : 0.0) +
+                                  other_object.get_length();
+        const auto other_times  = sol.get_train_times(other_name);
+        const auto t_other      = t + time_tolerance;
+        if (t_other >= other_times.back()) {
+          // The other train has left the network
+          continue;
+        }
+        const auto max_pos =
+            t_other < other_times.front()
+                ? 0.0
+                : sol.get_exact_pos_and_vel_bounds(other_name, t_other).pos.ub;
+        EXPECT_GE(max_pos, required_pos - cda_rail::EPS)
+            << "Moving authority of train " << tr_name << " at time " << t
+            << " ends " << ma_pos_on_edge << " m into edge "
+            << network.get_edge_name(ma_edge) << ", but the rear of train "
+            << other_name << " can at most be "
+            << max_pos - other_edge_start - other_object.get_length()
+            << " m into it instead of "
+            << required_pos - other_edge_start - other_object.get_length()
+            << " m in " << instance_path;
+      }
+    }
+  }
+}
+
+// Only usable within this translation unit.
 template <typename SolutionType>
 void check_objective_if_optimal_or_warn(const SolutionType& solution,
                                         const std::string&  instance_name,
@@ -1153,6 +1275,7 @@ TEST(GenPOMovingBlockMIPSolver, Default1) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1174,6 +1297,7 @@ TEST(GenPOMovingBlockMIPSolver, Default2) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1194,6 +1318,7 @@ TEST(GenPOMovingBlockMIPSolver, Default3) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1214,6 +1339,7 @@ TEST(GenPOMovingBlockMIPSolver, Default4) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1234,6 +1360,7 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1267,6 +1394,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1296,6 +1424,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1324,6 +1453,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1352,6 +1482,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_8Trains) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1380,6 +1511,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_16Trains) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1409,6 +1541,7 @@ TEST(GenPOMovingBlockMIPSolver, AllVelocities1) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1434,6 +1567,7 @@ TEST(GenPOMovingBlockMIPSolver, AllVelocities2) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1458,6 +1592,7 @@ TEST(GenPOMovingBlockMIPSolver, AllVelocities3_4Trains) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1493,6 +1628,7 @@ TEST(GenPOMovingBlockMIPSolver, All1) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1527,6 +1663,7 @@ TEST(GenPOMovingBlockMIPSolver, All1b) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1558,6 +1695,7 @@ TEST(GenPOMovingBlockMIPSolver, All2) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1588,6 +1726,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_4Trains) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1618,6 +1757,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_8Trains) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1648,6 +1788,7 @@ TEST(GenPOMovingBlockMIPSolver, All3_16Trains) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1669,6 +1810,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1692,6 +1834,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1Indicator) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1717,6 +1860,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1738,6 +1882,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy3) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1759,6 +1904,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy4) {
 
     check_last_train_pos(instance, sol, p);
     check_trajectory(instance, sol, p);
+    check_headways(instance, sol, p);
     check_schedule(instance, sol, p, 0.0);
   }
 }
@@ -1952,6 +2098,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val, "SimpleStation", 10);
   check_trajectory(instance, obj_val, "SimpleStation");
+  check_headways(instance, obj_val, "SimpleStation");
   check_schedule(instance, obj_val, "SimpleStation", 0.0);
   // Check that the model files exist in the standard solution directory, which
   // includes the parameter identifier, but no solution was exported
@@ -1984,6 +2131,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val2, "SimpleStation", 10);
   check_trajectory(instance, obj_val2, "SimpleStation");
+  check_headways(instance, obj_val2, "SimpleStation");
   check_schedule(instance, obj_val2, "SimpleStation", 0.0);
   // Check that tmp2folder and solutions structure exists
   EXPECT_TRUE(std::filesystem::exists("tmp2folder"));
@@ -2025,6 +2173,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val3, "SimpleStation", 10);
   check_trajectory(instance, obj_val3, "SimpleStation");
+  check_headways(instance, obj_val3, "SimpleStation");
   check_schedule(instance, obj_val3, "SimpleStation", 0.0);
   // Check that corresponding folders exist
   EXPECT_TRUE(std::filesystem::exists("tmp3folder"));
@@ -2084,6 +2233,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val4, "SimpleStation", 10);
   check_trajectory(instance, obj_val4, "SimpleStation");
+  check_headways(instance, obj_val4, "SimpleStation");
   check_schedule(instance, obj_val4, "SimpleStation", 0.0);
   // Expect no folder tmp4folder to exist
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
@@ -2105,6 +2255,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val5, "SimpleStation", 10);
   check_trajectory(instance, obj_val5, "SimpleStation");
+  check_headways(instance, obj_val5, "SimpleStation");
   check_schedule(instance, obj_val5, "SimpleStation", 0.0);
   // Check that tmp5folder exists with LP files and solutions
   EXPECT_TRUE(std::filesystem::exists("tmp5folder"));
@@ -2152,6 +2303,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val6, "SimpleStation", 10);
   check_trajectory(instance, obj_val6, "SimpleStation");
+  check_headways(instance, obj_val6, "SimpleStation");
   check_schedule(instance, obj_val6, "SimpleStation", 0.0);
   // Check that tmp6folder exists with LP files, instance, networks, and
   // solutions
@@ -2216,6 +2368,7 @@ TEST(GenPOMovingBlockMIPSolver, SimpleStationExportOptions) {
   // Expect optimal value of 0
   check_objective_if_optimal_or_warn(obj_val7, "SimpleStation", 10);
   check_trajectory(instance, obj_val7, "SimpleStation");
+  check_headways(instance, obj_val7, "SimpleStation");
   check_schedule(instance, obj_val7, "SimpleStation", 0.0);
   // Expect LP files to exist in the default solution directory
   EXPECT_TRUE(std::filesystem::exists(
@@ -2330,8 +2483,10 @@ TEST(GenPOMovingBlockMIPSolver, MinimumTimeBoundsDoNotChangeOptimum) {
   EXPECT_APPROX_EQ(sol_with.get_obj(), sol_without.get_obj());
 
   check_trajectory(instance, sol_with, "MinimumTimeBounds");
+  check_headways(instance, sol_with, "MinimumTimeBounds");
   check_schedule(instance, sol_with, "MinimumTimeBounds");
   check_trajectory(instance, sol_without, "MinimumTimeBounds");
+  check_headways(instance, sol_without, "MinimumTimeBounds");
   check_schedule(instance, sol_without, "MinimumTimeBounds");
 }
 
@@ -2400,10 +2555,14 @@ TEST(GenPOMovingBlockMIPSolver, MinimumTimeBoundsAtVertexBeforeOrAfterStop) {
 
   check_trajectory(instance, sol_with,
                    "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_headways(instance, sol_with,
+                 "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
   check_schedule(instance, sol_with,
                  "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
   check_trajectory(instance, sol_without,
                    "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
+  check_headways(instance, sol_without,
+                 "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
   check_schedule(instance, sol_without,
                  "MinimumTimeBoundsAtVertexBeforeOrAfterStop");
 }
@@ -2498,6 +2657,7 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
   EXPECT_LE(sol3.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum with lazy constraints";
   check_trajectory(instance, sol3, "PreventOvertakingWhileStopping (lazy)");
+  check_headways(instance, sol3, "PreventOvertakingWhileStopping (lazy)");
   check_schedule(instance, sol3, "PreventOvertakingWhileStopping (lazy)",
                  100.0);
 
@@ -2510,6 +2670,7 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
   EXPECT_LE(sol4.get_obj(), 2 * (190.0 - 90.0))
       << "Expected expensive optimum without lazy constraints";
   check_trajectory(instance, sol4, "PreventOvertakingWhileStopping (no lazy)");
+  check_headways(instance, sol4, "PreventOvertakingWhileStopping (no lazy)");
   check_schedule(instance, sol4, "PreventOvertakingWhileStopping (no lazy)",
                  100.0);
 
@@ -2521,6 +2682,8 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
       << "Expected zero objective on late entry with lazy constraints";
   check_trajectory(instance, sol5,
                    "PreventOvertakingWhileStopping (late entry, lazy)", true);
+  check_headways(instance, sol5,
+                 "PreventOvertakingWhileStopping (late entry, lazy)");
   check_schedule(instance, sol5,
                  "PreventOvertakingWhileStopping (late entry, lazy)", 0.0);
 
@@ -2533,6 +2696,8 @@ TEST(GenPOMovingBlockMIPSolver, PreventOvertakingWhileStopping) {
   check_trajectory(instance, sol6,
                    "PreventOvertakingWhileStopping (late entry, no lazy)",
                    true);
+  check_headways(instance, sol6,
+                 "PreventOvertakingWhileStopping (late entry, no lazy)");
   check_schedule(instance, sol6,
                  "PreventOvertakingWhileStopping (late entry, no lazy)", 0.0);
 }
@@ -2597,6 +2762,8 @@ TEST(GenPOMovingBlockMIPSolver, StopsAreServedInScheduleOrder) {
   EXPECT_EQ(right_order_sol.get_status(), cda_rail::SolutionStatus::Optimal);
   check_trajectory(right_order_instance, right_order_sol,
                    "StopsAreServedInScheduleOrder");
+  check_headways(right_order_instance, right_order_sol,
+                 "StopsAreServedInScheduleOrder");
   check_schedule(right_order_instance, right_order_sol,
                  "StopsAreServedInScheduleOrder");
 }
@@ -2624,6 +2791,120 @@ TEST(GenPOMovingBlockMIPSolver, UnreachableExitIsInfeasible) {
     EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Infeasible)
         << "fix_routes = " << fix_routes;
   }
+}
+
+TEST(GenPOMovingBlockMIPSolver, MovingAuthorityEndingAtVertex) {
+  // Both trains enter at v0 with 10 m/s and brake with 2 m/s^2, so their moving
+  // authority ends 25 m ahead, exactly at v1. Tr1 stops at station S at v1,
+  // which it reaches after 5 s. It stands there for 10 s, and its rear leaves
+  // v1 another sqrt(10) s = 3.16 s later. Hence, Tr2 cannot enter after 18 s,
+  // but after 19 s.
+  const auto create_instance = [](double tr2_entry_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 25, 10);
+    const auto e12 = network.add_edge(v1, v2, 100, 10);
+    network.add_successor(e01, e12);
+
+    instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v2, 1);
+    instance.add_train("Tr2", 10, 10, 2, 2, true, tr2_entry_time, 10, v0,
+                       tr2_entry_time, 10, v2, 1);
+
+    instance.add_empty_station("S");
+    instance.add_track_to_station("S", e01);
+    instance.insert_stop("Tr1", "S", 0, 10);
+
+    return instance;
+  };
+
+  const auto early_instance = create_instance(18);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver early_solver(
+      early_instance);
+  const auto early_sol = early_solver.solve({}, {}, {}, 100);
+
+  EXPECT_FALSE(early_sol.has_solution());
+  EXPECT_EQ(early_sol.get_status(), cda_rail::SolutionStatus::Infeasible);
+
+  const auto late_instance = create_instance(19);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver late_solver(
+      late_instance);
+  const auto late_sol = late_solver.solve({}, {}, {}, 100);
+
+  ASSERT_TRUE(late_sol.has_solution());
+  EXPECT_EQ(late_sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  check_trajectory(late_instance, late_sol, "MovingAuthorityEndingAtVertex");
+  check_headways(late_instance, late_sol, "MovingAuthorityEndingAtVertex");
+  check_schedule(late_instance, late_sol, "MovingAuthorityEndingAtVertex");
+}
+
+TEST(GenPOMovingBlockMIPSolver, MovingAuthorityOnSlowTrackBehindSwitch) {
+  // At the switch v1, the trains can pass with up to 20 m/s on their way to
+  // the fast track via v2, but the slow track to v3 only allows 10 m/s. Both
+  // trains stop at station S on the slow track, so they have to use it. Both
+  // enter at v0 with 10 m/s and brake with 2 m/s^2, so their moving authority
+  // ends 25 m ahead, 15 m into the slow track. The rear of Tr1 passes this
+  // point after about 3.45 s at the earliest. Hence, Tr2 cannot enter after
+  // 3 s, but after 4 s.
+  const auto create_instance = [](double tr2_entry_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+    const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+    const auto v4      = network.add_vertex("v4", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 10, 20);
+    const auto e12 = network.add_edge(v1, v2, 100, 20);
+    const auto e23 = network.add_edge(v2, v3, 100, 20);
+    const auto e13 = network.add_edge(v1, v3, 100, 10);
+    const auto e34 = network.add_edge(v3, v4, 100, 20);
+
+    network.add_successor(e01, e12);
+    network.add_successor(e01, e13);
+    network.add_successor(e12, e23);
+    network.add_successor(e23, e34);
+    network.add_successor(e13, e34);
+
+    instance.add_train("Tr1", 10, 20, 2, 2, true, 0, 10, v0, 0, 20, v4, 1);
+    instance.add_train("Tr2", 10, 20, 2, 2, true, tr2_entry_time, 10, v0,
+                       tr2_entry_time, 20, v4, 1);
+
+    instance.add_empty_station("S");
+    instance.add_track_to_station("S", e13);
+    instance.insert_stop("Tr1", "S", 0, 10);
+    instance.insert_stop("Tr2", "S", 0, 10);
+
+    return instance;
+  };
+
+  const auto early_instance = create_instance(3);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver early_solver(
+      early_instance);
+  const auto early_sol = early_solver.solve({}, {}, {}, 100);
+
+  EXPECT_FALSE(early_sol.has_solution());
+  EXPECT_EQ(early_sol.get_status(), cda_rail::SolutionStatus::Infeasible);
+
+  const auto late_instance = create_instance(4);
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver late_solver(
+      late_instance);
+  const auto late_sol = late_solver.solve({}, {}, {}, 100);
+
+  ASSERT_TRUE(late_sol.has_solution());
+  EXPECT_EQ(late_sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  check_trajectory(late_instance, late_sol,
+                   "MovingAuthorityOnSlowTrackBehindSwitch");
+  check_headways(late_instance, late_sol,
+                 "MovingAuthorityOnSlowTrackBehindSwitch");
+  check_schedule(late_instance, late_sol,
+                 "MovingAuthorityOnSlowTrackBehindSwitch");
 }
 
 namespace {
@@ -2697,6 +2978,10 @@ TEST(GenPOMovingBlockMIPSolver, CrossingTtdSectionIsUsedByOneTrainAtATime) {
     EXPECT_GE(sol.get_obj(), 103 - 1e-3) << label;
     check_trajectory(instance, sol,
                      "CrossingTtdSectionIsUsedByOneTrainAtATime");
+    if (!simplify_headway_constraints) {
+      check_headways(instance, sol,
+                     "CrossingTtdSectionIsUsedByOneTrainAtATime");
+    }
   }
 }
 
@@ -2758,6 +3043,10 @@ TEST(GenPOMovingBlockMIPSolver, TrainWaitingAtTtdBorderDoesNotOccupySection) {
 
     check_trajectory(instance, sol,
                      "TrainWaitingAtTtdBorderDoesNotOccupySection");
+    if (!simplify_headway_constraints) {
+      check_headways(instance, sol,
+                     "TrainWaitingAtTtdBorderDoesNotOccupySection");
+    }
   }
 }
 
@@ -2988,6 +3277,9 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartKeepsOptimum) {
   EXPECT_EQ(sol_with.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_without.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_APPROX_EQ(sol_with.get_obj(), sol_without.get_obj());
+  check_headways(routes.instance, sol_with, "WarmStartKeepsOptimum (with)");
+  check_headways(routes.instance, sol_without,
+                 "WarmStartKeepsOptimum (without)");
 }
 
 TEST(GenPOMovingBlockMIPSolver, SmallCoefficientsAreRemoved) {
