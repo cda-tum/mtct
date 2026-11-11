@@ -64,23 +64,25 @@ void cda_rail::cli::add_mb_astar_options(CLI::App&        app,
       ->capture_default_str()
       ->group("Model Parameters");
   app.add_flag("-l,--allow-late-entry", settings.late_entry_possible,
-               "Allow late entry (delays) in the solution (default without "
-               "flag is false)")
+               "If this flag is set, trains may enter the network later than "
+               "scheduled. Otherwise (by default) they enter exactly at their "
+               "scheduled time.")
       ->group("Model Parameters");
   app.add_flag("!-f,!--speed-limit-only-on-train-front,--limit-speed-by-"
                "leaving-edges",
                settings.limit_speed_by_leaving_edges,
-               "If this flag is set, trains only respect the limit of their "
-               "front position. Otherwise (by default) any edge's speed limit "
-               "any part of the train is on applies, i.e., by default speed "
-               "limits of edges the train is leaving (and the front already "
-               "left) are also relevant.")
+               "The speed limit of every edge any part of the train is on "
+               "applies by default, i.e., also the limits of edges the train "
+               "is leaving (and the front already left). If this flag is "
+               "negated (-f or --speed-limit-only-on-train-front), trains only "
+               "respect the limit at their front position.")
       ->group("Model Parameters");
   app.add_flag("!-y,!--allow-early-exit,--consider-earliest-exit",
                settings.consider_earliest_exit,
-               "Allow to leave stations and the network early. By defaults "
-               "trains cannot leave before the scheduled time, i.e., the "
-               "earliest exit times imposed by the schedule are respected.")
+               "The earliest exit times imposed by the schedule are respected "
+               "by default, i.e., trains cannot leave stations and the network "
+               "before their scheduled time. If this flag is negated (-y or "
+               "--allow-early-exit), they may leave early.")
       ->group("Model Parameters");
   app.add_flag("-a,--time-aware-state-transitions",
                settings.time_aware_state_transitions,

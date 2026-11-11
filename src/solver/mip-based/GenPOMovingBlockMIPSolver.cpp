@@ -696,8 +696,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
                         solver_strategy.use_lazy_constraints},
                        {"include_reverse_headways",
                         solver_strategy.include_reverse_headways},
-                       {"include_higher_velocities_in_edge_expr",
-                        solver_strategy.include_higher_velocities_in_edge_expr},
                        {"use_warm_start", solver_strategy.use_warm_start}},
       .integer_data = {{"time_limit", time_limit}},
       .double_data  = {{"max_velocity_delta", model_detail.max_velocity_delta},
@@ -707,6 +705,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
       .string_data = {{"velocity_refinement_strategy",
                        velocity_refinement_strategy_to_string(
                            model_detail.velocity_refinement_strategy)},
+                      {"lazy_velocity_selection_strategy",
+                       lazy_velocity_selection_strategy_to_string(
+                           solver_strategy.lazy_velocity_selection_strategy)},
                       {"lazy_constraint_selection_strategy",
                        lazy_constraint_selection_strategy_to_string(
                            solver_strategy.lazy_constraint_selection_strategy)},
