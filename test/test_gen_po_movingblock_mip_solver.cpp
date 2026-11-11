@@ -2596,6 +2596,11 @@ bool check_lazy_strategies_against_full_model(
     const auto full_sol = full_solver.solve(
         model_detail, {.use_lazy_constraints = false, .abs_mip_gap = 1e-4}, {},
         100);
+    // Only a proven optimum or infeasibility is a valid reference.
+    EXPECT_TRUE(full_sol.get_status() == cda_rail::SolutionStatus::Optimal ||
+                full_sol.get_status() == cda_rail::SolutionStatus::Infeasible)
+        << (simplified ? "full model with simplified headways"
+                       : "full model with exact headways");
     if (!simplified) {
       exact_model_feasible = full_sol.has_solution();
     }
