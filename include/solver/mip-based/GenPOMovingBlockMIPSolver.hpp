@@ -105,15 +105,16 @@ struct ModelDetailMovingBlock {
 /**
  * @brief Which of the headway constraints the lazy callback adds.
  *
- * `OnlyViolated` adds every constraint that the incumbent violates,
- * `OnlyFirstFound` stops after the first of them, and `AllChecked` adds every
- * constraint it looked at, whether it was violated or not. With every
- * strategy, a constraint that was already added is only added again if the
- * incumbent violates it.
+ * The strategies are ordered by how many constraints they add:
+ * `OnlyFirstFound` adds only the first constraint that the incumbent violates,
+ * `OnlyViolated` adds every constraint that the incumbent violates, and
+ * `AllChecked` adds every constraint it looked at, whether it was violated or
+ * not. With every strategy, a constraint that was already added is only added
+ * again if the incumbent violates it.
  */
 enum class LazyConstraintSelectionStrategy : std::uint8_t {
-  OnlyViolated   = 0,
-  OnlyFirstFound = 1,
+  OnlyFirstFound = 0,
+  OnlyViolated   = 1,
   AllChecked     = 2,
 };
 
@@ -121,10 +122,10 @@ enum class LazyConstraintSelectionStrategy : std::uint8_t {
 constexpr std::string lazy_constraint_selection_strategy_to_string(
     LazyConstraintSelectionStrategy strategy) {
   switch (strategy) {
-  case LazyConstraintSelectionStrategy::OnlyViolated:
-    return "OnlyViolated";
   case LazyConstraintSelectionStrategy::OnlyFirstFound:
     return "OnlyFirstFound";
+  case LazyConstraintSelectionStrategy::OnlyViolated:
+    return "OnlyViolated";
   case LazyConstraintSelectionStrategy::AllChecked:
     return "AllChecked";
   default:
@@ -160,6 +161,50 @@ lazy_train_selection_strategy_to_string(LazyTrainSelectionStrategy strategy) {
 }
 
 /**
+ * @brief For which velocities the lazy callback adds a headway constraint
+ *        between two trains on an edge.
+ *
+ * Once the callback decides, see LazyConstraintSelectionStrategy, that a train
+ * passing a vertex has to be separated from a train ahead, the constraint
+ * depends on the velocity at which the train passes the vertex, since its
+ * moving authority ends the further ahead the faster it is.
+ * `OnlyCurrent` adds the constraint of the velocity in the incumbent.
+ * `ExtendToHigher` adds no further constraint, but extends this one to every
+ * higher velocity, i.e., it also binds if the train passes the vertex faster.
+ * This is valid, since a higher velocity only extends the moving authority,
+ * but weaker than the constraint of the higher velocity itself.
+ * `All` adds the constraint of every velocity at the vertex, each of which
+ * only holds for its own velocity.
+ *
+ * Only the full headway constraints on edges are affected. The simplified
+ * ones, see ModelDetailMovingBlock::simplify_headway_constraints, already
+ * express the headway of every velocity in a single constraint, and the
+ * headway constraints of TTD sections always use the velocities of the
+ * incumbent.
+ */
+enum class LazyVelocitySelectionStrategy : std::uint8_t {
+  OnlyCurrent    = 0,
+  ExtendToHigher = 1,
+  All            = 2,
+};
+
+/** @brief The name of @p strategy, as it is reported and parsed. */
+constexpr std::string lazy_velocity_selection_strategy_to_string(
+    LazyVelocitySelectionStrategy strategy) {
+  switch (strategy) {
+  case LazyVelocitySelectionStrategy::OnlyCurrent:
+    return "OnlyCurrent";
+  case LazyVelocitySelectionStrategy::ExtendToHigher:
+    return "ExtendToHigher";
+  case LazyVelocitySelectionStrategy::All:
+    return "All";
+  default:
+    throw cda_rail::exceptions::ConsistencyException(
+        "Unknown lazy velocity selection strategy");
+  }
+}
+
+/**
  * @brief How the moving block MIP is handed to and solved by Gurobi.
  *
  * The headway constraints are the ones there are too many of to add upfront,
@@ -176,8 +221,9 @@ struct SolverStrategyMovingBlock {
   bool use_indicator_constraints = false;
   bool use_lazy_constraints =
       true; // If false, the following settings are ignored
-  bool include_reverse_headways               = false;
-  bool include_higher_velocities_in_edge_expr = false;
+  bool                          include_reverse_headways = false;
+  LazyVelocitySelectionStrategy lazy_velocity_selection_strategy =
+      LazyVelocitySelectionStrategy::OnlyCurrent;
   LazyConstraintSelectionStrategy lazy_constraint_selection_strategy =
       LazyConstraintSelectionStrategy::OnlyViolated;
   LazyTrainSelectionStrategy lazy_train_selection_strategy =
@@ -525,14 +571,62 @@ private:
      *        i.e., equal keys always lead to equal constraints
      * @param create Creates the constraints as a std::vector<LazyConstraint>,
      *        only called for a new key
+     * @return Whether one of the added constraints is violated by the current
+     *         solution, i.e., whether the solution is rejected
      */
     template <typename CreateConstraints>
-    void add_lazy_constraints(LazyConstraintKind kind, std::vector<size_t> key,
-                              const CreateConstraints& create);
+    [[nodiscard]] bool add_lazy_constraints(LazyConstraintKind       kind,
+                                            std::vector<size_t>      key,
+                                            const CreateConstraints& create);
     /** @brief The value of an expression in the current solution. */
     [[nodiscard]] double get_solution_value(const GRBLinExpr& expr);
     /** @brief The index of a velocity among those of a train at a vertex. */
     [[nodiscard]] size_t velocity_index(size_t tr, size_t v, double vel) const;
+
+    /** @brief Where the moving authority of a train ends on its route. */
+    struct MovingAuthorityEnd {
+      // The edges from the vertex the train passes up to the one the moving
+      // authority ends on
+      cda_rail::index_vector path;
+      // The distance of the end from the source of the last of these edges
+      double pos_on_edge;
+    };
+    /**
+     * @brief Where the moving authority of a train ends if it passes a vertex
+     *        of its route with a given braking distance.
+     *
+     * @param route The route of the train, see get_routes()
+     * @param r_v_idx Index of the vertex within the route, not its last one
+     * @param braking_distance The braking distance of the train at the vertex
+     * @return The end, or `std::nullopt` if it lies beyond the end of the
+     *         route.
+     */
+    [[nodiscard]] std::optional<MovingAuthorityEnd>
+    moving_authority_end(const std::vector<std::pair<size_t, double>>& route,
+                         size_t r_v_idx, double braking_distance) const;
+    /**
+     * @brief Adds the headway constraints by which a train passing a vertex
+     *        at a given velocity follows another train on the edge its moving
+     *        authority ends on.
+     *
+     * The constraints only bind if the train passes the vertex at this
+     * velocity (or a higher one, see
+     * LazyVelocitySelectionStrategy::ExtendToHigher), uses the path to the
+     * end of its moving authority, and follows the other train on the edge.
+     *
+     * @param tr Index of the following train
+     * @param other_tr Index of the train ahead
+     * @param v_idx Index of the vertex
+     * @param vel The velocity at which tr passes v_idx
+     * @param ma_end Where the moving authority of tr ends at this velocity,
+     *        see moving_authority_end()
+     * @return Whether the current solution violates one of the added
+     *         constraints, see add_lazy_constraints()
+     */
+    [[nodiscard]] bool
+    add_lazy_edge_headway_constraints(size_t tr, size_t other_tr, size_t v_idx,
+                                      double                    vel,
+                                      const MovingAuthorityEnd& ma_end);
 
     /**
      * @brief The routes of the current solution.

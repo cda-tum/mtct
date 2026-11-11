@@ -34,7 +34,9 @@ struct MbMipSettings {
   bool use_indicator_constraints{false};
   bool use_lazy_constraints{true};
   bool include_reverse_headways{false};
-  bool include_higher_velocities_in_edge_expr{false};
+  solver::mip_based::LazyVelocitySelectionStrategy
+      lazy_velocity_selection_strategy{
+          solver::mip_based::LazyVelocitySelectionStrategy::OnlyCurrent};
   solver::mip_based::LazyConstraintSelectionStrategy
       lazy_constraint_selection_strategy{
           solver::mip_based::LazyConstraintSelectionStrategy::OnlyViolated};
