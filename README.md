@@ -55,7 +55,7 @@ More precisely, at least GCC 13.0, Clang 17.0, Apple Clang 16.0 (i.e., Xcode 16.
 
 Moreover, the tool requires a local installation of a recent Gurobi [[10]](#references) version available at [https://www.gurobi.com/downloads/gurobi-software/](https://www.gurobi.com/downloads/gurobi-software/) as well as a valid [license](https://www.gurobi.com/solutions/licensing/).
 For academic purposes, Gurobi offers [free academic licenses](https://www.gurobi.com/academia/academic-program-and-licenses/).
-The project currently tests with Gurobi v13.0.3.
+The project currently tests with Gurobi v14.0.0.
 
 #### Build
 
