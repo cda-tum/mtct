@@ -1,5 +1,5 @@
 {
-  "gurobiShortVersion": "13.0",
-  "gurobiVersion": "13.0.3",
-  "gurobiFolder": "gurobi1303"
+  "gurobiShortVersion": "14.0",
+  "gurobiVersion": "14.0.0",
+  "gurobiFolder": "gurobi1400"
 }
