@@ -1303,6 +1303,8 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
 TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
   const std::vector<std::string> paths{"Stammstrecke4Trains"};
 
+  // OnlyFirstFound adds a single constraint per solution, so it is slow on this
+  // instance. The warm start shortens the search.
   for (const auto& p : paths) {
     const auto instance =
         cda_rail::instances::GeneralPerformanceOptimizationInstance(
@@ -1316,7 +1318,8 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
              LazyVelocitySelectionStrategy::ExtendToHigher,
          .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
              LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap = 10},
+         .abs_mip_gap    = 10,
+         .use_warm_start = true},
         {}, 700);
 
     EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
