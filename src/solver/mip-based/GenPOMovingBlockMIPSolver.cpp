@@ -116,10 +116,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   PLOGI << "Model created. Optimize.";
   {
-    auto time_left = time_limit - (m_create_time / 1000);
-    if (time_left < 0 && time_limit > 0) {
-      time_left = 1;
-    }
+    // Positive, since the time limit has not been reached yet
+    const auto time_left = time_limit - (m_create_time / 1000);
     if (time_limit > 0) {
       m_model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
     }
@@ -1641,9 +1639,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                         tr_object.get_acceleration(),
                         tr_object.get_deceleration(), tr_object.get_length(),
                         outside_len, false);
-                if (v_exit_velocity > tr_max_speed_tmp) {
-                  continue;
-                }
                 const auto& v1_velocities =
                     m_velocity_extensions.at(tr).at(last_edge_obj.source);
                 for (size_t j = 0; j < v1_velocities.size(); j++) {
