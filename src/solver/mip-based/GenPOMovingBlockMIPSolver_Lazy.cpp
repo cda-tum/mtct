@@ -597,6 +597,11 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                 solver->m_instance.get_const_network().get_edge(p.front());
             const auto tr_max_speed =
                 std::min(tr_object.get_max_speed(), first_e_obj.max_speed);
+            // As in the full model, there is no headway to tr_other on an edge
+            // it cannot use, which the moving authority of another velocity
+            // can end on
+            const auto tr_other_edges = solver->m_instance.edges_used_by_train(
+                tr_other_idx, solver->m_model_detail.fix_routes, false);
             for (const auto candidate_vel :
                  solver->m_velocity_extensions.at(tr).at(v_idx)) {
               if (candidate_vel > tr_max_speed) {
@@ -606,6 +611,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   moving_authority_end(routes.at(tr), r_v_idx,
                                        candidate_vel * candidate_vel /
                                            (2 * tr_object.get_deceleration()));
+              if (!tr_other_edges.contains(candidate_ma_end.path.back())) {
+                continue;
+              }
               if (add_lazy_edge_headway_constraints(tr, tr_other_idx, v_idx,
                                                     candidate_vel,
                                                     candidate_ma_end)) {
