@@ -4896,5 +4896,222 @@ TEST(GreedySimulator, RASInstancesFeasibleWithExactEntry) {
   }
 }
 
+TEST(GreedySimulator, GeneralSimpleNetworkInstancesFeasibleWithExactEntry) {
+  // SimpleNetwork is a single track line with a passing loop (v7-v8) in the
+  // middle. The trains are dispatched as follows: eastbound trains take loop
+  // track b, westbound trains loop track a. Every TTD section, entry and exit
+  // is passed in the order in which the trains reach the middle of the single
+  // track on the same side of the loop. Hence no two trains meet on a single
+  // track, and opposite trains whose runs meet between these middles cross in
+  // the loop. A train runs at maximal speed, but leaves the loop as late as
+  // it can without exiting after its scheduled exit time, so that trains
+  // which would wait at their exit anyway give way. Simulating these
+  // decisions without late entry shows that the instances are feasible.
+  // GeneralSimpleNetwork45Trains is missing: there, a train waiting in the
+  // loop holds up the train behind it, which these rules cannot avoid.
+  for (const int num_trains_in_name :
+       {3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 35, 40, 50}) {
+    const auto instance_name =
+        "GeneralSimpleNetwork" + std::to_string(num_trains_in_name) + "Trains";
+    const instances::GeneralPerformanceOptimizationInstance instance(
+        instance_name, "gen-po", "./data");
+    const auto& network    = instance.get_const_network();
+    const auto  num_trains = instance.get_const_train_list().size();
+
+    // Every route has 13 edges: edge 3 is the first single track, edge 6 the
+    // loop and edge 9 the second single track
+    constexpr size_t                 first_single_track  = 3;
+    constexpr size_t                 loop                = 6;
+    constexpr size_t                 second_single_track = 9;
+    std::vector<index_vector>        train_edges(num_trains);
+    std::vector<std::vector<double>> stop_positions(num_trains);
+    std::vector<bool>                eastbound(num_trains);
+    // When the train reaches the middle of its first and second single track
+    std::vector<double> first_key(num_trains);
+    std::vector<double> second_key(num_trains);
+    // When the train would reach the loop, and how long it takes from leaving
+    // the loop to the middle of the second single track
+    std::vector<double> loop_arrival(num_trains);
+    std::vector<double> loop_to_second_key(num_trains);
+    for (size_t tr = 0; tr < num_trains; ++tr) {
+      const auto& schedule = instance.get_const_schedule(tr);
+      const auto& entry = network.get_vertex(schedule.get_entry_vertex()).name;
+      const auto& exit  = network.get_vertex(schedule.get_exit_vertex()).name;
+      eastbound.at(tr)  = !entry.starts_with("v14");
+      const auto vertices =
+          eastbound.at(tr) ? std::vector<std::string>{entry,
+                                                      "v2" + entry.substr(2),
+                                                      "v3",
+                                                      "v4",
+                                                      "v5",
+                                                      "v6",
+                                                      "v7b",
+                                                      "v8b",
+                                                      "v9",
+                                                      "v10",
+                                                      "v11",
+                                                      "v12",
+                                                      "v13" + exit.substr(3),
+                                                      exit}
+                           : std::vector<std::string>{entry,
+                                                      "v13" + entry.substr(3),
+                                                      "v12",
+                                                      "v11",
+                                                      "v10",
+                                                      "v9",
+                                                      "v8a",
+                                                      "v7a",
+                                                      "v6",
+                                                      "v5",
+                                                      "v4",
+                                                      "v3",
+                                                      "v2" + exit.substr(2),
+                                                      exit};
+      auto& route = train_edges.at(tr);
+      for (size_t i = 0; i + 1 < vertices.size(); ++i) {
+        route.push_back(
+            network.get_edge_index(std::string_view(vertices.at(i)),
+                                   std::string_view(vertices.at(i + 1))));
+      }
+
+      const auto max_speed =
+          instance.get_const_train_list().get_train(tr).get_max_speed();
+      const auto edge_time = [&](size_t i) {
+        const auto& edge = network.get_edge(route.at(i));
+        return edge.length / std::min(max_speed, edge.max_speed);
+      };
+      const auto&                        stops = schedule.get_stops();
+      std::vector<std::optional<size_t>> stop_at_end_of_edge(route.size());
+      double                             t    = schedule.get_entry_time();
+      size_t                             stop = 0;
+      for (size_t i = 0; i < route.size(); ++i) {
+        if (i == first_single_track) {
+          first_key.at(tr) = t + (edge_time(i) / 2);
+        } else if (i == second_single_track) {
+          second_key.at(tr) = t + (edge_time(i) / 2);
+          loop_to_second_key.at(tr) += second_key.at(tr);
+        }
+        if (i == loop) {
+          loop_arrival.at(tr) = t;
+        }
+        t += edge_time(i);
+        if (i == loop) {
+          loop_to_second_key.at(tr) -= t;
+        }
+        if (stop < stops.size() &&
+            stops.at(stop).get_station().tracks.contains(route.at(i))) {
+          const index_vector route_to_stop(route.begin(),
+                                           route.begin() + i + 1);
+          ASSERT_TRUE(
+              instance.is_route_end_valid_stop_pos(tr, route_to_stop, stop))
+              << instance_name << ": stop " << stop << " of train " << tr;
+          stop_positions.at(tr).push_back(
+              network.length_of_path(route_to_stop));
+          stop_at_end_of_edge.at(i) = stop;
+          t = std::max(t, stops.at(stop).get_service_time()) +
+              stops.at(stop).get_service_duration();
+          ++stop;
+        }
+      }
+      ASSERT_EQ(stop, stops.size())
+          << instance_name << ": stops of train " << tr;
+
+      // As late as possible, backwards from the scheduled exit time
+      t = schedule.get_exit_time();
+      for (size_t i = route.size() - 1; i > second_single_track; --i) {
+        if (stop_at_end_of_edge.at(i).has_value()) {
+          t -= stops.at(stop_at_end_of_edge.at(i).value())
+                   .get_service_duration();
+        }
+        t -= edge_time(i);
+      }
+      second_key.at(tr) =
+          std::max(second_key.at(tr), t - (edge_time(second_single_track) / 2));
+    }
+
+    // A train does not leave before its scheduled exit time. If an opposite
+    // train enters where it exits before it can be gone, it waits in the loop
+    // until that train has arrived there, and some time longer to let further
+    // opposite trains pass. Trains of the same direction cannot overtake each
+    // other, hence keep their order.
+    constexpr double wait_margin  = 300;
+    bool             keys_changed = true;
+    while (keys_changed) {
+      keys_changed = false;
+      for (size_t tr = 0; tr < num_trains; ++tr) {
+        const auto& schedule    = instance.get_const_schedule(tr);
+        const auto  exit_vertex = schedule.get_exit_vertex();
+        for (size_t other = 0; other < num_trains; ++other) {
+          const auto delayed_key =
+              loop_arrival.at(other) + loop_to_second_key.at(tr) + wait_margin;
+          if (instance.get_const_schedule(other).get_entry_vertex() ==
+                  exit_vertex &&
+              schedule.get_exit_time() +
+                      network.get_vertex(exit_vertex).headway >
+                  instance.get_const_schedule(other).get_entry_time() &&
+              second_key.at(tr) < delayed_key) {
+            second_key.at(tr) = delayed_key;
+            keys_changed      = true;
+          }
+          if (eastbound.at(other) == eastbound.at(tr) &&
+              std::pair(first_key.at(other), other) <
+                  std::pair(first_key.at(tr), tr) &&
+              second_key.at(tr) <= second_key.at(other)) {
+            second_key.at(tr) = second_key.at(other) + 1;
+            keys_changed      = true;
+          }
+        }
+      }
+    }
+
+    const auto ttd_sections = network.unbreakable_sections();
+    std::vector<std::vector<std::pair<double, size_t>>> ttd_keys(
+        ttd_sections.size());
+    std::vector<std::vector<std::pair<double, size_t>>> vertex_keys(
+        network.number_of_vertices());
+    for (size_t tr = 0; tr < num_trains; ++tr) {
+      const auto& route = train_edges.at(tr);
+      for (size_t ttd = 0; ttd < ttd_sections.size(); ++ttd) {
+        const auto it = std::ranges::find_if(
+            route, [&](size_t e) { return ttd_sections.at(ttd).contains(e); });
+        if (it != route.end()) {
+          ttd_keys.at(ttd).emplace_back(
+              it - route.begin() < loop ? first_key.at(tr) : second_key.at(tr),
+              tr);
+        }
+      }
+      const auto& schedule = instance.get_const_schedule(tr);
+      vertex_keys.at(schedule.get_entry_vertex())
+          .emplace_back(first_key.at(tr), tr);
+      vertex_keys.at(schedule.get_exit_vertex())
+          .emplace_back(second_key.at(tr), tr);
+    }
+    const auto orders =
+        [](std::vector<std::vector<std::pair<double, size_t>>> keys) {
+          std::vector<index_vector> result(keys.size());
+          for (size_t i = 0; i < keys.size(); ++i) {
+            std::ranges::sort(keys.at(i));
+            for (const auto& [key, tr] : keys.at(i)) {
+              result.at(i).push_back(tr);
+            }
+          }
+          return result;
+        };
+
+    const simulator::GreedySimulator simulator(
+        instance, ttd_sections, train_edges, orders(ttd_keys),
+        orders(vertex_keys), stop_positions);
+    for (const double dt : {6.0, 15.0}) {
+      const auto result = simulator.simulate(dt, false, true, false, true);
+      EXPECT_TRUE(result.success) << instance_name << ", dt " << dt;
+      for (size_t tr = 0; tr < num_trains; ++tr) {
+        EXPECT_EQ(result.stop_times.at(tr).size(),
+                  instance.get_const_schedule(tr).get_stops().size())
+            << instance_name << ", dt " << dt << ", train " << tr;
+      }
+    }
+  }
+}
+
 // NOLINTEND
 // (clang-analyzer-deadcode.DeadStores,misc-const-correctness,clang-diagnostic-unused-result)

@@ -24,8 +24,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 60.0,
-    "t_n": 960.0,
+    "t_0": 90.0,
+    "t_n": 990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -225,8 +225,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 7060.0,
-    "t_n": 7960.0,
+    "t_0": 7090.0,
+    "t_n": 7990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -258,11 +258,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 8090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 8860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 8120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 8890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 8060.0,
-    "t_n": 8960.0,
+    "t_0": 8090.0,
+    "t_n": 8990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
