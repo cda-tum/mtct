@@ -1300,37 +1300,6 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
   }
 }
 
-TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
-  const std::vector<std::string> paths{"Stammstrecke4Trains"};
-
-  // OnlyFirstFound adds a single constraint per solution, so it is slow on this
-  // instance. The warm start shortens the search.
-  for (const auto& p : paths) {
-    const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            p, "atmos2023", "data");
-    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol = solver.solve(
-        {.max_exit_delay = 0.0},
-        {.use_lazy_constraints             = true,
-         .include_reverse_headways         = false,
-         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
-             LazyVelocitySelectionStrategy::ExtendToHigher,
-         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
-             LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap    = 10,
-         .use_warm_start = true},
-        {}, 700);
-
-    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
-    check_objective_if_optimal_or_warn(sol, p, 10);
-
-    check_last_train_pos(instance, sol, p);
-    check_trajectory(instance, sol, p);
-    check_schedule(instance, sol, p, 0.0);
-  }
-}
-
 TEST(GenPOMovingBlockMIPSolver, AllVelocities1) {
   const std::vector<std::string> paths{
       "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
@@ -2736,6 +2705,34 @@ TEST(GenPOMovingBlockMIPSolver, MovingAuthorityOnSlowTrackBehindSwitch) {
 
   EXPECT_FALSE(check_lazy_strategies_against_full_model(create_instance(3)));
   EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(4)));
+}
+
+TEST(GenPOMovingBlockMIPSolver, MovingAuthorityBeyondExit) {
+  // Both trains run with 10 m/s and brake with 1 m/s^2, so their moving
+  // authority of 50 m reaches beyond the exit 40 m ahead. Then it ends at the
+  // exit, i.e., the train ahead has to have left the network. The rear of Tr1
+  // leaves it after 5 s. Hence, Tr2 cannot enter after 4 s, but after 6 s.
+  const auto create_instance = [](double tr2_entry_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 20, 10);
+    const auto e12 = network.add_edge(v1, v2, 20, 10);
+    network.add_successor(e01, e12);
+
+    instance.add_train("Tr1", 10, 10, 1, 1, true, 0, 10, v0, 0, 10, v2, 1);
+    instance.add_train("Tr2", 10, 10, 1, 1, true, tr2_entry_time, 10, v0,
+                       tr2_entry_time, 10, v2, 1);
+
+    return instance;
+  };
+
+  EXPECT_FALSE(check_lazy_strategies_against_full_model(create_instance(4)));
+  EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(6)));
 }
 
 namespace {

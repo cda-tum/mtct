@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
@@ -78,24 +79,42 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     return get_solution_value(lhs) - get_solution_value(rhs) <
            -m_feasibility_tolerance;
   };
+  // Gurobi measures the violation relative to the magnitude of the constraint,
+  // e.g., of its big-M terms, and only rejects a solution violating it in this
+  // measure. It accepted relative violations of up to about three times its
+  // feasibility tolerance, hence the margin.
+  constexpr double margin = 10;
+  const auto rejects = [this](const GRBLinExpr& lhs, const GRBLinExpr& rhs) {
+    const GRBLinExpr diff      = lhs - rhs;
+    double           magnitude = std::abs(diff.getConstant());
+    for (unsigned int i = 0; i < diff.size(); i++) {
+      magnitude += std::abs(diff.getCoeff(static_cast<int>(i)) *
+                            getSolution(diff.getVar(static_cast<int>(i))));
+    }
+    return get_solution_value(diff) <
+           -margin * m_feasibility_tolerance * std::max(1.0, magnitude);
+  };
 
   key.insert(key.begin(), static_cast<size_t>(kind));
-  bool violated_added = false;
   if (const auto it = m_added_lazy_constraints.find(key);
       it != m_added_lazy_constraints.end()) {
+    // Gurobi already enforces these constraints, so it offers the solution only
+    // if it fulfills them within its own tolerances. Adding them again does not
+    // reject it.
     for (const auto& [lhs, rhs] : it->second) {
       if (violated(lhs, rhs)) {
         addLazy(lhs >= rhs);
-        violated_added = true;
       }
     }
-    return violated_added;
+    return false;
   }
+
+  bool violated_added = false;
 
   auto constraints = create();
   for (const auto& [lhs, rhs] : constraints) {
     addLazy(lhs >= rhs);
-    violated_added = violated_added || violated(lhs, rhs);
+    violated_added = violated_added || rejects(lhs, rhs);
     if (solver->m_solution_settings.export_lp_model) {
       solver->m_lazy_constraints.push_back(lhs >= rhs);
     }
@@ -121,15 +140,15 @@ size_t cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                              velocities.begin());
 }
 
-std::optional<cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
-                  LazyCallback::MovingAuthorityEnd>
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
-    moving_authority_end(const std::vector<std::pair<size_t, double>>& route,
-                         size_t r_v_idx, double braking_distance) const {
-  const auto ma_pos = route.at(r_v_idx).second + braking_distance;
-  if (ma_pos > route.back().second) {
-    return std::nullopt;
-  }
+    MovingAuthorityEnd
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
+        moving_authority_end(
+            const std::vector<std::pair<size_t, double>>& route, size_t r_v_idx,
+            double braking_distance) const {
+  // A moving authority reaching beyond the exit ends at the exit
+  const auto ma_pos = std::min(route.at(r_v_idx).second + braking_distance,
+                               route.back().second);
 
   // r_ma_idx >= r_v_idx s.th. route.at(r_ma_idx).second < ma_pos <=
   // route.at(r_ma_idx + 1).second which should be unique by design unless
@@ -479,10 +498,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
       const auto& tr_t_var       = solver->m_vars["t_front_arrival"](tr, v_idx);
       const auto& tr_t_var_value = getSolution(tr_t_var);
 
-      if (const auto ma_end = moving_authority_end(routes.at(tr), r_v_idx, bd);
-          ma_end.has_value()) {
-        const auto& p               = ma_end->path;
-        const auto  rel_pos_on_edge = ma_end->pos_on_edge;
+      {
+        const auto  ma_end = moving_authority_end(routes.at(tr), r_v_idx, bd);
+        const auto& p      = ma_end.path;
+        const auto  rel_pos_on_edge = ma_end.pos_on_edge;
         const auto& rel_e_idx       = p.back();
         const auto& rel_e_obj =
             solver->m_instance.get_const_network().get_edge(rel_e_idx);
@@ -587,15 +606,14 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
                   moving_authority_end(routes.at(tr), r_v_idx,
                                        candidate_vel * candidate_vel /
                                            (2 * tr_object.get_deceleration()));
-              if (candidate_ma_end.has_value() &&
-                  add_lazy_edge_headway_constraints(tr, tr_other_idx, v_idx,
+              if (add_lazy_edge_headway_constraints(tr, tr_other_idx, v_idx,
                                                     candidate_vel,
-                                                    *candidate_ma_end)) {
+                                                    candidate_ma_end)) {
                 violated_constraint_found = true;
               }
             }
           } else if (add_lazy_edge_headway_constraints(tr, tr_other_idx, v_idx,
-                                                       vel, *ma_end)) {
+                                                       vel, ma_end)) {
             violated_constraint_found = true;
           }
         }

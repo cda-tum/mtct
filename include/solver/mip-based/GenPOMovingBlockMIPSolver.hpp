@@ -562,17 +562,20 @@ private:
      * @brief Adds lazy constraints unless they were added before.
      *
      * Constraints that were added before are only added again if the current
-     * solution violates them, which Gurobi does not rule out. Either way, a
-     * solution that violates one of the constraints is rejected, exactly as if
-     * all of them were added again.
+     * solution violates them by more than the feasibility tolerance. Gurobi
+     * already enforces them, so such a violation is within Gurobi's own
+     * tolerances, and adding them again does not reject the solution.
      *
      * @param kind The rule by which the constraints are created
      * @param key Every index that determines the constraints for this rule,
      *        i.e., equal keys always lead to equal constraints
      * @param create Creates the constraints as a std::vector<LazyConstraint>,
      *        only called for a new key
-     * @return Whether one of the added constraints is violated by the current
-     *         solution, i.e., whether the solution is rejected
+     * @return Whether one of the newly created constraints is violated by the
+     *         current solution, i.e., whether the solution is rejected. Like
+     *         Gurobi, this measures the violation relative to the magnitude of
+     *         the constraint at the current solution. Always false for
+     *         constraints that were added before.
      */
     template <typename CreateConstraints>
     [[nodiscard]] bool add_lazy_constraints(LazyConstraintKind       kind,
@@ -598,10 +601,10 @@ private:
      * @param route The route of the train, see get_routes()
      * @param r_v_idx Index of the vertex within the route, not its last one
      * @param braking_distance The braking distance of the train at the vertex
-     * @return The end, or `std::nullopt` if it lies beyond the end of the
-     *         route.
+     * @return The end, which is the end of the route (the exit) if the
+     *         braking distance reaches beyond it
      */
-    [[nodiscard]] std::optional<MovingAuthorityEnd>
+    [[nodiscard]] MovingAuthorityEnd
     moving_authority_end(const std::vector<std::pair<size_t, double>>& route,
                          size_t r_v_idx, double braking_distance) const;
     /**
