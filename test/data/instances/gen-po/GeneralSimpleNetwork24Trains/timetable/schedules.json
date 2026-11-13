@@ -108,11 +108,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 3090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 3860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 3120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 3890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 3060.0,
-    "t_n": 3960.0,
+    "t_0": 3090.0,
+    "t_n": 3990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -141,11 +141,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 4090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 4860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 4120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 4890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 4060.0,
-    "t_n": 4960.0,
+    "t_0": 4090.0,
+    "t_n": 4990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -174,11 +174,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 5090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 5860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 5120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 5890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 5060.0,
-    "t_n": 5960.0,
+    "t_0": 5090.0,
+    "t_n": 5990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -186,11 +186,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 5150.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 5920.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 5210.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 5980.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 5120.0,
-    "t_n": 6020.0,
+    "t_0": 5180.0,
+    "t_n": 6080.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -210,11 +210,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 6090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 6860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 6120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 6890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 6060.0,
-    "t_n": 6960.0,
+    "t_0": 6090.0,
+    "t_n": 6990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -222,11 +222,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 6150.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 6920.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 6210.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 6980.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 6120.0,
-    "t_n": 7020.0,
+    "t_0": 6180.0,
+    "t_n": 7080.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -246,11 +246,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 7090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 7860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 7120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 7890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 7060.0,
-    "t_n": 7960.0,
+    "t_0": 7090.0,
+    "t_n": 7990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },

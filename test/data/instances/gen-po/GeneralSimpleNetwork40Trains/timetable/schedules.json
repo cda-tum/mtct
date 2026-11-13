@@ -33,8 +33,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 60.0,
-    "t_n": 960.0,
+    "t_0": 90.0,
+    "t_n": 990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -42,8 +42,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": 60.0,
-    "t_n": 960.0,
+    "t_0": 90.0,
+    "t_n": 990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -72,8 +72,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 1060.0,
-    "t_n": 1960.0,
+    "t_0": 1090.0,
+    "t_n": 1990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -132,11 +132,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 2090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 2860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 2120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 2890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 2060.0,
-    "t_n": 2960.0,
+    "t_0": 2090.0,
+    "t_n": 2990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -144,8 +144,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 2060.0,
-    "t_n": 2960.0,
+    "t_0": 2090.0,
+    "t_n": 2990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -162,8 +162,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 3060.0,
-    "t_n": 3960.0,
+    "t_0": 3090.0,
+    "t_n": 3990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -192,8 +192,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 3120.0,
-    "t_n": 4020.0,
+    "t_0": 3180.0,
+    "t_n": 4080.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -222,11 +222,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 4090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 4860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 4120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 4890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 4060.0,
-    "t_n": 4960.0,
+    "t_0": 4090.0,
+    "t_n": 4990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -246,8 +246,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 4060.0,
-    "t_n": 4960.0,
+    "t_0": 4090.0,
+    "t_n": 4990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -288,8 +288,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 5060.0,
-    "t_n": 5960.0,
+    "t_0": 5090.0,
+    "t_n": 5990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -297,11 +297,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 5090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 5860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 5120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 5890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 5060.0,
-    "t_n": 5960.0,
+    "t_0": 5090.0,
+    "t_n": 5990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -339,8 +339,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": 6060.0,
-    "t_n": 6960.0,
+    "t_0": 6090.0,
+    "t_n": 6990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -348,8 +348,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 6060.0,
-    "t_n": 6960.0,
+    "t_0": 6090.0,
+    "t_n": 6990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -381,11 +381,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 7090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 7860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 7120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 7890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 7060.0,
-    "t_n": 7960.0,
+    "t_0": 7090.0,
+    "t_n": 7990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -402,11 +402,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 7090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 7860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 7120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 7890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 7060.0,
-    "t_n": 7960.0,
+    "t_0": 7090.0,
+    "t_n": 7990.0,
     "v_0": 25.0,
     "v_n": 25.0
   }

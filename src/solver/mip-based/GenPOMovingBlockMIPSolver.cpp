@@ -82,27 +82,30 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   create_model(solution_settings_input, solver_strategy_input,
                model_detail_input);
-  // As the model, the warm start counts towards the time limit
-  if (m_solver_strategy.use_warm_start) {
+  // As the model, the warm start counts towards the time limit. If none is
+  // left, it is skipped.
+  const bool time_limit_reached =
+      time_limit > 0 && std::chrono::high_resolution_clock::now() - m_start >=
+                            std::chrono::seconds(time_limit);
+  if (m_solver_strategy.use_warm_start && !time_limit_reached) {
     set_warm_start();
   }
 
-  PLOGI << "Model created. Optimize.";
   m_model_created = std::chrono::high_resolution_clock::now();
   m_create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
                         m_model_created - m_start)
                         .count();
+  PLOGI << "Model created. Optimize.";
   {
-    auto time_left = time_limit - (m_create_time / 1000);
-    if (time_left < 0 && time_limit > 0) {
-      time_left = 1;
-    }
-    if (time_limit > 0) {
-      m_model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
-    }
     PLOGD << "Model created in "
           << (static_cast<double>(m_create_time) / 1000.0) << " s";
     if (time_limit > 0) {
+      // Zero if the model creation used up the time limit, in which case
+      // Gurobi stops right away and reports a timeout
+      const auto time_left =
+          std::max(0.0, static_cast<double>(time_limit) -
+                            (static_cast<double>(m_create_time) / 1000.0));
+      m_model->set(GRB_DoubleParam_TimeLimit, time_left);
       PLOGD << "Time left: " << time_left << " s";
     } else {
       PLOGD << "Time left: "
@@ -1618,9 +1621,6 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                         tr_object.get_acceleration(),
                         tr_object.get_deceleration(), tr_object.get_length(),
                         outside_len, false);
-                if (v_exit_velocity > tr_max_speed_tmp) {
-                  continue;
-                }
                 const auto& v1_velocities =
                     m_velocity_extensions.at(tr).at(last_edge_obj.source);
                 for (size_t j = 0; j < v1_velocities.size(); j++) {
@@ -1965,14 +1965,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           continue;
         }
         const auto bd = vel * vel / (2 * tr_object.get_deceleration());
-        // What if bd is outside network. Then relation to point where ma was
-        // set to exit node or leave as it is?
+        // A moving authority reaching beyond the exit ends at the exit, i.e.,
+        // such a path is shorter than bd. Min EPS so that the following edge
+        // is detected for speed 0.
         const auto brake_paths =
             m_instance.get_const_network()
                 .all_paths_of_length_starting_in_vertex(
-                    v, std::max(EPS, bd), {},
-                    tr_used_edges); // min EPS so that following edge is
-                                    // detected for speed 0
+                    v, std::max(EPS, bd), tr_schedule_object.get_exit_vertex(),
+                    tr_used_edges);
         for (size_t p_index = 0; p_index < brake_paths.size(); p_index++) {
           const auto& p = brake_paths.at(p_index);
           const auto  p_len =
@@ -2041,8 +2041,9 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                         (static_cast<double>(p.size()) - edge_path_expr) +
                     t_bound_tmp * (1 - m_vars["order"](tr, tr2, p.back()));
             }
-            if (p_len + EPS >= bd && p_len - EPS <= bd) {
-              // Target vertex is exactly the desired moving authority
+            if (p_len - EPS <= bd) {
+              // Target vertex is exactly the desired moving authority, or the
+              // exit at which a longer moving authority ends
               // t_front_departure(tr, v) >= t_rear_departure(tr2, target) if
               // order(tr, tr2, e) = 1 and path p chosen.
               rhs.emplace_back(

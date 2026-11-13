@@ -33,8 +33,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 60.0,
-    "t_n": 960.0,
+    "t_0": 90.0,
+    "t_n": 990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -87,8 +87,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 1060.0,
-    "t_n": 1960.0,
+    "t_0": 1090.0,
+    "t_n": 1990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -96,11 +96,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 1090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 1860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 1120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 1890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 1060.0,
-    "t_n": 1960.0,
+    "t_0": 1090.0,
+    "t_n": 1990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -120,11 +120,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 2090.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 2860.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 2120.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 2890.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 2060.0,
-    "t_n": 2960.0,
+    "t_0": 2090.0,
+    "t_n": 2990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -141,11 +141,11 @@
     "entry": "v1c",
     "exit": "v14c",
     "stops": [
-      { "begin": 2150.0, "duration": 45.0, "station": "StationLeft" },
-      { "begin": 2920.0, "duration": 45.0, "station": "StationRight" }
+      { "begin": 2210.0, "duration": 45.0, "station": "StationLeft" },
+      { "begin": 2980.0, "duration": 45.0, "station": "StationRight" }
     ],
-    "t_0": 2120.0,
-    "t_n": 3020.0,
+    "t_0": 2180.0,
+    "t_n": 3080.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -174,11 +174,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 3090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 3860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 3120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 3890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 3060.0,
-    "t_n": 3960.0,
+    "t_0": 3090.0,
+    "t_n": 3990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -207,11 +207,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 3150.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 3920.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 3210.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 3980.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 3120.0,
-    "t_n": 4020.0,
+    "t_0": 3180.0,
+    "t_n": 4080.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -252,11 +252,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 4090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 4860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 4120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 4890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 4060.0,
-    "t_n": 4960.0,
+    "t_0": 4090.0,
+    "t_n": 4990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -294,8 +294,8 @@
     "entry": "v1b",
     "exit": "v14b",
     "stops": null,
-    "t_0": 5060.0,
-    "t_n": 5960.0,
+    "t_0": 5090.0,
+    "t_n": 5990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -366,11 +366,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 6090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 6860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 6120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 6890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 6060.0,
-    "t_n": 6960.0,
+    "t_0": 6090.0,
+    "t_n": 6990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -408,8 +408,8 @@
     "entry": "v14b",
     "exit": "v1b",
     "stops": null,
-    "t_0": 7060.0,
-    "t_n": 7960.0,
+    "t_0": 7090.0,
+    "t_n": 7990.0,
     "v_0": 50.0,
     "v_n": 50.0
   },
@@ -441,11 +441,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 8090.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 8860.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 8120.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 8890.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 8060.0,
-    "t_n": 8960.0,
+    "t_0": 8090.0,
+    "t_n": 8990.0,
     "v_0": 25.0,
     "v_n": 25.0
   },
@@ -471,11 +471,11 @@
     "entry": "v14a",
     "exit": "v1a",
     "stops": [
-      { "begin": 8150.0, "duration": 45.0, "station": "StationRight" },
-      { "begin": 8920.0, "duration": 45.0, "station": "StationLeft" }
+      { "begin": 8210.0, "duration": 45.0, "station": "StationRight" },
+      { "begin": 8980.0, "duration": 45.0, "station": "StationLeft" }
     ],
-    "t_0": 8120.0,
-    "t_n": 9020.0,
+    "t_0": 8180.0,
+    "t_n": 9080.0,
     "v_0": 25.0,
     "v_n": 25.0
   }

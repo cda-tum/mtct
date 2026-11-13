@@ -2725,6 +2725,11 @@ TEST(GeneralPerformanceOptimizationInstances, ATMOS2023) {
 
       auto const consistency = instance.check_consistency(false);
       EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+      // The moving block MILP separates the station tracks, hence every
+      // instance must allow this transformation
+      EXPECT_TRUE(
+          instance.get_const_network().is_consistent_for_transformation())
+          << "Instance " << name << " is not consistent for transformation.";
     }
   }
 }
@@ -2748,6 +2753,11 @@ TEST(GeneralPerformanceOptimizationInstances, RAS) {
 
       auto const consistency = instance.check_consistency(false);
       EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+      // The moving block MILP separates the station tracks, hence every
+      // instance must allow this transformation
+      EXPECT_TRUE(
+          instance.get_const_network().is_consistent_for_transformation())
+          << "Instance " << name << " is not consistent for transformation.";
     }
   }
 }
@@ -2771,6 +2781,11 @@ TEST(GeneralPerformanceOptimizationInstances, GenPO) {
 
       auto const consistency = instance.check_consistency(false);
       EXPECT_TRUE(consistency) << "Instance " << name << " is inconsistent.";
+      // The moving block MILP separates the station tracks, hence every
+      // instance must allow this transformation
+      EXPECT_TRUE(
+          instance.get_const_network().is_consistent_for_transformation())
+          << "Instance " << name << " is not consistent for transformation.";
     }
   }
 }

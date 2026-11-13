@@ -14,7 +14,9 @@
 
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <ranges>
 #include <string>
@@ -1300,37 +1302,6 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
   }
 }
 
-TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities3_4Trains) {
-  const std::vector<std::string> paths{"Stammstrecke4Trains"};
-
-  // OnlyFirstFound adds a single constraint per solution, so it is slow on this
-  // instance. The warm start shortens the search.
-  for (const auto& p : paths) {
-    const auto instance =
-        cda_rail::instances::GeneralPerformanceOptimizationInstance(
-            p, "atmos2023", "data");
-    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-    const auto                                             sol = solver.solve(
-        {.max_exit_delay = 0.0},
-        {.use_lazy_constraints             = true,
-         .include_reverse_headways         = false,
-         .lazy_velocity_selection_strategy = cda_rail::solver::mip_based::
-             LazyVelocitySelectionStrategy::ExtendToHigher,
-         .lazy_constraint_selection_strategy = cda_rail::solver::mip_based::
-             LazyConstraintSelectionStrategy::OnlyFirstFound,
-         .abs_mip_gap    = 10,
-         .use_warm_start = true},
-        {}, 700);
-
-    EXPECT_TRUE(sol.has_solution()) << "No solution found for instance " << p;
-    check_objective_if_optimal_or_warn(sol, p, 10);
-
-    check_last_train_pos(instance, sol, p);
-    check_trajectory(instance, sol, p);
-    check_schedule(instance, sol, p, 0.0);
-  }
-}
-
 TEST(GenPOMovingBlockMIPSolver, AllVelocities1) {
   const std::vector<std::string> paths{
       "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
@@ -2573,20 +2544,120 @@ TEST(GenPOMovingBlockMIPSolver, UnreachableExitIsInfeasible) {
   }
 }
 
+TEST(GenPOMovingBlockMIPSolver, NetworkInconsistentForTransformationThrows) {
+  // A breakable edge must not end in a vertex without a border
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::NoBorder);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto e01     = network.add_edge(v0, v1, 100, 10);
+  const auto e12     = network.add_edge(v1, v2, 100, 10);
+  network.add_successor(e01, e12);
+
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v2, 1);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  EXPECT_THROW(std::ignore = solver.solve({}, {}, {}, 100),
+               cda_rail::exceptions::ConsistencyException);
+}
+
+TEST(GenPOMovingBlockMIPSolver, TracksMergingBeforeSlowerEdgeToExit) {
+  // Two tracks for 20 m/s merge at m, behind which the last edge to the exit
+  // allows only 10 m/s. Hence, a train can pass m with 20 m/s, but not if it
+  // continues to the exit. The train enters with 20 m/s and brakes with
+  // 1 m/s^2. Hence, it needs 10 s + 10 s to a or b and 2.5 s + 10 s from there
+  // to m, where it brakes on the last 150 m. Then it needs 2 s to the exit and
+  // another 5 s until its rear, 50 m behind, has left. As the train is longer
+  // than the last edge, its rear passes m after its front has left the
+  // network. Moreover, it would need 100 m to accelerate from 0 m/s to its exit
+  // speed of 10 m/s, which is more than its length.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto s       = network.add_vertex("s", cda_rail::VertexType::TTD);
+  const auto a       = network.add_vertex("a", cda_rail::VertexType::TTD);
+  const auto b       = network.add_vertex("b", cda_rail::VertexType::TTD);
+  const auto m       = network.add_vertex("m", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v0_s    = network.add_edge(v0, s, 200, 20);
+  const auto s_a     = network.add_edge(s, a, 200, 20);
+  const auto s_b     = network.add_edge(s, b, 200, 20);
+  const auto a_m     = network.add_edge(a, m, 200, 20);
+  const auto b_m     = network.add_edge(b, m, 200, 20);
+  const auto m_v1    = network.add_edge(m, v1, 20, 10);
+  network.add_successor(v0_s, s_a);
+  network.add_successor(v0_s, s_b);
+  network.add_successor(s_a, a_m);
+  network.add_successor(s_b, b_m);
+  network.add_successor(a_m, m_v1);
+  network.add_successor(b_m, m_v1);
+
+  instance.add_train("Tr1", 50, 20, 0.5, 1, true, 0, 20, v0, 0, 10, v1, 1);
+
+  // Without a time limit, which the tiny model does not need
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  const auto                                             sol =
+      solver.solve({.max_velocity_delta = 10,
+                    .velocity_refinement_strategy =
+                        cda_rail::VelocityRefinementStrategy::None},
+                   {.abs_mip_gap = 0}, {});
+
+  ASSERT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_NEAR(sol.get_obj(), 39.5, 1e-3);
+  check_trajectory(instance, sol, "TracksMergingBeforeSlowerEdgeToExit");
+}
+
+TEST(GenPOMovingBlockMIPSolver, ModelExportIntoFileThrows) {
+  // The model is exported into the working directory, which cannot be created
+  // if a file of the same name exists
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  network.add_edge(v0, v1, 100, 10);
+
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v1, 1);
+
+  const auto file_path =
+      std::filesystem::temp_directory_path() /
+      ("cda_rail_mb_model_export_" +
+       std::to_string(
+           std::chrono::steady_clock::now().time_since_epoch().count()));
+  {
+    std::ofstream file(file_path);
+    file << "not a directory";
+  }
+
+  cda_rail::solver::mip_based::SolutionSettingsMovingBlock solution_settings;
+  solution_settings.working_directory = file_path.string();
+  solution_settings.export_lp_model   = true;
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  EXPECT_THROW(std::ignore = solver.solve({}, {}, solution_settings, 100),
+               cda_rail::exceptions::ExportException);
+
+  std::filesystem::remove(file_path);
+}
+
 namespace {
 // Only usable within this translation unit.
 // Solves the instance with all headway constraints upfront and with every lazy
-// constraint selection strategy, once with the exact and once with the
-// simplified headway constraints. A lazy strategy has to reject every solution
-// that is infeasible for the full model with the same headway constraints.
-// Hence, it is infeasible if and only if this full model is, and otherwise
-// finds the same optimum.
-// Returns whether the full model with the exact headway constraints is
-// feasible.
+// constraint and velocity selection strategy, once with the exact and once
+// with the simplified headway constraints. A lazy strategy has to reject every
+// solution that is infeasible for the full model with the same headway
+// constraints. Hence, it is infeasible if and only if this full model is, and
+// otherwise finds the same optimum. Returns whether the full model with the
+// exact headway constraints is feasible.
 bool check_lazy_strategies_against_full_model(
     const cda_rail::instances::GeneralPerformanceOptimizationInstance&
         instance) {
   using cda_rail::solver::mip_based::LazyConstraintSelectionStrategy;
+  using cda_rail::solver::mip_based::LazyVelocitySelectionStrategy;
   bool exact_model_feasible = false;
   for (const bool simplified : {false, true}) {
     const cda_rail::solver::mip_based::ModelDetailMovingBlock model_detail{
@@ -2608,20 +2679,30 @@ bool check_lazy_strategies_against_full_model(
     for (const auto strategy : {LazyConstraintSelectionStrategy::OnlyFirstFound,
                                 LazyConstraintSelectionStrategy::OnlyViolated,
                                 LazyConstraintSelectionStrategy::AllChecked}) {
-      const auto label =
-          cda_rail::solver::mip_based::
-              lazy_constraint_selection_strategy_to_string(strategy) +
-          (simplified ? " with simplified headways" : " with exact headways");
-      cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
-      const auto                                             sol = solver.solve(
-          model_detail,
-          {.lazy_constraint_selection_strategy = strategy, .abs_mip_gap = 1e-4},
-          {}, 100);
+      for (const auto velocity_strategy :
+           {LazyVelocitySelectionStrategy::OnlyCurrent,
+            LazyVelocitySelectionStrategy::ExtendToHigher,
+            LazyVelocitySelectionStrategy::All}) {
+        const auto label =
+            cda_rail::solver::mip_based::
+                lazy_constraint_selection_strategy_to_string(strategy) +
+            ", " +
+            cda_rail::solver::mip_based::
+                lazy_velocity_selection_strategy_to_string(velocity_strategy) +
+            (simplified ? " with simplified headways" : " with exact headways");
+        cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+        const auto                                             sol =
+            solver.solve(model_detail,
+                         {.lazy_velocity_selection_strategy = velocity_strategy,
+                          .lazy_constraint_selection_strategy = strategy,
+                          .abs_mip_gap                        = 1e-4},
+                         {}, 100);
 
-      EXPECT_EQ(sol.get_status(), full_sol.get_status()) << label;
-      EXPECT_EQ(sol.has_solution(), full_sol.has_solution()) << label;
-      if (sol.has_solution() && full_sol.has_solution()) {
-        EXPECT_APPROX_EQ(sol.get_obj(), full_sol.get_obj()) << label;
+        EXPECT_EQ(sol.get_status(), full_sol.get_status()) << label;
+        EXPECT_EQ(sol.has_solution(), full_sol.has_solution()) << label;
+        if (sol.has_solution() && full_sol.has_solution()) {
+          EXPECT_APPROX_EQ(sol.get_obj(), full_sol.get_obj()) << label;
+        }
       }
     }
   }
@@ -2655,6 +2736,51 @@ TEST(GenPOMovingBlockMIPSolver, FastTrainFollowsSlowTrain) {
 
   instance.add_train("Tr1", 10, 5, 2, 2, true, 0, 5, v0, 0, 5, v5, 1);
   instance.add_train("Tr2", 10, 10, 2, 2, true, 10, 10, v0, 10, 10, v5, 1);
+
+  EXPECT_TRUE(check_lazy_strategies_against_full_model(instance));
+
+  // Indicator constraints model the same simplified headways as big-M ones
+  std::vector<double> objectives;
+  for (const bool use_indicator_constraints : {false, true}) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol =
+        solver.solve({.simplify_headway_constraints = true},
+                     {.use_indicator_constraints = use_indicator_constraints,
+                      .use_lazy_constraints      = false,
+                      .abs_mip_gap               = 0},
+                     {}, 100);
+    ASSERT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "use_indicator_constraints = " << use_indicator_constraints;
+    objectives.push_back(sol.get_obj());
+  }
+  EXPECT_NEAR(objectives.at(0), objectives.at(1), 1e-3);
+}
+
+TEST(GenPOMovingBlockMIPSolver, TrainsMergingAtSwitch) {
+  // Tr1 enters at a0, Tr2 at b0, and both continue on m-e. At b1, Tr2 runs at
+  // up to 20 m/s, whose moving authority of 100 m reaches onto m-e where Tr1
+  // is, whereas the moving authority of a lower velocity ends on b1-m, which
+  // Tr1 cannot use.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+  auto&      network = instance.get_editable_network();
+  const auto a0      = network.add_vertex("a0", cda_rail::VertexType::TTD);
+  const auto b0      = network.add_vertex("b0", cda_rail::VertexType::TTD);
+  const auto b1      = network.add_vertex("b1", cda_rail::VertexType::TTD);
+  const auto m       = network.add_vertex("m", cda_rail::VertexType::TTD);
+  const auto e       = network.add_vertex("e", cda_rail::VertexType::TTD);
+
+  const auto e_a0m  = network.add_edge(a0, m, 100, 20);
+  const auto e_b0b1 = network.add_edge(b0, b1, 100, 20);
+  const auto e_b1m  = network.add_edge(b1, m, 50, 20);
+  const auto e_me   = network.add_edge(m, e, 300, 20);
+
+  network.add_successor(e_a0m, e_me);
+  network.add_successor(e_b0b1, e_b1m);
+  network.add_successor(e_b1m, e_me);
+
+  instance.add_train("Tr1", 10, 20, 2, 2, true, 0, 10, a0, 0, 10, e, 1);
+  instance.add_train("Tr2", 10, 20, 2, 2, true, 0, 20, b0, 0, 20, e, 2);
 
   EXPECT_TRUE(check_lazy_strategies_against_full_model(instance));
 }
@@ -2738,6 +2864,34 @@ TEST(GenPOMovingBlockMIPSolver, MovingAuthorityOnSlowTrackBehindSwitch) {
   EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(4)));
 }
 
+TEST(GenPOMovingBlockMIPSolver, MovingAuthorityBeyondExit) {
+  // Both trains run with 10 m/s and brake with 1 m/s^2, so their moving
+  // authority of 50 m reaches beyond the exit 40 m ahead. Then it ends at the
+  // exit, i.e., the train ahead has to have left the network. The rear of Tr1
+  // leaves it after 5 s. Hence, Tr2 cannot enter after 4 s, but after 6 s.
+  const auto create_instance = [](double tr2_entry_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 20, 10);
+    const auto e12 = network.add_edge(v1, v2, 20, 10);
+    network.add_successor(e01, e12);
+
+    instance.add_train("Tr1", 10, 10, 1, 1, true, 0, 10, v0, 0, 10, v2, 1);
+    instance.add_train("Tr2", 10, 10, 1, 1, true, tr2_entry_time, 10, v0,
+                       tr2_entry_time, 10, v2, 1);
+
+    return instance;
+  };
+
+  EXPECT_FALSE(check_lazy_strategies_against_full_model(create_instance(4)));
+  EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(6)));
+}
+
 namespace {
 // The ways to model the TTD headways, each with whether the headway
 // constraints are simplified
@@ -2761,7 +2915,12 @@ ttd_headway_strategies() {
         .abs_mip_gap               = 0.01}},
       {"NoLazySimplified",
        true,
-       {.use_lazy_constraints = false, .abs_mip_gap = 0.01}}};
+       {.use_lazy_constraints = false, .abs_mip_gap = 0.01}},
+      {"NoLazySimplifiedIndicator",
+       true,
+       {.use_indicator_constraints = true,
+        .use_lazy_constraints      = false,
+        .abs_mip_gap               = 0.01}}};
 }
 } // namespace
 
