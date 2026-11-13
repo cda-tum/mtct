@@ -298,19 +298,46 @@ private:
       const SolverStrategyMovingBlock&   solver_strategy_input,
       const ModelDetailMovingBlock&      model_detail_input);
   /**
-   * @brief Collects the settings of a solve for the solver data export.
+   * @brief Statistics of a solve for the solver data export.
+   *
+   * Every value is -1 if it is unavailable, e.g., since the model was not
+   * created, the optimization never started, or Gurobi could not report it.
+   */
+  struct SolveStatistics {
+    // Number of lazy constraints handed to Gurobi during the solve. A
+    // constraint added before is handed over again only if the offered
+    // solution violates it, and then counts again. Zero without lazy
+    // constraints.
+    int num_lazy_constraints_added = -1;
+    // Number of linear constraints (rows) of the created model, i.e., without
+    // the lazy constraints and without general constraints such as indicator
+    // constraints.
+    int model_num_rows = -1;
+    // Number of variables (columns) of the created model.
+    int model_num_columns = -1;
+    // Number of branch-and-bound nodes Gurobi explored.
+    double node_count = -1;
+  };
+  /**
+   * @brief Collects the settings and statistics of a solve for the solver data
+   * export.
+   *
+   * The statistics are exported as num_lazy_constraints_added_int,
+   * model_num_rows_int, model_num_columns_int, and node_count_double.
    *
    * @param model_detail The model detail the solve uses
    * @param solver_strategy The solver strategy the solve uses
    * @param solution_settings The solution settings the solve uses
    * @param time_limit The time limit in seconds passed to the solver
-   * @return The settings as further data of the solver data export
+   * @param statistics The statistics of the solve
+   * @return The settings and statistics as further data of the solver data
+   * export
    */
   [[nodiscard]] static FurtherData
   get_further_data(const ModelDetailMovingBlock&      model_detail,
                    const SolverStrategyMovingBlock&   solver_strategy,
                    const SolutionSettingsMovingBlock& solution_settings,
-                   int                                time_limit);
+                   int time_limit, const SolveStatistics& statistics);
 
   /** @brief The scheduled exit time of a train plus the allowed delay. */
   double latest_exit_time(size_t tr) const;
@@ -557,6 +584,9 @@ private:
     // Gurobi's feasibility tolerance, with which a constraint that was added
     // before counts as violated.
     double m_feasibility_tolerance = 0;
+    // Number of addLazy() calls so far, see
+    // SolveStatistics::num_lazy_constraints_added.
+    int m_num_lazy_constraints_added = 0;
 
     /**
      * @brief Adds lazy constraints unless they were added before.
@@ -673,6 +703,11 @@ private:
 
   public:
     explicit LazyCallback(GenPOMovingBlockMIPSolver* solver) : solver(solver) {}
+
+    /** @brief The number of lazy constraints handed to Gurobi so far. */
+    [[nodiscard]] int get_num_lazy_constraints_added() const {
+      return m_num_lazy_constraints_added;
+    }
 
   protected:
     void callback() override;

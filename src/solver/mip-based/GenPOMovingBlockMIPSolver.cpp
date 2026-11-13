@@ -73,7 +73,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
       export_general_solution(
           solution, solution_settings_input,
           get_further_data(model_detail_input, solver_strategy_input,
-                           solution_settings_input, time_limit));
+                           solution_settings_input, time_limit, {}));
       cleanup();
       this->m_instance = old_instance;
       return solution;
@@ -82,6 +82,15 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   create_model(solution_settings_input, solver_strategy_input,
                model_detail_input);
+  SolveStatistics statistics;
+  // Queried before the optimization, since exporting the LP model adds the
+  // lazy constraints to the model afterwards
+  try {
+    statistics.model_num_rows    = m_model->get(GRB_IntAttr_NumConstrs);
+    statistics.model_num_columns = m_model->get(GRB_IntAttr_NumVars);
+  } catch (const GRBException& e) {
+    PLOGW << "Could not query the model size: " << e.getMessage();
+  }
   // As the model, the warm start counts towards the time limit. If none is
   // left, it is skipped.
   const bool time_limit_reached =
@@ -96,6 +105,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
                         m_model_created - m_start)
                         .count();
   PLOGI << "Model created. Optimize.";
+  // False if the model creation used up the time limit, in which case Gurobi
+  // stops right away and reports a timeout
+  bool optimization_started = true;
   {
     PLOGD << "Model created in "
           << (static_cast<double>(m_create_time) / 1000.0) << " s";
@@ -106,6 +118,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
           std::max(0.0, static_cast<double>(time_limit) -
                             (static_cast<double>(m_create_time) / 1000.0));
       m_model->set(GRB_DoubleParam_TimeLimit, time_left);
+      optimization_started = time_left > 0;
       PLOGD << "Time left: " << time_left << " s";
     } else {
       PLOGD << "Time left: "
@@ -143,6 +156,19 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   m_solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
                        m_model_solved - m_model_created)
                        .count();
+  if (!m_solver_strategy.use_lazy_constraints) {
+    statistics.num_lazy_constraints_added = 0;
+  } else if (optimization_started) {
+    statistics.num_lazy_constraints_added =
+        cb.value().get_num_lazy_constraints_added();
+  }
+  if (optimization_started) {
+    try {
+      statistics.node_count = m_model->get(GRB_DoubleAttr_NodeCount);
+    } catch (const GRBException& e) {
+      PLOGW << "Could not query the node count: " << e.getMessage();
+    }
+  }
   IF_PLOG(plog::debug) {
     PLOGD << "Model created in "
           << (static_cast<double>(m_create_time) / 1000.0) << " s";
@@ -183,10 +209,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     m_model->write((path / (m_solution_settings.model_name + ".mps")).string());
   }
 
-  export_general_solution(solution, m_solution_settings,
-                          get_further_data(model_detail_input,
-                                           solver_strategy_input,
-                                           m_solution_settings, time_limit));
+  export_general_solution(
+      solution, m_solution_settings,
+      get_further_data(model_detail_input, solver_strategy_input,
+                       m_solution_settings, time_limit, statistics));
 
   cleanup();
 
@@ -683,7 +709,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::FurtherData
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
     const ModelDetailMovingBlock&      model_detail,
     const SolverStrategyMovingBlock&   solver_strategy,
-    const SolutionSettingsMovingBlock& solution_settings, int time_limit) {
+    const SolutionSettingsMovingBlock& solution_settings, int time_limit,
+    const SolveStatistics& statistics) {
   return {
       .bool_data    = {{"fix_routes", model_detail.fix_routes},
                        {"simplify_headway_constraints",
@@ -700,8 +727,13 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
                        {"include_reverse_headways",
                         solver_strategy.include_reverse_headways},
                        {"use_warm_start", solver_strategy.use_warm_start}},
-      .integer_data = {{"time_limit", time_limit}},
+      .integer_data = {{"time_limit", time_limit},
+                       {"num_lazy_constraints_added",
+                        statistics.num_lazy_constraints_added},
+                       {"model_num_rows", statistics.model_num_rows},
+                       {"model_num_columns", statistics.model_num_columns}},
       .double_data  = {{"max_velocity_delta", model_detail.max_velocity_delta},
+                       {"node_count", statistics.node_count},
                        {"max_exit_delay", model_detail.max_exit_delay},
                        {"max_station_delay", model_detail.max_station_delay},
                        {"abs_mip_gap", solver_strategy.abs_mip_gap}},
