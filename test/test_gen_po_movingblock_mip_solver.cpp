@@ -9,6 +9,7 @@
 #include "datastructure/Route.hpp"
 #include "gurobi_c++.h"
 #include "gurobi_c.h"
+#include "nlohmann/json.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 
@@ -3276,6 +3277,89 @@ TEST(GenPOMovingBlockMIPSolver, SmallCoefficientsAreRemoved) {
 
   EXPECT_EQ(solver.m_model->getCoeff(c, x), 0);
   EXPECT_EQ(solver.m_model->getCoeff(c, y), 1e-3);
+}
+
+namespace {
+nlohmann::json read_solver_data(const std::filesystem::path& export_path) {
+  std::ifstream data_file(export_path / "solver_data.json");
+  EXPECT_TRUE(data_file.is_open()) << export_path.string();
+  nlohmann::json data;
+  if (data_file.is_open()) {
+    data_file >> data;
+  }
+  return data;
+}
+} // namespace
+
+TEST(GenPOMovingBlockMIPSolver, SolverDataStatistics) {
+  // The statistics are exported without debug output, with -1 for values
+  // that are unavailable and 0 only for true zeros.
+  const auto instance =
+      cda_rail::instances::GeneralPerformanceOptimizationInstance(
+          "SimpleStation", "atmos2023", "data");
+  const std::filesystem::path export_path =
+      "tmp1folder/solutions/tmp1file/atmos2023/SimpleStation";
+
+  for (const bool use_lazy : {true, false}) {
+    cleanup_export_dirs();
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol =
+        solver.solve({.fix_routes         = false,
+                      .max_velocity_delta = 5.55,
+                      .velocity_refinement_strategy =
+                          cda_rail::VelocityRefinementStrategy::None,
+                      .max_exit_delay = 0.0},
+                     {.use_lazy_constraints = use_lazy, .abs_mip_gap = 10},
+                     {{cda_rail::solver::GeneralExportOption::ExportSolution,
+                       "tmp1folder", "tmp1file"}},
+                     60, false);
+    EXPECT_TRUE(sol.has_solution()) << "use_lazy = " << use_lazy;
+
+    const auto data = read_solver_data(export_path);
+    ASSERT_TRUE(data.contains("num_lazy_constraints_added_int"));
+    ASSERT_TRUE(data.contains("model_num_rows_int"));
+    ASSERT_TRUE(data.contains("model_num_columns_int"));
+    ASSERT_TRUE(data.contains("node_count_double"));
+    if (use_lazy) {
+      EXPECT_GT(data.at("num_lazy_constraints_added_int").get<int>(), 0);
+    } else {
+      EXPECT_EQ(data.at("num_lazy_constraints_added_int").get<int>(), 0);
+    }
+    EXPECT_GT(data.at("model_num_rows_int").get<int>(), 0)
+        << "use_lazy = " << use_lazy;
+    EXPECT_GT(data.at("model_num_columns_int").get<int>(), 0)
+        << "use_lazy = " << use_lazy;
+    EXPECT_GE(data.at("node_count_double").get<double>(), 0)
+        << "use_lazy = " << use_lazy;
+  }
+
+  // Without a successor relation between the two edges, the train cannot
+  // reach its exit vertex, so the model is never created.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance unreachable;
+  auto&      network = unreachable.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  network.add_edge(v0, v1, 100, 10);
+  network.add_edge(v1, v2, 100, 10);
+  unreachable.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v2, 1);
+
+  cleanup_export_dirs();
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(unreachable);
+  const auto                                             sol =
+      solver.solve({}, {},
+                   {{cda_rail::solver::GeneralExportOption::ExportSolution,
+                     "tmp2folder", "tmp2file", "tmp2id"}},
+                   100, false);
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Infeasible);
+  const auto data =
+      read_solver_data(sol.get_export_path("tmp2folder", "tmp2file", "tmp2id"));
+  EXPECT_EQ(data.at("num_lazy_constraints_added_int").get<int>(), -1);
+  EXPECT_EQ(data.at("model_num_rows_int").get<int>(), -1);
+  EXPECT_EQ(data.at("model_num_columns_int").get<int>(), -1);
+  EXPECT_EQ(data.at("node_count_double").get<double>(), -1);
+
+  cleanup_export_dirs();
 }
 
 // NOLINTEND (clang-analyzer-deadcode.DeadStores)

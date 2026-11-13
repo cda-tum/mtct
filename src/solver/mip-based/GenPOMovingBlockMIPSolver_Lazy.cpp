@@ -104,6 +104,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     for (const auto& [lhs, rhs] : it->second) {
       if (violated(lhs, rhs)) {
         addLazy(lhs >= rhs);
+        m_num_lazy_constraints_added++;
       }
     }
     return false;
@@ -114,6 +115,7 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   auto constraints = create();
   for (const auto& [lhs, rhs] : constraints) {
     addLazy(lhs >= rhs);
+    m_num_lazy_constraints_added++;
     violated_added = violated_added || rejects(lhs, rhs);
     if (solver->m_solution_settings.export_lp_model) {
       solver->m_lazy_constraints.push_back(lhs >= rhs);
