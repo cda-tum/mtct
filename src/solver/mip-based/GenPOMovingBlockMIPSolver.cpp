@@ -83,13 +83,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   create_model(solution_settings_input, solver_strategy_input,
                model_detail_input);
   // As the model, the warm start counts towards the time limit. If none is
-  // left, the model is not optimized.
-  const auto time_limit_reached = [this, time_limit] {
-    return time_limit > 0 &&
-           std::chrono::high_resolution_clock::now() - m_start >=
-               std::chrono::seconds(time_limit);
-  };
-  if (m_solver_strategy.use_warm_start && !time_limit_reached()) {
+  // left, it is skipped.
+  const bool time_limit_reached =
+      time_limit > 0 && std::chrono::high_resolution_clock::now() - m_start >=
+                            std::chrono::seconds(time_limit);
+  if (m_solver_strategy.use_warm_start && !time_limit_reached) {
     set_warm_start();
   }
 
@@ -97,33 +95,17 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   m_create_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
                         m_model_created - m_start)
                         .count();
-  if (time_limit_reached()) {
-    PLOGI << "Time limit reached while creating the model after "
-          << (static_cast<double>(m_create_time) / 1000.0)
-          << " s, hence it is not optimized";
-    m_model_solved = m_model_created;
-    m_solve_time   = 0;
-    instances::SolGeneralPerformanceOptimizationInstance solution(old_instance);
-    solution.set_status(SolutionStatus::Timeout);
-    export_general_solution(solution, m_solution_settings,
-                            get_further_data(model_detail_input,
-                                             solver_strategy_input,
-                                             m_solution_settings, time_limit));
-    cleanup();
-    this->m_instance = old_instance;
-    return solution;
-  }
-
   PLOGI << "Model created. Optimize.";
   {
-    // Positive, since the time limit has not been reached yet
-    const auto time_left = time_limit - (m_create_time / 1000);
-    if (time_limit > 0) {
-      m_model->set(GRB_DoubleParam_TimeLimit, static_cast<double>(time_left));
-    }
     PLOGD << "Model created in "
           << (static_cast<double>(m_create_time) / 1000.0) << " s";
     if (time_limit > 0) {
+      // Zero if the model creation used up the time limit, in which case
+      // Gurobi stops right away and reports a timeout
+      const auto time_left =
+          std::max(0.0, static_cast<double>(time_limit) -
+                            (static_cast<double>(m_create_time) / 1000.0));
+      m_model->set(GRB_DoubleParam_TimeLimit, time_left);
       PLOGD << "Time left: " << time_left << " s";
     } else {
       PLOGD << "Time left: "
