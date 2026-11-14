@@ -17,8 +17,11 @@ using std::size_t;
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_fixed_routes_variables() {
-  m_vars["lda"]   = MultiArray<GRBVar>(num_tr, num_t);
-  m_vars["mu"]    = MultiArray<GRBVar>(num_tr, num_t);
+  m_vars["lda"] = MultiArray<GRBVar>(num_tr, num_t);
+  m_vars["mu"]  = MultiArray<GRBVar>(num_tr, num_t);
+  if (this->convexify_braking_distance) {
+    m_vars["ma"] = MultiArray<GRBVar>(num_tr, num_t);
+  }
   m_vars["x_lda"] = MultiArray<GRBVar>(num_tr, num_t, num_edges);
   m_vars["x_mu"]  = MultiArray<GRBVar>(num_tr, num_t, num_edges);
 
@@ -37,6 +40,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       m_vars["mu"](tr, t_steps) =
           m_model->addVar(0, mu_ub, 0, GRB_CONTINUOUS,
                           "mu_" + tr_name + "_" + std::to_string(t));
+      if (this->convexify_braking_distance) {
+        // mu only is the front of the train, ma its moving authority
+        m_vars["ma"](tr, t_steps) =
+            m_model->addVar(0, mu_ub, 0, GRB_CONTINUOUS,
+                            "ma_" + tr_name + "_" + std::to_string(t));
+      }
       m_vars["lda"](tr, t_steps) =
           m_model->addVar(-tr_len, r_len, 0, GRB_CONTINUOUS,
                           "lda_" + tr_name + "_" + std::to_string(t));
@@ -79,20 +88,24 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     auto tr_name = train_list.get_train(tr).get_name();
     auto tr_len =
         m_instance.get_const_train_list().get_train(tr_name).get_length();
+    // If the braking distance is convexified, it is only part of the moving
+    // authority ma, but not of mu
+    const bool brakelen_in_mu =
+        this->include_braking_curves && !this->convexify_braking_distance;
     for (size_t t = train_interval[tr].first;
          t <= train_interval[tr].second - 1; ++t) {
       // full pos: mu - lda = len + (v(t) + v(t+1))/2 * dt + brakelen (if
       // applicable)
       GRBLinExpr rhs =
           tr_len + (m_vars["v"](tr, t) + m_vars["v"](tr, t + 1)) * dt / 2;
-      if (this->include_braking_curves) {
+      if (brakelen_in_mu) {
         rhs += m_vars["brakelen"](tr, t);
       }
       m_model->addConstr(m_vars["mu"](tr, t) - m_vars["lda"](tr, t) == rhs,
                          "full_pos_" + tr_name + "_" + std::to_string(t));
       // overlap: mu(t) - lda(t+1) = len + brakelen (if applicable)
       rhs = tr_len;
-      if (this->include_braking_curves) {
+      if (brakelen_in_mu) {
         rhs += m_vars["brakelen"](tr, t);
       }
       m_model->addConstr(m_vars["mu"](tr, t) - m_vars["lda"](tr, t + 1) == rhs,
@@ -108,11 +121,22 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     auto       t = train_interval[tr].second;
     GRBLinExpr rhs =
         tr_len + (m_vars["v"](tr, t) + m_vars["v"](tr, t + 1)) * dt / 2;
-    if (this->include_braking_curves) {
+    if (brakelen_in_mu) {
       rhs += m_vars["brakelen"](tr, t);
     }
     m_model->addConstr(m_vars["mu"](tr, t) - m_vars["lda"](tr, t) == rhs,
                        "full_pos_" + tr_name + "_" + std::to_string(t));
+
+    // moving authority: ma = mu + brakelen
+    if (this->convexify_braking_distance) {
+      for (size_t t_ma = train_interval[tr].first;
+           t_ma <= train_interval[tr].second; ++t_ma) {
+        m_model->addConstr(m_vars["ma"](tr, t_ma) ==
+                               m_vars["mu"](tr, t_ma) +
+                                   m_vars["brakelen"](tr, t_ma),
+                           "ma_" + tr_name + "_" + std::to_string(t_ma));
+      }
+    }
 
     // The train cannot leave the network before its scheduled exit time.
     // lda(tr, t) is the rear of the train at time t * dt, which is strictly
@@ -142,9 +166,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     m_model->addConstr(m_vars["lda"](i, train_interval[i].first) == -tr_len,
                        "initial_lda_" + tr_name);
     // final_mu: mu(train_interval[i].second) = r_len + tr_len + brakelen (if
-    // applicable)
+    // applicable and not convexified)
     GRBLinExpr rhs = r_len + tr_len;
-    if (this->include_braking_curves) {
+    if (this->include_braking_curves && !this->convexify_braking_distance) {
       rhs += m_vars["brakelen"](i, train_interval[i].second);
     }
     m_model->addConstr(m_vars["mu"](i, train_interval[i].second) == rhs,
@@ -176,13 +200,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       // Iterate over possible time steps
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
-        // x_mu(tr, t, edge_id) = 1 if, and only if, mu(tr,t) > edge_pos.source
+        // x_mu(tr, t, edge_id) = 1 if, and only if, the moving authority
+        // ma(tr,t) > edge_pos.source
         m_model->addConstr(mu_ub * m_vars["x_mu"](tr, t, edge_id) >=
-                               (m_vars["mu"](tr, t) - edge_pos.source),
+                               (moving_authority(tr, t) - edge_pos.source),
                            "x_mu_if_" + tr_name + "_" + std::to_string(t) +
                                "_" + std::to_string(edge_id));
         m_model->addConstr(r_len * m_vars["x_mu"](tr, t, edge_id) <=
-                               r_len + m_vars["mu"](tr, t) - edge_pos.source,
+                               r_len + moving_authority(tr, t) -
+                                   edge_pos.source,
                            "x_mu_only_if_" + tr_name + "_" + std::to_string(t) +
                                "_" + std::to_string(edge_id));
 
@@ -280,8 +306,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           max_distance_travelled(tr, t_steps, before_after_struct.v_before,
                                  train_list.get_train(tr).get_acceleration(),
                                  this->include_braking_curves);
-      // mu <= before_max + dist_travelled
-      m_model->addConstr(m_vars["mu"](tr, t), GRB_LESS_EQUAL,
+      // ma <= before_max + dist_travelled
+      m_model->addConstr(moving_authority(tr, t), GRB_LESS_EQUAL,
                          before_max + dist_travelled,
                          "mu_cut_" + tr_name + "_" + std::to_string(t));
 
@@ -318,14 +344,14 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
-          // mu(tr, t) - edge_pos.source <= b_pos(e_index, vss) + mu_ub * (1 -
+          // ma(tr, t) - edge_pos.source <= b_pos(e_index, vss) + mu_ub * (1 -
           // b_front(tr, t, e_index, vss))
 
           // lda(tr, t) - edge_pos.source + (r_len + tr_len + e_len) * (1 -
           // b_rear(tr, t, e_index, vss)) >= b_pos(e_index, vss)
           const auto m1 = mu_ub;
           m_model->addConstr(
-              m_vars["mu"](tr, t) - edge_pos.source, GRB_LESS_EQUAL,
+              moving_authority(tr, t) - edge_pos.source, GRB_LESS_EQUAL,
               m_vars["b_pos"](e_index, vss) +
                   m1 * (1 - m_vars["b_front"](tr, t, e_index, vss)),
               "b_pos_front_" + std::to_string(tr) + "_" + std::to_string(t) +
@@ -389,9 +415,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
           m_instance.get_const_train_list().get_train(tr_list[i]).get_name();
       const auto& tr1_route_length = m_instance.route_length(tr1_name);
       for (size_t t = train_interval[tr_list[i]].first; t <= tr2_exit; ++t) {
-        // mu(tr1, t) <= tr1_route_length
+        // ma(tr1, t) <= tr1_route_length
         m_model->addConstr(
-            m_vars["mu"](tr_list[i], t), GRB_LESS_EQUAL, tr1_route_length,
+            moving_authority(tr_list[i], t), GRB_LESS_EQUAL, tr1_route_length,
             "common_exit_" + std::to_string(tr_list[i]) + "_" +
                 std::to_string(tr_list[i + 1]) + "_" + std::to_string(t));
       }
@@ -401,6 +427,9 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_fixed_routes_only_stop_at_vss_constraints() {
+  // Where a train stops is given by its front mu, not by its moving authority.
+  // Without convexified braking distances, both coincide while stopped.
+
   // For every breakable edge position exactly b_pos if tight
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
     const auto& e            = breakable_edges[i];
@@ -485,6 +514,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                              std::to_string(static_cast<double>(t) * dt));
     }
   }
+}
+
+GRBVar
+cda_rail::solver::mip_based::VSSGenTimetableSolver::moving_authority(size_t tr,
+                                                                     size_t t) {
+  return this->convexify_braking_distance ? m_vars["ma"](tr, t)
+                                          : m_vars["mu"](tr, t);
 }
 
 // NOLINTEND(performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)

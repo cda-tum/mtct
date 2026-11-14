@@ -1400,6 +1400,58 @@ TEST(CliVssOptions, FreeRoutesExcludeMovingBlockInformation) {
   EXPECT_THROW(app.parse(std::string{"-m mb-solutions -f"}), CLI::ParseError);
 }
 
+TEST(CliVssOptions, ConvexifiedBrakingDistance) {
+  cda_rail::cli::VssMipSettings settings;
+  CLI::App                      app;
+  cda_rail::cli::add_vss_mip_options(app, settings);
+  app.parse(std::string{"--convexify-braking-distance"});
+
+  EXPECT_TRUE(settings.convexify_braking_distance);
+  EXPECT_TRUE(cda_rail::cli::vss_mip_model_settings(settings)
+                  .convexify_braking_distance);
+}
+
+TEST(CliVssOptions,
+     ConvexifiedBrakingDistanceNeedsBrakingCurvesAndFixedRoutes) {
+  // Checked once parsing is complete, both for an app and a subcommand
+  for (const auto* const options :
+       {"--convexify-braking-distance -k", "-f --convexify-braking-distance"}) {
+    cda_rail::cli::VssMipSettings settings;
+    CLI::App                      app;
+    cda_rail::cli::add_vss_mip_options(app, settings);
+    EXPECT_THROW(app.parse(std::string{options}), CLI::ValidationError)
+        << options;
+
+    cda_rail::cli::VssMipSettings sub_settings;
+    CLI::App                      main_app;
+    auto*                         sub = main_app.add_subcommand("vss-mip");
+    cda_rail::cli::add_vss_mip_options(*sub, sub_settings);
+    EXPECT_THROW(main_app.parse("vss-mip " + std::string{options}),
+                 CLI::ValidationError)
+        << options;
+  }
+
+  // A negated flag that is set again later is fine
+  cda_rail::cli::VssMipSettings settings;
+  CLI::App                      app;
+  cda_rail::cli::add_vss_mip_options(app, settings);
+  app.parse(std::string{"-k --braking-curves --convexify-braking-distance"});
+  EXPECT_TRUE(settings.convexify_braking_distance);
+  EXPECT_TRUE(settings.braking_curves);
+}
+
+TEST(CliVssOptions, GeneratedIdentifierWithConvexifiedBrakingDistance) {
+  cda_rail::cli::VssMipSettings settings;
+  CLI::App                      app;
+  cda_rail::cli::add_vss_mip_options(app, settings);
+  app.parse(std::string{"-o -e my-solutions -g --convexify-braking-distance"});
+  cda_rail::cli::finalize_vss_mip_settings(settings);
+
+  // Only appended if set, so that all other identifiers stay as they were
+  EXPECT_EQ(cda_rail::cli::generate_vss_mip_identifier(settings),
+            "15_t_t_Continuous_f_f_t_f_Optimal_Fixed_1_2_t_f_-1_t_convex");
+}
+
 TEST(CliVssOptions, GeneratedIdentifier) {
   cda_rail::cli::VssMipSettings settings;
   CLI::App                      app;
@@ -1616,6 +1668,7 @@ TEST(CliVssOptions, SettingsReachTheSolver) {
   const auto model = cda_rail::cli::vss_mip_model_settings(settings);
   EXPECT_TRUE(model.use_pwl);
   EXPECT_FALSE(model.use_schedule_cuts);
+  EXPECT_FALSE(model.convexify_braking_distance);
 
   const auto strategy = cda_rail::cli::vss_mip_solver_strategy(settings);
   EXPECT_TRUE(strategy.iterative_approach);

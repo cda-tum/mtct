@@ -47,6 +47,7 @@ struct VssMipSettings {
   bool                                only_stop_at_vss{false};
   bool                                use_pwl{false};
   bool                                use_schedule_cuts{true};
+  bool                                convexify_braking_distance{false};
 
   // solver parameters
   bool               iterative_approach{false};

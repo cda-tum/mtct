@@ -23,7 +23,8 @@
 // meaning elsewhere.
 //
 // Since all lowercase letters are used up, the fine tuning settings
-// (--only-stop-at-vss, --use-pwl, --use-schedule-cuts, --postprocess), the
+// (--only-stop-at-vss, --use-pwl, --use-schedule-cuts,
+// --convexify-braking-distance, --postprocess), the
 // settings that are only relevant together with -x (--iterative-approach) and
 // the remaining moving block loading options are long option only.
 
@@ -224,6 +225,25 @@ void cda_rail::cli::add_vss_mip_options(CLI::App&       app,
                "schedule by default. If this flag is negated "
                "(--no-schedule-cuts), these cuts are omitted.")
       ->group("Model Parameters");
+  app.add_flag("--convexify-braking-distance",
+               settings.convexify_braking_distance,
+               "If this flag is set, the braking distance is only bounded "
+               "from below by the function of the velocity, which is convex, "
+               "instead of being equal to it. The moving authority may then "
+               "reserve more track than needed. Only applicable if braking "
+               "curves are included and the routes are fixed.")
+      ->group("Model Parameters");
+  // Whether braking curves are included and the routes are fixed is only known
+  // once everything is parsed, since both are flags that can be negated.
+  app.parse_complete_callback([&settings]() {
+    if (settings.convexify_braking_distance &&
+        (!settings.braking_curves || !settings.fix_routes)) {
+      throw CLI::ValidationError(
+          "--convexify-braking-distance",
+          "only applicable if braking curves are included and the routes are "
+          "fixed");
+    }
+  });
 
   auto* iterative_approach_flag =
       app.add_flag("-x,--iterative-approach", settings.iterative_approach,
@@ -330,15 +350,22 @@ cda_rail::cli::generate_vss_mip_identifier(const VssMipSettings& settings) {
   // The settings that only exist for one of the two solvers are appended
   // last, so that the identifiers of the settings both of them share keep the
   // very same structure.
-  return settings.use_moving_block_information()
-             ? concatenate_string_views(
-                   {identifier, "_", bool_to_str(settings.fix_stop_positions),
-                    "_", bool_to_str(settings.fix_exact_positions), "_",
-                    bool_to_str(settings.fix_exact_velocities), "_",
-                    bool_to_str(settings.hint_approximate_positions), "_",
-                    bool_to_str(settings.fix_order_on_edges)})
-             : concatenate_string_views(
-                   {identifier, "_", bool_to_str(settings.fix_routes)});
+  identifier =
+      settings.use_moving_block_information()
+          ? concatenate_string_views(
+                {identifier, "_", bool_to_str(settings.fix_stop_positions), "_",
+                 bool_to_str(settings.fix_exact_positions), "_",
+                 bool_to_str(settings.fix_exact_velocities), "_",
+                 bool_to_str(settings.hint_approximate_positions), "_",
+                 bool_to_str(settings.fix_order_on_edges)})
+          : concatenate_string_views(
+                {identifier, "_", bool_to_str(settings.fix_routes)});
+  // The convexified braking distance came later. It is only appended if set,
+  // so that the identifiers of all settings without it stay as they were.
+  if (settings.convexify_braking_distance) {
+    identifier = concatenate_string_views({identifier, "_convex"});
+  }
+  return identifier;
 }
 
 void cda_rail::cli::log_vss_mip_settings(const VssMipSettings& settings,
@@ -377,6 +404,8 @@ void cda_rail::cli::log_vss_mip_settings(const VssMipSettings& settings,
   PLOGD << "  Only stop at VSS: " << yes_no(settings.only_stop_at_vss);
   PLOGD << "  Use PWL: " << yes_no(settings.use_pwl);
   PLOGD << "  Use schedule cuts: " << yes_no(settings.use_schedule_cuts);
+  PLOGD << "  Convexify braking distance: "
+        << yes_no(settings.convexify_braking_distance);
   PLOGD << "Solver Settings";
   PLOGD << "  Iterative approach: " << yes_no(settings.iterative_approach);
   PLOGD << "  Optimality strategy: "
@@ -421,7 +450,8 @@ cda_rail::cli::vss_mip_model_settings(const VssMipSettings& settings) {
                                           settings.separation_functions(),
                                           settings.only_stop_at_vss),
           .use_pwl           = settings.use_pwl,
-          .use_schedule_cuts = settings.use_schedule_cuts};
+          .use_schedule_cuts = settings.use_schedule_cuts,
+          .convexify_braking_distance = settings.convexify_braking_distance};
 }
 
 cda_rail::solver::mip_based::SolverStrategyVSSGen

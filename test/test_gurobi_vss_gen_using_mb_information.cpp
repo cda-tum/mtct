@@ -40,6 +40,18 @@ TEST(VSSGenMBInfoSolver, Default1) {
   EXPECT_EQ(sol.get_obj(), 1);
 }
 
+TEST(VSSGenMBInfoSolver, Default1ConvexifiedBrakingDistance) {
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(
+          load_moving_block_solution("SimpleStation", SOLUTION_SUBDIRECTORY));
+
+  const auto sol = solver.solve({}, {.convexify_braking_distance = true});
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 1);
+}
+
 TEST(VSSGenMBInfoSolver, Default1NoTolerance) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver(load_moving_block_solution("SimpleStation",
