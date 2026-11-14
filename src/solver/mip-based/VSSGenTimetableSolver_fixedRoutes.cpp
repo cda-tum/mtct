@@ -37,11 +37,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     for (size_t t_steps = train_interval[tr].first;
          t_steps <= train_interval[tr].second; ++t_steps) {
       auto t = static_cast<double>(t_steps) * dt;
-      m_vars["mu"](tr, t_steps) =
-          m_model->addVar(0, mu_ub, 0, GRB_CONTINUOUS,
-                          "mu_" + tr_name + "_" + std::to_string(t));
+      // If the braking distance is convexified, mu only is the front of the
+      // train and ma its moving authority
+      m_vars["mu"](tr, t_steps) = m_model->addVar(
+          0, this->convexify_braking_distance ? r_len + tr_len : mu_ub, 0,
+          GRB_CONTINUOUS, "mu_" + tr_name + "_" + std::to_string(t));
       if (this->convexify_braking_distance) {
-        // mu only is the front of the train, ma its moving authority
         m_vars["ma"](tr, t_steps) =
             m_model->addVar(0, mu_ub, 0, GRB_CONTINUOUS,
                             "ma_" + tr_name + "_" + std::to_string(t));
@@ -113,6 +114,13 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       // mu increasing: mu(t+1) >= mu(t)
       m_model->addConstr(m_vars["mu"](tr, t + 1) >= m_vars["mu"](tr, t),
                          "mu_increasing_" + tr_name + "_" + std::to_string(t));
+      // ma increasing: ma(t+1) >= ma(t), i.e., a moving authority is never
+      // withdrawn
+      if (this->convexify_braking_distance) {
+        m_model->addConstr(m_vars["ma"](tr, t + 1) >= m_vars["ma"](tr, t),
+                           "ma_increasing_" + tr_name + "_" +
+                               std::to_string(t));
+      }
       // lda increasing: lda(t+1) >= lda(t)
       m_model->addConstr(m_vars["lda"](tr, t + 1) >= m_vars["lda"](tr, t),
                          "lda_increasing_" + tr_name + "_" + std::to_string(t));

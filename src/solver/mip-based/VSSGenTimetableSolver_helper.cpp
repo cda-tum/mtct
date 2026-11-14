@@ -916,7 +916,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_timeout(
     }
   }
 
-  if ((this->include_braking_curves && !this->use_pwl)) {
+  if (this->include_braking_curves && !this->use_pwl &&
+      !this->convexify_braking_distance) {
     // Non-convex constraints are present. Still, Gurobi can solve to optimality
     // using spatial branching
     m_model->set(GRB_IntParam_NonConvex, 2);
