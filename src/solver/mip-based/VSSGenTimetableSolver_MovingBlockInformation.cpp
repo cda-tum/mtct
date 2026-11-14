@@ -180,7 +180,7 @@ void cda_rail::solver::mip_based::
             "exact_pos_ub_lda_" + tr_name + "_" + std::to_string(t));
 
         GRBLinExpr pos_mu_expr = m_vars["mu"](tr, t_steps - 1);
-        if (include_braking_curves) {
+        if (include_braking_curves && !convexify_braking_distance) {
           pos_mu_expr -= m_vars["brakelen"](tr, t_steps - 1);
         }
         m_model->addConstr(pos_mu_expr >= pos_lb - delta_pos,
@@ -236,7 +236,11 @@ void cda_rail::solver::mip_based::
                 : 0;
         m_vars["v"](tr, t_steps).set(GRB_DoubleAttr_VarHintVal, vel_approx);
         if (t_steps >= train_interval[tr].first + 1) {
-          m_vars["mu"](tr, t_steps - 1)
+          if (convexify_braking_distance) {
+            m_vars["mu"](tr, t_steps - 1)
+                .set(GRB_DoubleAttr_VarHintVal, pos_approx);
+          }
+          moving_authority(tr, t_steps - 1)
               .set(GRB_DoubleAttr_VarHintVal, pos_approx + bl);
           if (include_braking_curves) {
             m_vars["brakelen"](tr, t_steps - 1)

@@ -409,7 +409,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
           r_len +
           m_vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
     }
-    if (include_braking_curves) {
+    // mu only includes the braking distance if it is not convexified
+    if (include_braking_curves && !convexify_braking_distance) {
       train_pos_final -=
           m_vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
     }
@@ -582,18 +583,19 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::cleanup() {
   no_border_vss_vertices.clear();
   relevant_edges.clear();
   breakable_edges.clear();
-  fix_routes                = false;
-  vss_model                 = vss::Model();
-  include_train_dynamics    = false;
-  use_pwl                   = false;
-  use_schedule_cuts         = false;
-  iterative_vss             = false;
-  optimality_strategy       = OptimalityStrategy::Optimal;
-  iterative_update_strategy = UpdateStrategyVSSGen::Fixed;
-  iterative_initial_value   = 1;
-  iterative_update_value    = 2;
-  iterative_include_cuts    = true;
-  postprocess               = false;
+  fix_routes                 = false;
+  vss_model                  = vss::Model();
+  include_train_dynamics     = false;
+  use_pwl                    = false;
+  use_schedule_cuts          = false;
+  convexify_braking_distance = false;
+  iterative_vss              = false;
+  optimality_strategy        = OptimalityStrategy::Optimal;
+  iterative_update_strategy  = UpdateStrategyVSSGen::Fixed;
+  iterative_initial_value    = 1;
+  iterative_update_value     = 2;
+  iterative_include_cuts     = true;
+  postprocess                = false;
   max_vss_per_edge_in_iteration.clear();
   max_vss_per_edge.clear();
   breakable_edge_indices.clear();
@@ -733,20 +735,21 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
   }
 
   // General settings
-  this->dt                        = model_detail.delta_t;
-  this->fix_routes                = model_detail.fix_routes;
-  this->vss_model                 = model_settings.model_type;
-  this->include_train_dynamics    = model_detail.train_dynamics;
-  this->include_braking_curves    = model_detail.braking_curves;
-  this->use_pwl                   = model_settings.use_pwl;
-  this->use_schedule_cuts         = model_settings.use_schedule_cuts;
-  this->iterative_vss             = solver_strategy.iterative_approach;
-  this->optimality_strategy       = solver_strategy.optimality_strategy;
-  this->iterative_update_strategy = solver_strategy.update_strategy;
-  this->iterative_initial_value   = solver_strategy.initial_value;
-  this->iterative_update_value    = solver_strategy.update_value;
-  this->iterative_include_cuts    = solver_strategy.include_cuts;
-  this->postprocess               = solution_settings.postprocess;
+  this->dt                         = model_detail.delta_t;
+  this->fix_routes                 = model_detail.fix_routes;
+  this->vss_model                  = model_settings.model_type;
+  this->include_train_dynamics     = model_detail.train_dynamics;
+  this->include_braking_curves     = model_detail.braking_curves;
+  this->use_pwl                    = model_settings.use_pwl;
+  this->use_schedule_cuts          = model_settings.use_schedule_cuts;
+  this->convexify_braking_distance = model_settings.convexify_braking_distance;
+  this->iterative_vss              = solver_strategy.iterative_approach;
+  this->optimality_strategy        = solver_strategy.optimality_strategy;
+  this->iterative_update_strategy  = solver_strategy.update_strategy;
+  this->iterative_initial_value    = solver_strategy.initial_value;
+  this->iterative_update_value     = solver_strategy.update_value;
+  this->iterative_include_cuts     = solver_strategy.include_cuts;
+  this->postprocess                = solution_settings.postprocess;
 
   if (this->iterative_vss) {
     // Iterative optimization strategy
@@ -763,6 +766,19 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
       throw exceptions::ConsistencyException(
           "iterative_update_value must be between 0 and 1");
     }
+  }
+
+  if (this->convexify_braking_distance && !this->include_braking_curves) {
+    PLOGE << "Braking distances can only be convexified if braking curves are "
+             "modelled";
+    throw exceptions::ConsistencyException(
+        "Braking distances can only be convexified if braking curves are "
+        "modelled");
+  }
+  if (this->convexify_braking_distance && !this->fix_routes) {
+    PLOGE << "Braking distances can only be convexified if routes are fixed";
+    throw exceptions::ConsistencyException(
+        "Braking distances can only be convexified if routes are fixed");
   }
 
   if (this->fix_routes && !m_instance.has_route_for_every_train()) {
@@ -900,7 +916,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::set_timeout(
     }
   }
 
-  if ((this->include_braking_curves && !this->use_pwl)) {
+  if (this->include_braking_curves && !this->use_pwl &&
+      !this->convexify_braking_distance) {
     // Non-convex constraints are present. Still, Gurobi can solve to optimality
     // using spatial branching
     m_model->set(GRB_IntParam_NonConvex, 2);
@@ -1107,15 +1124,16 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::FurtherData
 cda_rail::solver::mip_based::VSSGenTimetableSolver::get_further_data(
     const SolutionSettingsVSSGen& solution_settings, int time_limit) const {
   return {
-      .bool_data    = {{"fix_routes", fix_routes},
-                       {"train_dynamics", include_train_dynamics},
-                       {"braking_curves", include_braking_curves},
-                       {"only_stop_at_vss", vss_model.get_only_stop_at_vss()},
-                       {"use_pwl", use_pwl},
-                       {"use_schedule_cuts", use_schedule_cuts},
-                       {"iterative_approach", iterative_vss},
-                       {"iterative_include_cuts", iterative_include_cuts},
-                       {"postprocess", postprocess}},
+      .bool_data = {{"fix_routes", fix_routes},
+                    {"train_dynamics", include_train_dynamics},
+                    {"braking_curves", include_braking_curves},
+                    {"only_stop_at_vss", vss_model.get_only_stop_at_vss()},
+                    {"use_pwl", use_pwl},
+                    {"use_schedule_cuts", use_schedule_cuts},
+                    {"convexify_braking_distance", convexify_braking_distance},
+                    {"iterative_approach", iterative_vss},
+                    {"iterative_include_cuts", iterative_include_cuts},
+                    {"postprocess", postprocess}},
       .integer_data = {{"time_limit", time_limit}},
       .double_data  = {{"delta_t", dt},
                        {"iterative_initial_value", iterative_initial_value},

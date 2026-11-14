@@ -387,6 +387,12 @@ Model Parameters:
                               The formulation is strengthened using cuts implied by the
                               schedule by default. If this flag is negated
                               (--no-schedule-cuts), these cuts are omitted.
+          --convexify-braking-distance
+                              If this flag is set, the braking distance is only bounded from
+                              below by the function of the velocity, which is convex, instead
+                              of being equal to it. The moving authority may then reserve more
+                              track than needed. Only applicable if braking curves are included
+                              and the routes are fixed.
 
 Solver Parameters:
   -x,     --iterative-approach

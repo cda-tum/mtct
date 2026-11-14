@@ -1200,7 +1200,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
 
 void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_brakelen_constraints() {
-  // break_len(tr, t) = v(tr, t+1)^2 / (2*tr_deceleration)
+  // break_len(tr, t) = v(tr, t+1)^2 / (2*tr_deceleration), or >= if the
+  // braking distance is convexified
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_deceleration =
         m_instance.get_const_train_list().get_train(tr).get_deceleration();
@@ -1219,19 +1220,34 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       }
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
-        m_model->addGenConstrPWL(
-            m_vars["v"](tr, t + 1), m_vars["brakelen"](tr, t), n + 1,
-            xpts.get(), ypts.get(),
-            "brakelen_" + std::to_string(tr) + "_" + std::to_string(t));
+        if (this->convexify_braking_distance) {
+          // The interpolation of a convex function is convex, hence it is the
+          // maximum of its pieces and being above it is linear.
+          for (size_t i = 0; i < n; ++i) {
+            const auto slope =
+                (ypts[i + 1] - ypts[i]) / (xpts[i + 1] - xpts[i]);
+            m_model->addConstr(m_vars["brakelen"](tr, t), GRB_GREATER_EQUAL,
+                               ypts[i] +
+                                   slope * (m_vars["v"](tr, t + 1) - xpts[i]),
+                               "brakelen_" + std::to_string(tr) + "_" +
+                                   std::to_string(t) + "_" + std::to_string(i));
+          }
+        } else {
+          m_model->addGenConstrPWL(
+              m_vars["v"](tr, t + 1), m_vars["brakelen"](tr, t), n + 1,
+              xpts.get(), ypts.get(),
+              "brakelen_" + std::to_string(tr) + "_" + std::to_string(t));
+        }
       }
     } else {
       for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
            ++t) {
-        m_model->addQConstr(m_vars["brakelen"](tr, t), GRB_EQUAL,
-                            (1 / (2 * tr_deceleration)) *
-                                m_vars["v"](tr, t + 1) * m_vars["v"](tr, t + 1),
-                            "brakelen_" + std::to_string(tr) + "_" +
-                                std::to_string(t));
+        m_model->addQConstr(
+            m_vars["brakelen"](tr, t),
+            this->convexify_braking_distance ? GRB_GREATER_EQUAL : GRB_EQUAL,
+            (1 / (2 * tr_deceleration)) * m_vars["v"](tr, t + 1) *
+                m_vars["v"](tr, t + 1),
+            "brakelen_" + std::to_string(tr) + "_" + std::to_string(t));
       }
     }
   }
