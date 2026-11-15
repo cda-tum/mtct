@@ -1684,6 +1684,29 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy4) {
   }
 }
 
+TEST(GenPOMovingBlockMIPSolver, SimplifiedHeadwaysOnLongBreakableEdge) {
+  // Both trains run on a single breakable edge of 50 km, on which they may
+  // stop. Hence, the time until the moving authority reaches the end of the
+  // edge is unbounded, and the simplified headway does not restrict the
+  // following train. Built with -ffinite-math-only, the compiler dropped the
+  // check for this infinite time, and the finite value used instead made the
+  // model infeasible, although both trains can run on time.
+  const auto instance =
+      cda_rail::instances::GeneralPerformanceOptimizationInstance(
+          "HighSpeedTrack2Trains", "atmos2023", "data");
+  for (const bool use_lazy_constraints : {false, true}) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol =
+        solver.solve({.simplify_headway_constraints = true},
+                     {.use_lazy_constraints = use_lazy_constraints}, {}, 100);
+
+    ASSERT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "use_lazy_constraints = " << use_lazy_constraints;
+    EXPECT_NEAR(sol.get_obj(), 0, 1e-3)
+        << "use_lazy_constraints = " << use_lazy_constraints;
+  }
+}
+
 TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
   const std::vector<std::string> paths{"SimpleStation"};
 

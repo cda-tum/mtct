@@ -36,8 +36,10 @@ function(enable_project_options target_name)
     endif()
 
     # enable some more optimizations in release mode
-    target_compile_options(${target_name} INTERFACE $<$<CONFIG:RELEASE>:-fno-math-errno -ffinite-math-only
-                                                    -fno-trapping-math>)
+    #
+    # No -ffinite-math-only: the code relies on infinity, e.g., as the maximal travel time of a train that may stop, and
+    # the flag lets the compiler drop comparisons with it (see Definitions.hpp)
+    target_compile_options(${target_name} INTERFACE $<$<CONFIG:RELEASE>:-fno-math-errno -fno-trapping-math>)
 
     # enable some more options for better debugging
     target_compile_options(${target_name} INTERFACE $<$<CONFIG:DEBUG>:-fno-omit-frame-pointer
