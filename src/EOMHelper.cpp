@@ -8,7 +8,9 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iomanip>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -751,9 +753,17 @@ void cda_rail::check_consistency_of_eom_input(double& v_1, double& v_2,
         "Both acceleration and deceleration must be strictly positive.");
   }
 
+  // Like values within GRB_EPS of 0, x within GRB_EPS beyond s is a rounding
+  // error, e.g., of a position computed as a difference of lengths
+  if (x > s && x <= s + GRB_EPS) {
+    x = s;
+  }
   if (x > s) {
-    throw exceptions::ConsistencyException(
-        "x must be less than or equal to s.");
+    // With full precision to show by how much x exceeds s
+    std::ostringstream message;
+    message << std::setprecision(std::numeric_limits<double>::max_digits10)
+            << "x (" << x << ") must be less than or equal to s (" << s << ").";
+    throw exceptions::ConsistencyException(message.str());
   }
 
   if (!possible_by_eom(v_1, v_2, a, d, s)) {

@@ -2893,6 +2893,37 @@ TEST(GenPOMovingBlockMIPSolver, MovingAuthorityBeyondExit) {
   EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(6)));
 }
 
+TEST(GenPOMovingBlockMIPSolver, MovingAuthorityBeyondExitOnLongRoute) {
+  // As MovingAuthorityBeyondExit, but the first edge is long, and the lengths
+  // are fractional. Then, the position of the exit on the route, 4321.1 +
+  // 40.1, minus the one of v1 exceeds the length of the last edge by a
+  // rounding error of 3.6e-13 > EPS. The lazy callback used this difference
+  // as the end of the moving authority from v1 and threw, since it is not on
+  // the edge. The moving authority from v0 ends 50 m into the first edge.
+  // Hence, Tr2 cannot enter after 4 s, but after 6 s.
+  const auto create_instance = [](double tr2_entry_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 4321.1, 10);
+    const auto e12 = network.add_edge(v1, v2, 40.1, 10);
+    network.add_successor(e01, e12);
+
+    instance.add_train("Tr1", 10, 10, 1, 1, true, 0, 10, v0, 0, 10, v2, 1);
+    instance.add_train("Tr2", 10, 10, 1, 1, true, tr2_entry_time, 10, v0,
+                       tr2_entry_time, 10, v2, 1);
+
+    return instance;
+  };
+
+  EXPECT_FALSE(check_lazy_strategies_against_full_model(create_instance(4)));
+  EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(6)));
+}
+
 namespace {
 // The ways to model the TTD headways, each with whether the headway
 // constraints are simplified

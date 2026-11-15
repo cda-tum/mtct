@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <map>
 #include <optional>
 #include <string>
@@ -587,6 +588,10 @@ private:
     // Number of addLazy() calls so far, see
     // SolveStatistics::num_lazy_constraints_added.
     int m_num_lazy_constraints_added = 0;
+    // An exception thrown while checking a solution. An exception must not
+    // leave the callback, since it cannot pass Gurobi. Hence, the callback
+    // stops the optimization instead, and solve() rethrows it afterwards.
+    std::exception_ptr m_exception;
 
     /**
      * @brief Adds lazy constraints unless they were added before.
@@ -707,6 +712,16 @@ private:
     /** @brief The number of lazy constraints handed to Gurobi so far. */
     [[nodiscard]] int get_num_lazy_constraints_added() const {
       return m_num_lazy_constraints_added;
+    }
+
+    /**
+     * @brief The exception that stopped the optimization, if any.
+     *
+     * @return The exception thrown while checking a solution, or a null
+     *         pointer if there was none
+     */
+    [[nodiscard]] std::exception_ptr get_exception() const {
+      return m_exception;
     }
 
   protected:
