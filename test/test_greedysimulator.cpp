@@ -2979,12 +2979,12 @@ SIMULATOR_TEST(ExitNetworkSpeedZero) {
   EXPECT_EQ(sim_res.vertex_headways.at(v1), sim_res.exit_times[0] + 30);
 }
 
-SIMULATOR_TEST(SimpleNetwork) {
+SIMULATOR_TEST(SingleTrackCorridor) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetwork6Trains", "gen-po", "./data");
+      "GeneralSingleTrackCorridor6Trains", "gen-po", "./data");
 
   const auto v2c_v3 =
       instance.get_const_network().get_edge_index({"v2c"}, {"v3"});
@@ -3270,7 +3270,7 @@ SIMULATOR_TEST(FaultyInstance) {
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetwork6Trains", "gen-po", "./data");
+      "GeneralSingleTrackCorridor6Trains", "gen-po", "./data");
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
   TypeParam  simulator(instance, ttd_sections);
 
@@ -4256,12 +4256,12 @@ SIMULATOR_TEST(HeadOnCollision2) {
 // Bugfixing Tests
 // -----------------
 
-SIMULATOR_TEST(SimpleNetworkTR1RL) {
+SIMULATOR_TEST(SingleTrackCorridorTR1RL) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "SimpleNetwork", "atmos2023", "./data");
+      "SingleTrackCorridor", "atmos2023", "./data");
 
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
   TypeParam  simulator(instance, ttd_sections);
@@ -4296,12 +4296,12 @@ SIMULATOR_TEST(SimpleNetworkTR1RL) {
   EXPECT_LE(sim_res.exit_times.at(tr1rl), 960 + 6);
 }
 
-SIMULATOR_TEST(SimpleNetworkTR1LR) {
+SIMULATOR_TEST(SingleTrackCorridorTR1LR) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "SimpleNetwork", "atmos2023", "./data");
+      "SingleTrackCorridor", "atmos2023", "./data");
 
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
   TypeParam  simulator(instance, ttd_sections);
@@ -4336,12 +4336,12 @@ SIMULATOR_TEST(SimpleNetworkTR1LR) {
   EXPECT_LE(sim_res.exit_times.at(tr1lr), 960 + 6);
 }
 
-SIMULATOR_TEST(SimpleNetworkLRTrains) {
+SIMULATOR_TEST(SingleTrackCorridorLRTrains) {
   static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
   plog::init(plog::verbose, &console_appender);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "SimpleNetwork", "atmos2023", "./data");
+      "SingleTrackCorridor", "atmos2023", "./data");
 
   const auto ttd_sections = instance.get_const_network().unbreakable_sections();
   TypeParam  simulator(instance, ttd_sections);
@@ -4896,23 +4896,24 @@ TEST(GreedySimulator, RASInstancesFeasibleWithExactEntry) {
   }
 }
 
-TEST(GreedySimulator, GeneralSimpleNetworkInstancesFeasibleWithExactEntry) {
-  // SimpleNetwork is a single track line with a passing loop (v7-v8) in the
-  // middle. The trains are dispatched as follows: eastbound trains take loop
-  // track b, westbound trains loop track a. Every TTD section, entry and exit
-  // is passed in the order in which the trains reach the middle of the single
-  // track on the same side of the loop. Hence no two trains meet on a single
-  // track, and opposite trains whose runs meet between these middles cross in
-  // the loop. A train runs at maximal speed, but leaves the loop as late as
-  // it can without exiting after its scheduled exit time, so that trains
-  // which would wait at their exit anyway give way. Simulating these
+TEST(GreedySimulator,
+     GeneralSingleTrackCorridorInstancesFeasibleWithExactEntry) {
+  // SingleTrackCorridor is a single track line with a passing loop (v7-v8) in
+  // the middle. The trains are dispatched as follows: eastbound trains take
+  // loop track b, westbound trains loop track a. Every TTD section, entry and
+  // exit is passed in the order in which the trains reach the middle of the
+  // single track on the same side of the loop. Hence no two trains meet on a
+  // single track, and opposite trains whose runs meet between these middles
+  // cross in the loop. A train runs at maximal speed, but leaves the loop as
+  // late as it can without exiting after its scheduled exit time, so that
+  // trains which would wait at their exit anyway give way. Simulating these
   // decisions without late entry shows that the instances are feasible.
-  // GeneralSimpleNetwork45Trains is missing: there, a train waiting in the
-  // loop holds up the train behind it, which these rules cannot avoid.
+  // GeneralSingleTrackCorridor45Trains is missing: there, a train waiting in
+  // the loop holds up the train behind it, which these rules cannot avoid.
   for (const int num_trains_in_name :
        {3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 35, 40, 50}) {
-    const auto instance_name =
-        "GeneralSimpleNetwork" + std::to_string(num_trains_in_name) + "Trains";
+    const auto instance_name = "GeneralSingleTrackCorridor" +
+                               std::to_string(num_trains_in_name) + "Trains";
     const instances::GeneralPerformanceOptimizationInstance instance(
         instance_name, "gen-po", "./data");
     const auto& network    = instance.get_const_network();

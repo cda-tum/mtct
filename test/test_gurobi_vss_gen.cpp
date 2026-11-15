@@ -1451,7 +1451,7 @@ TEST(VSSGenSolver, IterativeContinuousFeasible) {
 
 TEST(VSSGenSolver, IterativeTimeout1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleNetwork", "atmos2023", "data");
+      "SingleTrackCorridor", "atmos2023", "data");
 
   const auto obj_val = solver.solve({15, false}, {}, {true}, {}, 30, true);
 
@@ -1460,7 +1460,7 @@ TEST(VSSGenSolver, IterativeTimeout1) {
 
 TEST(VSSGenSolver, IterativeTimeout2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleNetwork", "atmos2023", "data");
+      "SingleTrackCorridor", "atmos2023", "data");
 
   const auto obj_val = solver.solve({}, {}, {true}, {}, 1, true);
 

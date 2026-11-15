@@ -2406,9 +2406,9 @@ TEST(GenPOMovingBlockAStarSolver, SimpleSolutionExtraction) {
   EXPECT_EQ(sol_obj.get_train_speed("Train1", 45), 20);
 }
 
-SOLVER_TEST(GeneralSimpleNetwork) {
+SOLVER_TEST(GeneralSingleTrackCorridor) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetwork3Trains", "gen-po", "./data");
+      "GeneralSingleTrackCorridor3Trains", "gen-po", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
@@ -2436,7 +2436,7 @@ SOLVER_TEST(RASToy) {
 
 TEST(GenPOMovingBlockAStarSolver, Timeout) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "GeneralSimpleNetwork6Trains", "gen-po", "./data");
+      "GeneralSingleTrackCorridor6Trains", "gen-po", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(
@@ -2640,9 +2640,9 @@ TEST(GenPOMovingBlockAStarSolver, NextStateStrategyToString) {
                exceptions::ConsistencyException);
 }
 
-SOLVER_TEST(SimpleNetwork) {
+SOLVER_TEST(SingleTrackCorridor) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "SimpleNetwork", "atmos2023", "./data");
+      "SingleTrackCorridor", "atmos2023", "./data");
 
   cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
   const auto sol_obj = solver.solve(

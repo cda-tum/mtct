@@ -1245,7 +1245,7 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
 
 TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
   const std::vector<std::string> paths{
-      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
+      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1307,7 +1307,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
 
 TEST(GenPOMovingBlockMIPSolver, AllVelocities1) {
   const std::vector<std::string> paths{
-      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
+      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1618,7 +1618,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1Indicator) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
-  const std::vector<std::string> paths{"SimpleNetwork"};
+  const std::vector<std::string> paths{"SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1735,7 +1735,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
-  const std::vector<std::string> paths{"SimpleNetwork"};
+  const std::vector<std::string> paths{"SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1816,7 +1816,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
-  const std::vector<std::string> paths{"SimpleNetwork"};
+  const std::vector<std::string> paths{"SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -3152,7 +3152,7 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
       {"SingleTrack", "atmos2023"},
       {"SingleTrackWithStation", "atmos2023"},
       {"Overtake", "atmos2023"},
-      {"SimpleNetwork", "atmos2023"},
+      {"SingleTrackCorridor", "atmos2023"},
       {"Stammstrecke4Trains", "atmos2023"},
       {"Stammstrecke8Trains", "atmos2023"},
       {"GeneralStammstrecke6Trains", "gen-po"}};
@@ -3219,7 +3219,7 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
           // As in the A* search, the trains cannot follow their quickest
           // paths first come, first served, since these meet on the same
           // track of the passing loop
-          EXPECT_TRUE(name == "SimpleNetwork" && !model_detail.fix_routes)
+          EXPECT_TRUE(name == "SingleTrackCorridor" && !model_detail.fix_routes)
               << description;
         } else {
           EXPECT_TRUE(integers_without_start.empty())
