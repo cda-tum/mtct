@@ -7,6 +7,13 @@
 #include <unordered_set>
 #include <vector>
 
+// Infinity is a valid value, e.g., the maximal travel time of a train that may
+// stop. With -ffinite-math-only (also part of -ffast-math), the compiler may
+// drop comparisons with it, which silently yields wrong models.
+#if defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__
+#error "cda-rail must not be compiled with -ffinite-math-only or -ffast-math"
+#endif
+
 namespace cda_rail {
 
 using index_vector = std::vector<size_t>;

@@ -62,12 +62,16 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
     PLOGE << e.getMessage();
+    m_exception = std::current_exception();
+    abort();
   } catch (std::exception& e) {
     PLOGE << "Uncaught exception: " << e.what();
-    throw;
+    m_exception = std::current_exception();
+    abort();
   } catch (...) {
     PLOGE << "Unknown exception caught in lazy callback.";
-    throw;
+    m_exception = std::current_exception();
+    abort();
   }
 }
 
@@ -149,8 +153,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
             const std::vector<std::pair<size_t, double>>& route, size_t r_v_idx,
             double braking_distance) const {
   // A moving authority reaching beyond the exit ends at the exit
-  const auto ma_pos = std::min(route.at(r_v_idx).second + braking_distance,
-                               route.back().second);
+  const bool ends_at_exit =
+      route.at(r_v_idx).second + braking_distance >= route.back().second;
+  const auto ma_pos = ends_at_exit
+                          ? route.back().second
+                          : route.at(r_v_idx).second + braking_distance;
 
   // r_ma_idx >= r_v_idx s.th. route.at(r_ma_idx).second < ma_pos <=
   // route.at(r_ma_idx + 1).second which should be unique by design unless
@@ -160,18 +167,29 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     r_ma_idx++;
   }
   assert(braking_distance == 0 || route.at(r_ma_idx).second < ma_pos - EPS);
-  assert(ma_pos <= route.at(r_ma_idx + 1).second);
+  assert(ma_pos <= route.at(r_ma_idx + 1).second + EPS);
 
   // The used path is route.at(i) -> route.at(i + 1) for i in [r_v_idx,
   // r_ma_idx]
-  MovingAuthorityEnd ma_end{.path        = {},
-                            .pos_on_edge = ma_pos - route.at(r_ma_idx).second};
+  MovingAuthorityEnd ma_end{.path = {}, .pos_on_edge = 0};
   ma_end.path.reserve(r_ma_idx - r_v_idx + 1);
   for (size_t i = r_v_idx; i <= r_ma_idx; i++) {
     ma_end.path.emplace_back(
         solver->m_instance.get_const_network().get_edge_index(
             route.at(i).first, route.at(i + 1).first));
   }
+
+  // The route positions are sums of edge lengths. On a long route with
+  // fractional edge lengths, their difference deviates from the length of the
+  // edge by rounding errors of more than EPS, which would place the end beyond
+  // the edge or slightly before the exit.
+  const auto ma_edge_length = solver->m_instance.get_const_network()
+                                  .get_edge(ma_end.path.back())
+                                  .length;
+  ma_end.pos_on_edge =
+      ends_at_exit
+          ? ma_edge_length
+          : std::clamp(ma_pos - route.at(r_ma_idx).second, 0.0, ma_edge_length);
   return ma_end;
 }
 

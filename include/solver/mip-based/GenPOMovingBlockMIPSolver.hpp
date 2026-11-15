@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <map>
 #include <optional>
 #include <string>
@@ -41,6 +42,7 @@ class GenPOMovingBlockMIPSolver_WarmStartRoutesTrainWithoutRoute_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartIfFixedRouteMissesStop_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartWithoutModelVelocities_Test;
 class GenPOMovingBlockMIPSolver_SmallCoefficientsAreRemoved_Test;
+class GenPOMovingBlockMIPSolver_LazyCallbackStopsOnException_Test;
 #endif
 
 namespace cda_rail::solver::mip_based {
@@ -253,6 +255,7 @@ private:
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartIfFixedRouteMissesStop);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartWithoutModelVelocities);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, SmallCoefficientsAreRemoved);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, LazyCallbackStopsOnException);
 #endif
 
   SolutionSettingsMovingBlock m_solution_settings = {};
@@ -587,6 +590,10 @@ private:
     // Number of addLazy() calls so far, see
     // SolveStatistics::num_lazy_constraints_added.
     int m_num_lazy_constraints_added = 0;
+    // An exception thrown while checking a solution. An exception must not
+    // leave the callback, since it cannot pass Gurobi. Hence, the callback
+    // stops the optimization instead, and solve() rethrows it afterwards.
+    std::exception_ptr m_exception;
 
     /**
      * @brief Adds lazy constraints unless they were added before.
@@ -707,6 +714,16 @@ private:
     /** @brief The number of lazy constraints handed to Gurobi so far. */
     [[nodiscard]] int get_num_lazy_constraints_added() const {
       return m_num_lazy_constraints_added;
+    }
+
+    /**
+     * @brief The exception that stopped the optimization, if any.
+     *
+     * @return The exception thrown while checking a solution, or a null
+     *         pointer if there was none
+     */
+    [[nodiscard]] std::exception_ptr get_exception() const {
+      return m_exception;
     }
 
   protected:

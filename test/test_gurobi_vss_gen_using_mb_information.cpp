@@ -137,8 +137,8 @@ TEST(VSSGenMBInfoSolver, Default4NoTolerance) {
 
 TEST(VSSGenMBInfoSolver, Default5) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(
-          load_moving_block_solution("SimpleNetwork", SOLUTION_SUBDIRECTORY));
+      solver(load_moving_block_solution("SingleTrackCorridor",
+                                        SOLUTION_SUBDIRECTORY));
 
   const auto sol = solver.solve();
 
@@ -149,7 +149,7 @@ TEST(VSSGenMBInfoSolver, Default5) {
 
 TEST(VSSGenMBInfoSolver, Default5NoTolerance) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(load_moving_block_solution("SimpleNetwork",
+      solver(load_moving_block_solution("SingleTrackCorridor",
                                         SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
   const auto sol = solver.solve();
@@ -164,8 +164,8 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
   // current working directory, hence the solver has to be created before
   // switching to the temporary directory.
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
-      solver(
-          load_moving_block_solution("SimpleNetwork", SOLUTION_SUBDIRECTORY));
+      solver(load_moving_block_solution("SingleTrackCorridor",
+                                        SOLUTION_SUBDIRECTORY));
 
   // All exports happen relative to the current working directory. Hence, the
   // test is executed within a temporary directory that is removed afterwards,
@@ -182,7 +182,7 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
 
   const std::filesystem::path temp_dir =
       std::filesystem::temp_directory_path() /
-      "cda_rail_test_vss_gen_mb_info_simple_network_export";
+      "cda_rail_test_vss_gen_mb_info_single_track_corridor_export";
   std::filesystem::remove_all(temp_dir);
   ASSERT_TRUE(std::filesystem::create_directories(temp_dir));
   const ScopedTempWorkingDirectory temp_working_directory{
@@ -205,7 +205,7 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
   // <instance_subdirectory>/<instance_name>-<parameter_identifier>
   const std::filesystem::path solution_dir =
       std::filesystem::path("solutions") / "unnamed-experiment" /
-      INSTANCE_SUBDIRECTORY / "SimpleNetwork-tmpid";
+      INSTANCE_SUBDIRECTORY / "SingleTrackCorridor-tmpid";
   EXPECT_TRUE(std::filesystem::is_directory(solution_dir));
   std::error_code ec;
   for (const auto& file_name :

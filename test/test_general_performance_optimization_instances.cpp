@@ -3325,7 +3325,7 @@ TEST(GeneralPerformanceOptimizationInstances,
        {"moving-block-solutions", "moving-block-solutions-no-tolerance"}) {
     for (const auto* instance_name :
          {"HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "Overtake",
-          "SimpleNetwork", "SimpleStation", "SingleTrack",
+          "SingleTrackCorridor", "SimpleStation", "SingleTrack",
           "SingleTrackWithStation", "Stammstrecke4Trains",
           "Stammstrecke8Trains", "Stammstrecke16Trains"}) {
       const instances::GeneralPerformanceOptimizationInstance instance(

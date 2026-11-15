@@ -16,10 +16,12 @@
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <chrono>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <unordered_set>
@@ -1243,7 +1245,7 @@ TEST(GenPOMovingBlockMIPSolver, Default5) {
 
 TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities1) {
   const std::vector<std::string> paths{
-      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
+      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1305,7 +1307,7 @@ TEST(GenPOMovingBlockMIPSolver, OnlyFirstWithHigherVelocities2) {
 
 TEST(GenPOMovingBlockMIPSolver, AllVelocities1) {
   const std::vector<std::string> paths{
-      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SimpleNetwork"};
+      "HighSpeedTrack2Trains", "HighSpeedTrack5Trains", "SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1616,7 +1618,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy1Indicator) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, NoLazy2) {
-  const std::vector<std::string> paths{"SimpleNetwork"};
+  const std::vector<std::string> paths{"SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1682,6 +1684,29 @@ TEST(GenPOMovingBlockMIPSolver, NoLazy4) {
   }
 }
 
+TEST(GenPOMovingBlockMIPSolver, SimplifiedHeadwaysOnLongBreakableEdge) {
+  // Both trains run on a single breakable edge of 50 km, on which they may
+  // stop. Hence, the time until the moving authority reaches the end of the
+  // edge is unbounded, and the simplified headway does not restrict the
+  // following train. Built with -ffinite-math-only, the compiler dropped the
+  // check for this infinite time, and the finite value used instead made the
+  // model infeasible, although both trains can run on time.
+  const auto instance =
+      cda_rail::instances::GeneralPerformanceOptimizationInstance(
+          "HighSpeedTrack2Trains", "atmos2023", "data");
+  for (const bool use_lazy_constraints : {false, true}) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    const auto                                             sol =
+        solver.solve({.simplify_headway_constraints = true},
+                     {.use_lazy_constraints = use_lazy_constraints}, {}, 100);
+
+    ASSERT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "use_lazy_constraints = " << use_lazy_constraints;
+    EXPECT_NEAR(sol.get_obj(), 0, 1e-3)
+        << "use_lazy_constraints = " << use_lazy_constraints;
+  }
+}
+
 TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
   const std::vector<std::string> paths{"SimpleStation"};
 
@@ -1710,7 +1735,7 @@ TEST(GenPOMovingBlockMIPSolver, NoLazySimplified1) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, NoLazySimplified2) {
-  const std::vector<std::string> paths{"SimpleNetwork"};
+  const std::vector<std::string> paths{"SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -1791,7 +1816,7 @@ TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified1) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, StandardLazySimplified2) {
-  const std::vector<std::string> paths{"SimpleNetwork"};
+  const std::vector<std::string> paths{"SingleTrackCorridor"};
 
   for (const auto& p : paths) {
     const auto instance =
@@ -2893,6 +2918,84 @@ TEST(GenPOMovingBlockMIPSolver, MovingAuthorityBeyondExit) {
   EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(6)));
 }
 
+TEST(GenPOMovingBlockMIPSolver, MovingAuthorityBeyondExitOnLongRoute) {
+  // As MovingAuthorityBeyondExit, but the first edge is long, and the lengths
+  // are fractional. Then, the position of the exit on the route, 4321.1 +
+  // 40.1, minus the one of v1 exceeds the length of the last edge by a
+  // rounding error of 3.6e-13 > EPS. The lazy callback used this difference
+  // as the end of the moving authority from v1 and threw, since it is not on
+  // the edge. The moving authority from v0 ends 50 m into the first edge.
+  // Hence, Tr2 cannot enter after 4 s, but after 6 s.
+  const auto create_instance = [](double tr2_entry_time) {
+    cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+
+    auto&      network = instance.get_editable_network();
+    const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+    const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+    const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+
+    const auto e01 = network.add_edge(v0, v1, 4321.1, 10);
+    const auto e12 = network.add_edge(v1, v2, 40.1, 10);
+    network.add_successor(e01, e12);
+
+    instance.add_train("Tr1", 10, 10, 1, 1, true, 0, 10, v0, 0, 10, v2, 1);
+    instance.add_train("Tr2", 10, 10, 1, 1, true, tr2_entry_time, 10, v0,
+                       tr2_entry_time, 10, v2, 1);
+
+    return instance;
+  };
+
+  EXPECT_FALSE(check_lazy_strategies_against_full_model(create_instance(4)));
+  EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(6)));
+}
+
+TEST(GenPOMovingBlockMIPSolver, LazyCallbackStopsOnException) {
+  // An exception must not leave the lazy callback through Gurobi, which would
+  // terminate the process. The callback keeps it and stops the optimization.
+  // The solver data is corrupted after the model is created, so that checking
+  // the first solution throws.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto e01     = network.add_edge(v0, v1, 20, 10);
+  const auto e12     = network.add_edge(v1, v2, 20, 10);
+  network.add_successor(e01, e12);
+  instance.add_train("Tr1", 10, 10, 1, 1, true, 0, 10, v0, 0, 10, v2, 1);
+  instance.add_train("Tr2", 10, 10, 1, 1, true, 6, 10, v0, 6, 10, v2, 1);
+
+  // Returns the exception that stopped the optimization
+  const auto stopping_exception =
+      [&instance](const auto& corrupt) -> std::exception_ptr {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback
+        callback(&solver);
+    solver.solve_init_general_mip(false, true, &callback);
+    solver.m_model->set(GRB_IntParam_LazyConstraints, 1);
+    solver.create_model({}, {}, {});
+    corrupt(solver);
+    solver.m_model->optimize();
+    EXPECT_EQ(solver.m_model->get(GRB_IntAttr_Status), GRB_INTERRUPTED);
+    const auto exception = callback.get_exception();
+    solver.cleanup();
+    return exception;
+  };
+
+  // A C++ exception, i.e., std::out_of_range from the velocities
+  const auto out_of_range = stopping_exception(
+      [](auto& solver) { solver.m_velocity_extensions.clear(); });
+  ASSERT_NE(out_of_range, nullptr);
+  EXPECT_THROW(std::rethrow_exception(out_of_range), std::out_of_range);
+
+  // A Gurobi exception, i.e., the value of a variable not in the model
+  const auto gurobi_error = stopping_exception([v0](auto& solver) {
+    solver.m_vars["t_front_departure"](0, v0) = GRBVar();
+  });
+  ASSERT_NE(gurobi_error, nullptr);
+  EXPECT_THROW(std::rethrow_exception(gurobi_error), GRBException);
+}
+
 namespace {
 // The ways to model the TTD headways, each with whether the headway
 // constraints are simplified
@@ -3049,7 +3152,7 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
       {"SingleTrack", "atmos2023"},
       {"SingleTrackWithStation", "atmos2023"},
       {"Overtake", "atmos2023"},
-      {"SimpleNetwork", "atmos2023"},
+      {"SingleTrackCorridor", "atmos2023"},
       {"Stammstrecke4Trains", "atmos2023"},
       {"Stammstrecke8Trains", "atmos2023"},
       {"GeneralStammstrecke6Trains", "gen-po"}};
@@ -3116,7 +3219,7 @@ TEST(GenPOMovingBlockMIPSolver, WarmStartIsFeasible) {
           // As in the A* search, the trains cannot follow their quickest
           // paths first come, first served, since these meet on the same
           // track of the passing loop
-          EXPECT_TRUE(name == "SimpleNetwork" && !model_detail.fix_routes)
+          EXPECT_TRUE(name == "SingleTrackCorridor" && !model_detail.fix_routes)
               << description;
         } else {
           EXPECT_TRUE(integers_without_start.empty())

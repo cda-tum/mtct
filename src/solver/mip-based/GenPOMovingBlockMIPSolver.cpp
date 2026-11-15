@@ -18,6 +18,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <exception>
 #include <filesystem>
 #include <numeric>
 #include <optional>
@@ -151,6 +152,15 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   m_model->set(GRB_DoubleParam_IntFeasTol, integrality_tolerance);
 
   m_model->optimize();
+
+  // The solution that the lazy callback could not check is not known to be
+  // feasible, hence there is no solution to report.
+  if (cb.has_value() && cb.value().get_exception() != nullptr) {
+    PLOGE << "Optimization stopped by an exception in the lazy callback";
+    cleanup();
+    this->m_instance = old_instance;
+    std::rethrow_exception(cb.value().get_exception());
+  }
 
   m_model_solved = std::chrono::high_resolution_clock::now();
   m_solve_time   = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1698,8 +1708,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             assert(last_edge_obj.length + p_len_last_vertex >=
                    tr_object.get_length());
 
+            // Clamped, since the difference of lengths may leave the edge by a
+            // rounding error, which the travel time functions reject
             const auto rel_pt_on_edge =
-                tr_object.get_length() - p_len_last_vertex;
+                std::clamp(tr_object.get_length() - p_len_last_vertex, 0.0,
+                           last_edge_obj.length);
             const auto v_0_velocities =
                 m_velocity_extensions.at(tr).at(last_edge_obj.source);
             const auto v_1_velocities =
@@ -2082,7 +2095,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                   m_vars["t_rear_departure"](tr2, last_edge_object.target));
             } else {
               assert(p_len > bd && p_len - last_edge_object.length <= bd);
-              const auto  target_point = bd - p_len + last_edge_object.length;
+              // Clamped, since the difference of lengths may leave the edge by
+              // a rounding error, which the travel time functions reject
+              const auto target_point =
+                  std::clamp(bd - p_len + last_edge_object.length, 0.0,
+                             last_edge_object.length);
               const auto& v_tr2_source_velocities =
                   m_velocity_extensions.at(tr2).at(last_edge_object.source);
               const auto& v_tr2_target_velocities =

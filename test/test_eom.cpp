@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 #include <cmath>
 #include <limits>
+#include <string>
 
 #define EXPECT_APPROX_EQ(a, b)                                                 \
   EXPECT_TRUE(std::abs((a) - (b)) < 1e-6) << (a) << " !=(approx.) " << (b)
@@ -1515,6 +1516,48 @@ TEST(EoM, ConsistencySmallNegativeValues) {
   EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
                                                         d_in, s_in, x_in),
                cda_rail::exceptions::ConsistencyException);
+}
+
+TEST(EoM, ConsistencyXSlightlyBeyondS) {
+  // Like values slightly below 0, x within GRB_EPS beyond s is set to s
+  double v1_in = 1;
+  double v2_in = 1;
+  double a_in  = 1;
+  double d_in  = 1;
+  double s_in  = 1;
+  double x_in  = 1 + (cda_rail::GRB_EPS / 2);
+  EXPECT_NO_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                           d_in, s_in, x_in));
+  EXPECT_EQ(x_in, 1);
+
+  x_in = 1 + (2 * cda_rail::GRB_EPS);
+  EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
+                                                        d_in, s_in, x_in),
+               cda_rail::exceptions::ConsistencyException);
+  // The message shows both values
+  try {
+    cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in, d_in, s_in,
+                                             x_in);
+  } catch (const cda_rail::exceptions::ConsistencyException& e) {
+    EXPECT_EQ(std::string(e.what()),
+              "x (1.0002) must be less than or equal to s (1).");
+  }
+
+  // A position at the end of an edge computed as a difference of route
+  // positions, which exceeds the edge length by a rounding error. Calls with
+  // the exact end give the same times.
+  const double s   = 40.1;
+  const double x   = (4321.1 + 40.1) - 4321.1;
+  const double eps = x - s;
+  EXPECT_GT(eps, 0);
+  EXPECT_APPROX_EQ(
+      cda_rail::min_travel_time_from_start(10, 14, 20, 2, 1.2, s, x),
+      cda_rail::min_travel_time_from_start(10, 14, 20, 2, 1.2, s, s));
+  // The time to the end from slightly before the start, i.e., from s + eps
+  // before the end
+  EXPECT_APPROX_EQ(
+      cda_rail::max_travel_time_to_end(10, 14, 5, 2, 1.2, s, -eps, false),
+      cda_rail::max_travel_time_to_end(10, 14, 5, 2, 1.2, s, 0, false));
 }
 
 TEST(EoM, EoMBraking) {
