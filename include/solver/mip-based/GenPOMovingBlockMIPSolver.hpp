@@ -42,6 +42,7 @@ class GenPOMovingBlockMIPSolver_WarmStartRoutesTrainWithoutRoute_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartIfFixedRouteMissesStop_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartWithoutModelVelocities_Test;
 class GenPOMovingBlockMIPSolver_SmallCoefficientsAreRemoved_Test;
+class GenPOMovingBlockMIPSolver_LazyCallbackStopsOnException_Test;
 #endif
 
 namespace cda_rail::solver::mip_based {
@@ -254,6 +255,7 @@ private:
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartIfFixedRouteMissesStop);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartWithoutModelVelocities);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, SmallCoefficientsAreRemoved);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, LazyCallbackStopsOnException);
 #endif
 
   SolutionSettingsMovingBlock m_solution_settings = {};

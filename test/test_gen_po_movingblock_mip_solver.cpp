@@ -16,10 +16,12 @@
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <chrono>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <unordered_set>
@@ -2922,6 +2924,53 @@ TEST(GenPOMovingBlockMIPSolver, MovingAuthorityBeyondExitOnLongRoute) {
 
   EXPECT_FALSE(check_lazy_strategies_against_full_model(create_instance(4)));
   EXPECT_TRUE(check_lazy_strategies_against_full_model(create_instance(6)));
+}
+
+TEST(GenPOMovingBlockMIPSolver, LazyCallbackStopsOnException) {
+  // An exception must not leave the lazy callback through Gurobi, which would
+  // terminate the process. The callback keeps it and stops the optimization.
+  // The solver data is corrupted after the model is created, so that checking
+  // the first solution throws.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto e01     = network.add_edge(v0, v1, 20, 10);
+  const auto e12     = network.add_edge(v1, v2, 20, 10);
+  network.add_successor(e01, e12);
+  instance.add_train("Tr1", 10, 10, 1, 1, true, 0, 10, v0, 0, 10, v2, 1);
+  instance.add_train("Tr2", 10, 10, 1, 1, true, 6, 10, v0, 6, 10, v2, 1);
+
+  // Returns the exception that stopped the optimization
+  const auto stopping_exception =
+      [&instance](const auto& corrupt) -> std::exception_ptr {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback
+        callback(&solver);
+    solver.solve_init_general_mip(false, true, &callback);
+    solver.m_model->set(GRB_IntParam_LazyConstraints, 1);
+    solver.create_model({}, {}, {});
+    corrupt(solver);
+    solver.m_model->optimize();
+    EXPECT_EQ(solver.m_model->get(GRB_IntAttr_Status), GRB_INTERRUPTED);
+    const auto exception = callback.get_exception();
+    solver.cleanup();
+    return exception;
+  };
+
+  // A C++ exception, i.e., std::out_of_range from the velocities
+  const auto out_of_range = stopping_exception(
+      [](auto& solver) { solver.m_velocity_extensions.clear(); });
+  ASSERT_NE(out_of_range, nullptr);
+  EXPECT_THROW(std::rethrow_exception(out_of_range), std::out_of_range);
+
+  // A Gurobi exception, i.e., the value of a variable not in the model
+  const auto gurobi_error = stopping_exception([v0](auto& solver) {
+    solver.m_vars["t_front_departure"](0, v0) = GRBVar();
+  });
+  ASSERT_NE(gurobi_error, nullptr);
+  EXPECT_THROW(std::rethrow_exception(gurobi_error), GRBException);
 }
 
 namespace {

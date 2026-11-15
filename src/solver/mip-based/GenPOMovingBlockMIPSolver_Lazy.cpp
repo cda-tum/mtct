@@ -62,6 +62,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   } catch (GRBException& e) {
     PLOGE << "Error number: " << e.getErrorCode();
     PLOGE << e.getMessage();
+    m_exception = std::current_exception();
+    abort();
   } catch (std::exception& e) {
     PLOGE << "Uncaught exception: " << e.what();
     m_exception = std::current_exception();

@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 #include <cmath>
 #include <limits>
+#include <string>
 
 #define EXPECT_APPROX_EQ(a, b)                                                 \
   EXPECT_TRUE(std::abs((a) - (b)) < 1e-6) << (a) << " !=(approx.) " << (b)
@@ -1533,6 +1534,14 @@ TEST(EoM, ConsistencyXSlightlyBeyondS) {
   EXPECT_THROW(cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in,
                                                         d_in, s_in, x_in),
                cda_rail::exceptions::ConsistencyException);
+  // The message shows both values
+  try {
+    cda_rail::check_consistency_of_eom_input(v1_in, v2_in, a_in, d_in, s_in,
+                                             x_in);
+  } catch (const cda_rail::exceptions::ConsistencyException& e) {
+    EXPECT_EQ(std::string(e.what()),
+              "x (1.0002) must be less than or equal to s (1).");
+  }
 
   // A position at the end of an edge computed as a difference of route
   // positions, which exceeds the edge length by a rounding error. Calls with
