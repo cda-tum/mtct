@@ -438,16 +438,16 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::relaxation_state(
     const auto& schedule = m_instance.get_const_schedule(tr);
     auto&       route    = state.train_edges.at(tr);
     // The candidate not yet on the route with the highest positive value,
-    // ties broken by edge index
+    // ties broken by edge index, since the candidates are unordered
     const auto best_edge =
         [&](const cda_rail::index_set& candidates) -> std::optional<size_t> {
+      cda_rail::index_vector sorted(candidates.begin(), candidates.end());
+      std::ranges::sort(sorted);
       std::optional<size_t> best;
       double                best_value = DEFAULT_INT_FEAS_TOL;
-      for (const auto e : candidates) {
+      for (const auto e : sorted) {
         const auto val = value_of(m_vars.at("x").at(tr, e));
-        if (!std::ranges::contains(route, e) &&
-            (val > best_value ||
-             (best.has_value() && val == best_value && e < best.value()))) {
+        if (!std::ranges::contains(route, e) && val > best_value) {
           best       = e;
           best_value = val;
         }
