@@ -47,6 +47,7 @@ class GenPOMovingBlockMIPSolver_RelaxationStateServesStopsOnRoute_Test;
 class GenPOMovingBlockMIPSolver_RelaxationStateBreaksTiesByEdgeIndex_Test;
 class GenPOMovingBlockMIPSolver_RelaxationStateSkipsEdgesOnRoute_Test;
 class GenPOMovingBlockMIPSolver_CompleteRelaxationKeepsOnlyBetterSolutions_Test;
+class GenPOMovingBlockMIPSolver_SimulateStateFailsWithoutSimulation_Test;
 class
     GenPOMovingBlockMIPSolver_SimulatedIncumbentOnlyReplacesWorseSolutions_Test;
 class GenPOMovingBlockMIPSolver_SimulatedIncumbentWithoutGurobiBound_Test;
@@ -278,6 +279,7 @@ private:
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, RelaxationStateSkipsEdgesOnRoute);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,
               CompleteRelaxationKeepsOnlyBetterSolutions);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, SimulateStateFailsWithoutSimulation);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,
               SimulatedIncumbentOnlyReplacesWorseSolutions);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,

@@ -3279,10 +3279,29 @@ TEST(GenPOMovingBlockMIPSolver, NodeCompletionsImproveSimulatedIncumbent) {
 }
 
 TEST(GenPOMovingBlockMIPSolver, NoNodeCompletionsWithFixedRoutes) {
-  // With fixed routes, Gurobi also reaches nodes on Overtake, but only the
-  // initial A* state is completed
-  const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
-      "Overtake", "atmos2023", "./data");
+  // The fast train Tr2 enters the line v0-v3 behind the slow train Tr1, hence
+  // every solution delays it. The relaxation ignores the lazy headways, so
+  // that Gurobi's bound is below the simulated incumbent, and Gurobi reaches
+  // a node. With fixed routes, only the initial A* state is completed.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto v3      = network.add_vertex("v3", cda_rail::VertexType::TTD);
+  const cda_rail::index_vector route{network.add_edge(v0, v1, 1000, 40),
+                                     network.add_edge(v1, v2, 1000, 40),
+                                     network.add_edge(v2, v3, 1000, 40)};
+  network.add_successor(route.at(0), route.at(1));
+  network.add_successor(route.at(1), route.at(2));
+  instance.add_train("Tr1", 100, 10, 2, 2, true, 0, 10, v0, 0, 10, v3, 1);
+  instance.add_train("Tr2", 100, 40, 2, 2, true, 60, 10, v0, 60, 10, v3, 1);
+  for (const auto* tr : {"Tr1", "Tr2"}) {
+    instance.add_empty_route(tr);
+    for (const auto e : route) {
+      instance.push_back_edge_to_route(tr, e);
+    }
+  }
 
   cleanup_export_dirs();
   cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
@@ -3290,7 +3309,7 @@ TEST(GenPOMovingBlockMIPSolver, NoNodeCompletionsWithFixedRoutes) {
       {.fix_routes = true}, {.abs_mip_gap = 0, .completion_interval = 1},
       {{cda_rail::solver::GeneralExportOption::ExportSolution, "tmp5folder",
         "tmp5file", "tmp5id"}},
-      5);
+      30);
   ASSERT_TRUE(sol.has_solution());
   const auto data =
       read_solver_data(sol.get_export_path("tmp5folder", "tmp5file", "tmp5id"));

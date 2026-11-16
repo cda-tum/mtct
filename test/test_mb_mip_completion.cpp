@@ -494,6 +494,28 @@ TEST(GenPOMovingBlockMIPSolver, CompleteRelaxationKeepsOnlyBetterSolutions) {
             std::nullopt);
 }
 
+TEST(GenPOMovingBlockMIPSolver, SimulateStateFailsWithoutSimulation) {
+  // Tr1 and Tr2 enter the single track between v0 and v1 from opposite ends at
+  // the same time, hence their routes cannot be simulated
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto e01     = network.add_edge(v0, v1, 100, 10);
+  const auto e10     = network.add_edge(v1, v0, 100, 10);
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v1, 1);
+  instance.add_train("Tr2", 10, 10, 2, 2, true, 0, 10, v1, 0, 10, v0, 1);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  solver.solve_init_general_mip(false, true);
+  solver.create_model({}, {}, {});
+  EXPECT_EQ(solver.simulate_state({.train_edges    = {{e01}, {e10}},
+                                   .ttd_orders     = {},
+                                   .vertex_orders  = {{0}, {1}},
+                                   .stop_positions = {{}, {}}}),
+            std::nullopt);
+}
+
 TEST(GenPOMovingBlockMIPSolver, SimulatedIncumbentOnlyReplacesWorseSolutions) {
   // Gurobi's optimal solution is kept if it is strictly better than the
   // simulated incumbent, whose objective is set here, and replaced otherwise.
