@@ -2,8 +2,10 @@
 #include "EOMHelper.hpp"
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
+#include "gurobi_c.h"
 #include "plog/Log.h"
 #include "simulator/GeneralSimulator.hpp"
+#include "simulator/GreedyHeuristic.hpp"
 #include "simulator/GreedySimulator.hpp"
 #include "solver/astar-based/CompletionHeuristic.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
@@ -12,6 +14,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <iterator>
 #include <map>
 #include <optional>
@@ -90,7 +93,6 @@ bool exists(GRBVar var) { return !var.sameAs(GRBVar()); }
 
 std::optional<cda_rail::simulator::SimulatorState> cda_rail::solver::mip_based::
     GenPOMovingBlockMIPSolver::completed_initial_state() const {
-  const auto&               network = m_instance.get_const_network();
   simulator::SimulatorState state{
       .train_edges    = std::vector<cda_rail::index_vector>(m_num_tr),
       .ttd_orders     = std::vector<cda_rail::index_vector>(m_num_ttd),
@@ -103,27 +105,11 @@ std::optional<cda_rail::simulator::SimulatorState> cda_rail::solver::mip_based::
       if (!m_instance.get_const_routes().has_route(tr_name)) {
         continue;
       }
-      const auto& route =
+      state.train_edges.at(tr) =
           m_instance.get_const_routes().get_route(tr_name).get_edges();
-      // Every stop is served at the first valid stop vertex after the previous
-      // one, i.e., at the end of the shortest such beginning of the route
-      cda_rail::index_vector beginning;
-      for (size_t stop = 0;
-           stop < m_instance.get_const_schedule(tr).get_stops().size();
-           stop++) {
-        bool valid_stop_pos = false;
-        while (!valid_stop_pos) {
-          if (beginning.size() == route.size()) {
-            return std::nullopt;
-          }
-          beginning.emplace_back(route.at(beginning.size()));
-          valid_stop_pos =
-              m_instance.is_route_end_valid_stop_pos(tr, beginning, stop);
-        }
-        state.stop_positions.at(tr).emplace_back(
-            network.length_of_path(beginning));
+      if (!astar_based::serve_stops_along_route(m_instance, state, tr)) {
+        return std::nullopt;
       }
-      state.train_edges.at(tr) = route;
     }
   }
   simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
@@ -201,19 +187,69 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::velocity_indices(
   return indices;
 }
 
-void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
+std::optional<
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::SimulatedSolution>
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::simulate_state(
+    simulator::SimulatorState state) const {
+  simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
+  simulator.set_simulator_state(state);
+  auto results = simulator.simulate(
+      WARM_START_DT, m_model_detail.allow_late_entry, true, true, true);
+  if (!results.success) {
+    return std::nullopt;
+  }
+  // The simulator does not know the delay bounds of the model
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
+    const auto& stops = m_instance.get_const_schedule(tr).get_stops();
+    bool        within_bounds =
+        results.exit_times.at(tr) <= latest_exit_time(tr) + GRB_EPS;
+    for (size_t stop = 0; stop < stops.size(); stop++) {
+      within_bounds =
+          within_bounds && results.stop_times.at(tr).at(stop) -
+                                   stops.at(stop).get_service_time() <=
+                               m_model_detail.max_station_delay + GRB_EPS;
+    }
+    if (!within_bounds) {
+      PLOGD << "The simulated solution exceeds the delay bounds of the model";
+      return std::nullopt;
+    }
+  }
+  const auto obj = simulator::objective_val(m_instance, results.exit_times,
+                                            results.stop_times);
+  return SimulatedSolution{
+      .state = std::move(state), .results = std::move(results), .obj = obj};
+}
+
+std::optional<
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::SimulatedSolution>
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
   const auto state = completed_initial_state();
   if (!state.has_value()) {
     PLOGD << "No MIP start, since the completion of the initial A* state "
              "failed";
-    return;
+    return std::nullopt;
   }
-  simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
-  simulator.set_simulator_state(state.value());
-  const auto results = simulator.simulate(
-      WARM_START_DT, m_model_detail.allow_late_entry, true, true, true);
-  // The completion simulated the same state
-  assert(results.success);
+  auto simulated = simulate_state(state.value());
+  if (!simulated.has_value()) {
+    return std::nullopt;
+  }
+  PLOGD << "Simulated the completed initial A* state with objective "
+        << simulated->obj;
+  if (const auto values = integer_values(simulated.value());
+      values.has_value()) {
+    PLOGD << "MIP start from the simulation of the completed initial A* state";
+    for (auto [var, value] : values.value()) {
+      var.set(GRB_DoubleAttr_Start, value);
+    }
+  }
+  return simulated;
+}
+
+std::optional<std::vector<std::pair<GRBVar, double>>>
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::integer_values(
+    const SimulatedSolution& solution) {
+  const auto& state   = solution.state;
+  const auto& results = solution.results;
   const auto& network = m_instance.get_const_network();
 
   // The integer variables by their index in the model, with their values. The
@@ -240,7 +276,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
   // When the front of a train enters an edge of its route, by train and edge
   std::vector<std::map<size_t, double>> edge_entry_times(m_num_tr);
   for (size_t tr = 0; tr < m_num_tr; tr++) {
-    const auto& route      = state->train_edges.at(tr);
+    const auto& route      = state.train_edges.at(tr);
     const auto& trajectory = results.train_trajectories.at(tr);
 
     // How the train passes the vertices of its route, and where it stops
@@ -255,7 +291,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
       }
       const auto  arrival        = front_passing(trajectory, pos, false);
       const auto  departure      = front_passing(trajectory, pos, true);
-      const auto& stop_positions = state->stop_positions.at(tr);
+      const auto& stop_positions = state.stop_positions.at(tr);
       const bool  stop = stop_idx < stop_positions.size() &&
                          std::abs(stop_positions.at(stop_idx) - pos) < GRB_EPS;
       if (stop) {
@@ -284,7 +320,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
       PLOGD << "No MIP start, since the model has no velocities for how "
             << m_instance.get_const_train_list().get_train(tr).get_name()
             << " passes its route in the simulation";
-      return;
+      return std::nullopt;
     }
     for (size_t i = 0; i < route.size(); i++) {
       set(m_vars["y"](tr, route.at(i), indices->at(i), indices->at(i + 1)), 1);
@@ -359,9 +395,125 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::set_warm_start() {
     }
   }
 
-  PLOGD << "MIP start from the simulation of the completed initial A* state";
+  std::vector<std::pair<GRBVar, double>> result;
+  result.reserve(values.size());
   for (const auto& [var, value] : values | std::views::values) {
-    GRBVar(var).set(GRB_DoubleAttr_Start, value);
+    result.emplace_back(var, value);
+  }
+  return result;
+}
+
+cda_rail::simulator::SimulatorState
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::relaxation_state(
+    const std::function<double(const GRBVar&)>& value) const {
+  const auto&               network = m_instance.get_const_network();
+  simulator::SimulatorState state{
+      .train_edges    = std::vector<cda_rail::index_vector>(m_num_tr),
+      .ttd_orders     = std::vector<cda_rail::index_vector>(m_num_ttd),
+      .vertex_orders  = std::vector<cda_rail::index_vector>(m_num_vertices),
+      .stop_positions = std::vector<std::vector<double>>(m_num_tr)};
+  // The value of a variable, 0 if the model does not have it
+  const auto value_of = [&value](const GRBVar& var) {
+    return exists(var) ? value(var) : 0.0;
+  };
+
+  for (size_t tr = 0; tr < m_num_tr; tr++) {
+    const auto& schedule = m_instance.get_const_schedule(tr);
+    auto&       route    = state.train_edges.at(tr);
+    // The candidate not yet on the route with the highest positive value,
+    // ties broken by edge index, since the candidates are unordered
+    const auto best_edge =
+        [&](const cda_rail::index_set& candidates) -> std::optional<size_t> {
+      cda_rail::index_vector sorted(candidates.begin(), candidates.end());
+      std::ranges::sort(sorted);
+      std::optional<size_t> best;
+      double                best_value = DEFAULT_INT_FEAS_TOL;
+      for (const auto e : sorted) {
+        const auto val = value_of(m_vars.at("x").at(tr, e));
+        if (!std::ranges::contains(route, e) && val > best_value) {
+          best       = e;
+          best_value = val;
+        }
+      }
+      return best;
+    };
+    auto next = best_edge(network.out_edges(schedule.get_entry_vertex()));
+    while (next.has_value()) {
+      route.emplace_back(next.value());
+      next = network.get_edge(next.value()).target == schedule.get_exit_vertex()
+                 ? std::nullopt
+                 : best_edge(network.get_successors(next.value()));
+    }
+    // Stops that cannot be served on the route are left to the completion
+    astar_based::serve_stops_along_route(m_instance, state, tr);
+  }
+
+  return state;
+}
+
+std::optional<bool>
+cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::complete_relaxation(
+    const std::function<double(const GRBVar&)>& value) {
+  simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
+  auto                       completed = astar_based::complete_state(
+      simulator, relaxation_state(value), WARM_START_DT,
+      m_model_detail.allow_late_entry, true);
+  if (!completed.has_value()) {
+    return std::nullopt;
+  }
+  auto simulated = simulate_state(std::move(completed.value()));
+  if (!simulated.has_value()) {
+    return std::nullopt;
+  }
+  if (m_simulated_incumbent.has_value() &&
+      simulated->obj >= m_simulated_incumbent->obj) {
+    return false;
+  }
+  m_simulated_incumbent = std::move(simulated);
+  return true;
+}
+
+void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
+    complete_node_relaxation() {
+  const auto interval = solver->m_solver_strategy.completion_interval;
+  // With fixed routes, a relaxation cannot change the routes, hence only the
+  // initial state is completed. Gurobi does not stop within a callback, hence
+  // no completion is started once the time limit is reached.
+  if (interval == 0 || solver->m_model_detail.fix_routes ||
+      getIntInfo(GRB_CB_MIPNODE_STATUS) != GRB_OPTIMAL ||
+      getDoubleInfo(GRB_CB_RUNTIME) >=
+          solver->m_model->get(GRB_DoubleParam_TimeLimit)) {
+    return;
+  }
+  const auto relaxation = m_num_relaxations++;
+  if (relaxation % interval != 0) {
+    return;
+  }
+  m_completions_attempted++;
+  const auto improved = solver->complete_relaxation(
+      [this](const GRBVar& var) { return getNodeRel(var); });
+  if (!improved.has_value()) {
+    return;
+  }
+  m_completions_found++;
+  if (!improved.value()) {
+    return;
+  }
+  const auto& incumbent = solver->m_simulated_incumbent.value();
+  PLOGD << "Completion of node relaxation " << relaxation + 1
+        << " improves the simulated incumbent to " << incumbent.obj;
+  // Gurobi only has to find solutions at least as good
+  addLazy(solver->m_objective_expr <= incumbent.obj);
+  if (const auto values = solver->integer_values(incumbent);
+      values.has_value()) {
+    std::vector<GRBVar> vars;
+    std::vector<double> vals;
+    for (const auto& [var, val] : values.value()) {
+      vars.emplace_back(var);
+      vals.emplace_back(val);
+    }
+    setSolution(vars.data(), vals.data(), static_cast<int>(vars.size()));
+    useSolution();
   }
 }
 

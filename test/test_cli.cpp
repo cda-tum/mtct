@@ -1229,19 +1229,20 @@ TEST(CliOptions, MbMipGeneratedIdentifier) {
             cda_rail::cli::hash_identifier(all_settings));
 }
 
-TEST(CliOptions, MbMipWarmStart) {
+TEST(CliOptions, MbMipCompletionInterval) {
   cda_rail::cli::MbMipSettings settings;
   CLI::App                     app;
   cda_rail::cli::add_mb_mip_options(app, settings);
-  app.parse(std::string{"--use-warm-start"});
+  app.parse(std::string{"--completion-interval 50"});
 
-  EXPECT_TRUE(cda_rail::cli::mb_mip_solver_strategy(settings).use_warm_start);
-  // Only part of the identifier if the warm start is used, see
+  EXPECT_EQ(cda_rail::cli::mb_mip_solver_strategy(settings).completion_interval,
+            50);
+  // Only part of the identifier if completions are used, see
   // MbMipGeneratedIdentifier
   EXPECT_EQ(
       cda_rail::cli::generate_mb_mip_identifier(settings),
       "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_OnlyCurrent_OnlyViolated_"
-      "OnlyAdjacent_10_-1_t");
+      "OnlyAdjacent_10_-1_50");
 }
 
 TEST(CliOptions, HashIdentifier) {

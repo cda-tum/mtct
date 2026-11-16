@@ -19,6 +19,8 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <string>
+#include <utility>
 #include <vector>
 
 using namespace cda_rail;
@@ -677,6 +679,94 @@ TEST(CompletionHeuristic, PlatformsOfThePartialStateCountForTheTurns) {
   EXPECT_EQ(completed->train_edges.at(station.tr_late),
             (index_vector{station.in, station.b1, station.b2, station.out}));
   EXPECT_TRUE(is_feasible(station.instance, completed.value()));
+}
+
+// ----------------------
+// STOPS ALONG A ROUTE
+// ----------------------
+
+namespace {
+// Train Tr1 of the given length runs along the line v0 -> v1 -> ... -> v6 of
+// 100 m edges, whose route is given in the state
+struct StopLine {
+  instances::GeneralPerformanceOptimizationInstance instance;
+  index_vector                                      route;
+  simulator::SimulatorState                         state;
+};
+StopLine stop_line(double train_length) {
+  StopLine   line;
+  auto&      network = line.instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", VertexType::TTD);
+  size_t     v       = v0;
+  for (size_t i = 1; i <= 6; ++i) {
+    const auto next =
+        network.add_vertex("v" + std::to_string(i), VertexType::TTD);
+    const auto e = network.add_edge(v, next, 100, 10);
+    if (!line.route.empty()) {
+      network.add_successor(line.route.back(), e);
+    }
+    line.route.emplace_back(e);
+    v = next;
+  }
+  line.instance.add_train("Tr1", train_length, 10, 2, 2, true, 0, 10, v0, 0, 10,
+                          v, 1);
+  line.state = {.train_edges    = {line.route},
+                .ttd_orders     = {},
+                .vertex_orders  = {},
+                .stop_positions = {{}}};
+  return line;
+}
+} // namespace
+
+TEST(CompletionHeuristic, StopAlongRouteAtEndOfPlatform) {
+  // The platform of S consists of v1-v2 and v2-v3, hence Tr1 stops at v3
+  auto line = stop_line(10);
+  line.instance.add_empty_station("S");
+  line.instance.add_track_to_station("S", line.route.at(1));
+  line.instance.add_track_to_station("S", line.route.at(2));
+  line.instance.insert_stop("Tr1", "S", 0, 30);
+
+  EXPECT_TRUE(solver::astar_based::serve_stops_along_route(line.instance,
+                                                           line.state, 0));
+  EXPECT_EQ(line.state.stop_positions.at(0), std::vector<double>{300});
+  EXPECT_EQ(line.state.train_edges.at(0), line.route);
+}
+
+TEST(CompletionHeuristic, StopAlongRouteOnFirstPassageWhereTheTrainFits) {
+  // The route passes S at v1-v2 and at v3-v4-v5. Tr1 of 10 m stops at the end
+  // of the first passage, while Tr1 of 150 m only fits on the second one.
+  for (const auto& [length, position] :
+       {std::pair{10.0, 200.0}, std::pair{150.0, 500.0}}) {
+    auto line = stop_line(length);
+    line.instance.add_empty_station("S");
+    for (const auto i : {1, 3, 4}) {
+      line.instance.add_track_to_station("S", line.route.at(i));
+    }
+    line.instance.insert_stop("Tr1", "S", 0, 30);
+
+    EXPECT_TRUE(solver::astar_based::serve_stops_along_route(line.instance,
+                                                             line.state, 0));
+    EXPECT_EQ(line.state.stop_positions.at(0), std::vector<double>{position})
+        << "train length " << length;
+  }
+}
+
+TEST(CompletionHeuristic, StopsAlongRouteCutBackToPreviousStop) {
+  // Tr1 stops at S1 at v4 and then at S2, whose track v1-v2 lies before.
+  // Hence, its route is cut back to S1, and the stop at S2 is left open.
+  auto line = stop_line(10);
+  line.instance.add_empty_station("S1");
+  line.instance.add_track_to_station("S1", line.route.at(3));
+  line.instance.add_empty_station("S2");
+  line.instance.add_track_to_station("S2", line.route.at(1));
+  line.instance.insert_stop("Tr1", "S1", 0, 30);
+  line.instance.insert_stop("Tr1", "S2", 60, 90);
+
+  EXPECT_FALSE(solver::astar_based::serve_stops_along_route(line.instance,
+                                                            line.state, 0));
+  EXPECT_EQ(line.state.stop_positions.at(0), std::vector<double>{400});
+  EXPECT_EQ(line.state.train_edges.at(0),
+            (index_vector{line.route.begin(), line.route.begin() + 4}));
 }
 
 // ---------------------------------

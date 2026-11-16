@@ -207,6 +207,39 @@ cda_rail::solver::astar_based::complete_routes(
   return state;
 }
 
+bool cda_rail::solver::astar_based::serve_stops_along_route(
+    const instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
+    simulator::SimulatorState& state, size_t tr) {
+  const auto&            network = instance.get_const_network();
+  const auto&            stops   = instance.get_const_schedule(tr).get_stops();
+  auto&                  route   = state.train_edges.at(tr);
+  auto&                  stop_positions = state.stop_positions.at(tr);
+  cda_rail::index_vector served; // The route up to the previous stop
+  for (size_t stop = 0; stop < stops.size(); ++stop) {
+    const auto& tracks = stops.at(stop).get_station().tracks;
+    // Once the train can stop, it continues until it leaves the station. The
+    // end of the platform is given by the number of edges up to it.
+    std::optional<size_t> end_of_platform;
+    auto                  beginning = served;
+    while (beginning.size() < route.size() &&
+           (!end_of_platform.has_value() ||
+            tracks.contains(route.at(beginning.size())))) {
+      beginning.emplace_back(route.at(beginning.size()));
+      if (instance.is_route_end_valid_stop_pos(tr, beginning, stop)) {
+        end_of_platform = beginning.size();
+      }
+    }
+    if (!end_of_platform.has_value()) {
+      route = std::move(served);
+      return false;
+    }
+    beginning.resize(end_of_platform.value());
+    served = std::move(beginning);
+    stop_positions.emplace_back(network.length_of_path(served));
+  }
+  return true;
+}
+
 std::optional<cda_rail::simulator::SimulatorState>
 cda_rail::solver::astar_based::complete_state(
     simulator::GeneralSimulator& simulator, simulator::SimulatorState state,
