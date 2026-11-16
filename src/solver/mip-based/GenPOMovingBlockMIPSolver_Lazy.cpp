@@ -31,7 +31,19 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   try {
     if (where == GRB_CB_MESSAGE) {
       MessageCallback::callback();
-    } else if (where == GRB_CB_MIPSOL) {
+    } else if (where == GRB_CB_MIPNODE) {
+      complete_node_relaxation();
+    } else if (where == GRB_CB_MIP) {
+      // Gurobi does not know the simulated incumbent, hence it would not stop
+      // once the incumbent is within the gap
+      if (solver->m_simulated_incumbent.has_value() &&
+          solver->m_simulated_incumbent->obj -
+                  getDoubleInfo(GRB_CB_MIP_OBJBND) <=
+              solver->m_solver_strategy.abs_mip_gap) {
+        abort();
+      }
+    } else if (where == GRB_CB_MIPSOL &&
+               solver->m_solver_strategy.use_lazy_constraints) {
       m_feasibility_tolerance =
           solver->m_model->get(GRB_DoubleParam_FeasibilityTol);
       const auto routes                = get_routes();

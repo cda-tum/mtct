@@ -6,6 +6,7 @@
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 
+#include <cstddef>
 #include <string>
 
 namespace cda_rail::cli {
@@ -43,7 +44,7 @@ struct MbMipSettings {
   solver::mip_based::LazyTrainSelectionStrategy lazy_train_selection_strategy{
       solver::mip_based::LazyTrainSelectionStrategy::OnlyAdjacent};
   double abs_mip_gap{10};
-  bool   use_warm_start{false};
+  size_t completion_interval{0};
 
   SolvingSettings solving{};
   ExportSettings  exporting{};

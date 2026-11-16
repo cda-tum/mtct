@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -41,6 +42,18 @@ class GenPOMovingBlockMIPSolver_WarmStartIsFeasible_Test;
 class GenPOMovingBlockMIPSolver_WarmStartRoutesTrainWithoutRoute_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartIfFixedRouteMissesStop_Test;
 class GenPOMovingBlockMIPSolver_NoWarmStartWithoutModelVelocities_Test;
+class GenPOMovingBlockMIPSolver_RelaxationStateFollowsHighestEdges_Test;
+class GenPOMovingBlockMIPSolver_RelaxationStateServesStopsOnRoute_Test;
+class GenPOMovingBlockMIPSolver_RelaxationStateBreaksTiesByEdgeIndex_Test;
+class GenPOMovingBlockMIPSolver_RelaxationStateSkipsEdgesOnRoute_Test;
+class GenPOMovingBlockMIPSolver_RelaxationStateServesStopWithHighestValue_Test;
+class GenPOMovingBlockMIPSolver_RelaxationStateCutsRouteBackToPreviousStop_Test;
+class GenPOMovingBlockMIPSolver_CompleteRelaxationKeepsOnlyBetterSolutions_Test;
+class
+    GenPOMovingBlockMIPSolver_SimulatedIncumbentOnlyReplacesWorseSolutions_Test;
+class GenPOMovingBlockMIPSolver_SimulatedIncumbentWithoutGurobiBound_Test;
+class GenPOMovingBlockMIPSolver_CompletionStopsOnceIncumbentWithinGap_Test;
+class GenPOMovingBlockMIPSolver_NodeCompletionsImproveSimulatedIncumbent_Test;
 class GenPOMovingBlockMIPSolver_SmallCoefficientsAreRemoved_Test;
 class GenPOMovingBlockMIPSolver_LazyCallbackStopsOnException_Test;
 #endif
@@ -213,11 +226,15 @@ constexpr std::string lazy_velocity_selection_strategy_to_string(
  * which is why they are separated lazily by default. The remaining lazy
  * settings are ignored if they are not.
  *
- * If `use_warm_start` is set, the solver starts from the completion of the
- * initial A* state, see astar_based::complete_state, if there is one. The MIP
- * start fixes every integer variable as in the simulation of that completion,
- * i.e., its routes, stops and orders, and the velocities closest to the
- * simulated ones. Gurobi computes the times.
+ * If `completion_interval` is some x > 0, the initial A* state, see
+ * astar_based::complete_state, and the LP relaxation of every x-th node
+ * Gurobi reports are completed heuristically and simulated. The solver keeps
+ * the best simulated solution itself, since Gurobi often cannot complete it
+ * with the discrete velocities of the model, and only allows Gurobi solutions
+ * that are at least as good. It returns this solution unless Gurobi finds a
+ * better one. Every simulated solution is also offered to Gurobi, fixing every
+ * integer variable as in the simulation, i.e., its routes, stops and orders,
+ * and the velocities closest to the simulated ones. Gurobi computes the times.
  */
 struct SolverStrategyMovingBlock {
   bool use_indicator_constraints = false;
@@ -230,8 +247,8 @@ struct SolverStrategyMovingBlock {
       LazyConstraintSelectionStrategy::OnlyViolated;
   LazyTrainSelectionStrategy lazy_train_selection_strategy =
       LazyTrainSelectionStrategy::OnlyAdjacent;
-  double abs_mip_gap    = 10;
-  bool   use_warm_start = false;
+  double abs_mip_gap         = 10;
+  size_t completion_interval = 0;
 };
 
 /**
@@ -254,6 +271,25 @@ private:
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, WarmStartRoutesTrainWithoutRoute);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartIfFixedRouteMissesStop);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, NoWarmStartWithoutModelVelocities);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, RelaxationStateFollowsHighestEdges);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, RelaxationStateServesStopsOnRoute);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              RelaxationStateBreaksTiesByEdgeIndex);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, RelaxationStateSkipsEdgesOnRoute);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              RelaxationStateServesStopWithHighestValue);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              RelaxationStateCutsRouteBackToPreviousStop);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              CompleteRelaxationKeepsOnlyBetterSolutions);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              SimulatedIncumbentOnlyReplacesWorseSolutions);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              SimulatedIncumbentWithoutGurobiBound);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              CompletionStopsOnceIncumbentWithinGap);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
+              NodeCompletionsImproveSimulatedIncumbent);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, SmallCoefficientsAreRemoved);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, LazyCallbackStopsOnException);
 #endif
@@ -320,6 +356,15 @@ private:
     int model_num_columns = -1;
     // Number of branch-and-bound nodes Gurobi explored.
     double node_count = -1;
+    // Number of completions tried, including the initial one, and of those
+    // that the simulator could complete within the delay bounds, see
+    // SolverStrategyMovingBlock::completion_interval. Zero without
+    // completions.
+    int completions_attempted = -1;
+    int completions_found     = -1;
+    // Whether the returned solution is a simulated one rather than one of
+    // Gurobi.
+    bool simulated_solution = false;
   };
   /**
    * @brief Collects the settings and statistics of a solve for the solver data
@@ -539,12 +584,33 @@ private:
   [[nodiscard]] std::optional<std::vector<size_t>>
   velocity_indices(size_t tr, const cda_rail::index_vector& route,
                    const std::vector<VertexPassing>& passings) const;
+  /** @brief A final state, its simulation and its objective. */
+  struct SimulatedSolution {
+    simulator::SimulatorState   state;
+    simulator::SimulatorResults results;
+    double                      obj;
+  };
+  // The best simulated solution so far, see
+  // SolverStrategyMovingBlock::completion_interval
+  std::optional<SimulatedSolution> m_simulated_incumbent;
+  // The row bounding the objective by the initial simulated solution, see
+  // solve(). Removed before the model is exported.
+  std::optional<GRBConstr> m_incumbent_constraint;
+
   /**
-   * @brief Sets the MIP start of SolverStrategyMovingBlock::use_warm_start.
+   * @brief Simulates a final state by the greedy simulator, as the A* search
+   *        does, saving the trajectories.
    *
-   * The completed initial state, see completed_initial_state(), is simulated
-   * by the greedy simulator. Every integer variable is set accordingly: the
-   * routes and stops are those of the state, the velocities those of
+   * @return The simulated solution, or `std::nullopt` if the simulation fails
+   *         or exceeds ModelDetailMovingBlock::max_exit_delay or
+   *         max_station_delay, which the simulator does not know.
+   */
+  [[nodiscard]] std::optional<SimulatedSolution>
+  simulate_state(simulator::SimulatorState state) const;
+  /**
+   * @brief The values of the integer variables for a simulated solution.
+   *
+   * The routes and stops are those of the state, the velocities those of
    * velocity_indices(), and two trains are ordered on an edge, a TTD section
    * or a bidirectional track by when their fronts enter it in the simulation.
    * A train waits wherever it passes at velocity 0. Every other integer
@@ -554,12 +620,71 @@ private:
    * exit velocity. If it does so in the simulation, it passes its exit vertex
    * at the closest velocity the model allows instead.
    *
-   * Nothing is set if the completion fails, or if the model has no velocities
-   * for how a train passes its route in the simulation, see
-   * velocity_indices(). Gurobi rejects the start if the times cannot be
-   * completed, e.g., since the velocities of the model are discrete.
+   * @return The variables with their values, or `std::nullopt` if the model
+   *         has no velocities for how a train passes its route in the
+   *         simulation, see velocity_indices().
    */
-  void set_warm_start();
+  [[nodiscard]] std::optional<std::vector<std::pair<GRBVar, double>>>
+  integer_values(const SimulatedSolution& solution);
+  /**
+   * @brief Simulates the completed initial state, see
+   *        completed_initial_state(), and sets the MIP start to its
+   *        integer_values().
+   *
+   * The MIP start is not set if integer_values() has none. Gurobi rejects
+   * the start if the times cannot be completed, e.g., since the velocities of
+   * the model are discrete.
+   *
+   * @return The simulated solution, or `std::nullopt` if the completion or
+   *         its simulation fails, see simulate_state(), in which case nothing
+   *         is set.
+   */
+  std::optional<SimulatedSolution> set_warm_start();
+  /**
+   * @brief The state that a node relaxation suggests, to be completed by
+   *        astar_based::complete_state.
+   *
+   * Every train starts with the edge leaving its entry vertex that has the
+   * highest relaxation value, and continues with the successor that has the
+   * highest one, until it reaches its exit vertex or no successor has a
+   * positive value. Its stops are served, in order, at the vertex of this
+   * route with the highest relaxation value that is a valid stop position.
+   * If a stop cannot be served on the route, the route is cut back to the
+   * previous stop, respectively emptied, and the completion routes the rest.
+   * All orders are left to the completion, which decides them first come,
+   * first served, since the orders of a relaxation usually deadlock.
+   *
+   * @param value The relaxation value of a variable of the model
+   */
+  [[nodiscard]] simulator::SimulatorState
+  relaxation_state(const std::function<double(const GRBVar&)>& value) const;
+  /**
+   * @brief Completes the state of a relaxation, see relaxation_state(), by
+   *        astar_based::complete_state and simulates it, see
+   *        simulate_state(). The simulated solution replaces
+   *        m_simulated_incumbent if it is better.
+   *
+   * @param value The relaxation value of a variable of the model
+   * @return Whether the incumbent was replaced, or `std::nullopt` if the
+   *         completion or its simulation fails
+   */
+  [[nodiscard]] std::optional<bool>
+  complete_relaxation(const std::function<double(const GRBVar&)>& value);
+  /**
+   * @brief Replaces the solution of Gurobi by m_simulated_incumbent unless
+   *        Gurobi's is strictly better.
+   *
+   * Gurobi only searched for solutions at most as good as the incumbent.
+   * Hence, the lower bound is the minimum of Gurobi's bound and the
+   * incumbent, and the incumbent itself if Gurobi found the model infeasible.
+   * The status is optimal if the solution is within the absolute MIP gap of
+   * the bound, unless Gurobi's own solution was already proven optimal.
+   *
+   * @param sol The solution extracted from Gurobi, see extract_solution()
+   * @return Whether the solution was replaced
+   */
+  bool use_simulated_incumbent(
+      instances::SolGeneralPerformanceOptimizationInstance& sol) const;
 
   class LazyCallback : public MessageCallback {
   private:
@@ -590,6 +715,13 @@ private:
     // Number of addLazy() calls so far, see
     // SolveStatistics::num_lazy_constraints_added.
     int m_num_lazy_constraints_added = 0;
+    // Number of node relaxations reported so far, see
+    // complete_node_relaxation().
+    size_t m_num_relaxations = 0;
+    // See SolveStatistics::completions_attempted and completions_found,
+    // without the initial completion.
+    int m_completions_attempted = 0;
+    int m_completions_found     = 0;
     // An exception thrown while checking a solution. An exception must not
     // leave the callback, since it cannot pass Gurobi. Hence, the callback
     // stops the optimization instead, and solve() rethrows it afterwards.
@@ -708,8 +840,29 @@ private:
                                     std::vector<std::pair<size_t, bool>>>>&
             train_orders_on_edges);
 
+    /**
+     * @brief The node heuristic of SolverStrategyMovingBlock::
+     *        completion_interval.
+     *
+     * Every x-th optimal node relaxation is completed, see
+     * complete_relaxation(). If this replaces the simulated incumbent, the
+     * objective is bounded by it as a lazy constraint, and its
+     * integer_values() are offered to Gurobi. No completion is started once
+     * the time limit is reached.
+     */
+    void complete_node_relaxation();
+
   public:
     explicit LazyCallback(GenPOMovingBlockMIPSolver* solver) : solver(solver) {}
+
+    /** @brief The number of node relaxations completed so far. */
+    [[nodiscard]] int get_completions_attempted() const {
+      return m_completions_attempted;
+    }
+    /** @brief The number of them the simulator could complete. */
+    [[nodiscard]] int get_completions_found() const {
+      return m_completions_found;
+    }
 
     /** @brief The number of lazy constraints handed to Gurobi so far. */
     [[nodiscard]] int get_num_lazy_constraints_added() const {

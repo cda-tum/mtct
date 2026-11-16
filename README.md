@@ -486,9 +486,11 @@ This is worth considering if the results are only used to make preliminary decis
 Moreover, the delays can be bounded, either separately by `--max-exit-delay` and `--max-station-delay` or jointly by `--max-delay`.
 Finally, the granularity of the velocity extensions can be adapted by `--max-velocity-delta` and `--velocity-refinement-strategy`.
 
-To find a feasible solution early, `--use-warm-start` starts the solver from the completion of the initial A\* state, if there is one.
-This completion is simulated, and its routes, stops and orders, together with the velocities of the MILP closest to the simulated ones, are passed to Gurobi as MIP start.
-Gurobi then computes the times, and rejects the start if there are none, e.g., because the velocities of the MILP are discrete.
+To find feasible solutions early, `--completion-interval x` completes the initial A\* state and every x-th node relaxation heuristically.
+A relaxation gives the routes and stops, the trains continue along quickest paths where it gives none, and the orders are decided first come, first served.
+The best simulated completion is kept, and Gurobi only searches for solutions that are at least as good.
+In the end, the simulated solution is returned unless Gurobi found a better one.
+The simulated solutions are also offered to Gurobi, which rejects them if it cannot compute matching times, e.g., because the velocities of the MILP are discrete.
 
 ```commandline
 .\build\apps\rail_gen_po_moving_block_mip_testing --instance-name SimpleStation --instance-subdirectory atmos2023 --working-directory .\test\data --time-limit 3600
@@ -584,9 +586,11 @@ Solver Parameters:
                               lazy constraints. Currently supports 'OnlyAdjacent' and 'All'.
   -a,     --abs-mip-gap FLOAT:NONNEGATIVE [10]
                               Absolute MIP gap used as termination criterion of the solver.
-          --use-warm-start    If this flag is set, the solver starts from the routes, stops,
-                              orders and velocities of the simulated completion of the initial
-                              A* state, if there is one.
+          --completion-interval UINT [0]
+                              If x > 0, the initial A* state and every x-th node relaxation are
+                              completed heuristically and simulated. The best simulated
+                              solution is returned unless Gurobi finds a better one. 0 never
+                              completes a state.
 
 Additional Solving Parameters:
   -t,     --time-limit INT [-1]

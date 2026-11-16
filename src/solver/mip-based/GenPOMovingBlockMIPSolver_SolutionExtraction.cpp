@@ -46,8 +46,10 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   } else if (m_model->get(GRB_IntAttr_SolCount) >= 1) {
     PLOGD << "Solution status: Feasible (optimality unknown)";
     sol.set_status(SolutionStatus::Feasible);
-  } else if (grb_status == GRB_TIME_LIMIT &&
+  } else if ((grb_status == GRB_TIME_LIMIT || grb_status == GRB_INTERRUPTED) &&
              m_model->get(GRB_IntAttr_SolCount) == 0) {
+    // Interrupted once the simulated incumbent is within the gap, see
+    // use_simulated_incumbent()
     PLOGD << "Solution status: Timeout (Feasibility unknown)";
     sol.set_status(SolutionStatus::Timeout);
   } else {
@@ -157,6 +159,63 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   }
 
   PLOGI << "DONE! Solution extracted.";
+}
+
+bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
+    use_simulated_incumbent(
+        cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol)
+        const {
+  if (!m_simulated_incumbent.has_value()) {
+    return false;
+  }
+  const auto& incumbent  = m_simulated_incumbent.value();
+  const auto  grb_status = m_model->get(GRB_IntAttr_Status);
+  double      bound      = incumbent.obj;
+  if (grb_status != GRB_INFEASIBLE) {
+    // The objective is non-negative, which Gurobi's bound need not reflect,
+    // e.g., if it stopped before solving the root relaxation
+    bound =
+        std::min(bound, std::max(m_model->get(GRB_DoubleAttr_ObjBound), 0.0));
+  }
+
+  // Only a strictly better solution of Gurobi is kept
+  const bool replace = !sol.has_solution() || sol.get_obj() >= incumbent.obj;
+  if (replace) {
+    PLOGI << "Return the simulated incumbent with objective " << incumbent.obj;
+    sol = instances::SolGeneralPerformanceOptimizationInstance(
+        *sol.get_instance());
+    // As extract_solution(), without the routes of the instance
+    sol.reset_routes();
+    const auto& network = m_instance.get_const_network();
+    for (size_t tr = 0; tr < m_num_tr; tr++) {
+      const auto& tr_name =
+          m_instance.get_const_train_list().get_train(tr).get_name();
+      sol.add_empty_route(tr_name);
+      for (const auto e : incumbent.state.train_edges.at(tr)) {
+        // As extract_solution(), the original edges of the discretized ones
+        const auto& [old_edge_id, old_edge_pos] = network.get_old_edge(e);
+        if (old_edge_pos == 0) {
+          sol.push_back_edge_to_route(tr_name, old_edge_id);
+        }
+      }
+      for (const auto& [t, posvel] :
+           incumbent.results.train_trajectories.at(tr)) {
+        sol.add_train_pos(tr_name, t, posvel.pos);
+        sol.add_train_speed(tr_name, t, posvel.vel);
+      }
+    }
+    sol.set_exit_times(incumbent.results.exit_times);
+    sol.set_stop_times(incumbent.results.stop_times);
+    sol.set_obj(incumbent.obj);
+    sol.set_solution_found();
+  }
+  sol.set_lower_bound(bound);
+  if (replace || sol.get_status() != SolutionStatus::Optimal) {
+    sol.set_status(sol.get_obj() - bound <= m_solver_strategy.abs_mip_gap
+                       ? SolutionStatus::Optimal
+                       : SolutionStatus::Feasible);
+  }
+  return replace;
 }
 
 double

@@ -39,8 +39,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     const SolverStrategyMovingBlock&   solver_strategy_input,
     const SolutionSettingsMovingBlock& solution_settings_input, int time_limit,
     bool debug_input, bool overwrite_severity) {
+  // The callback also runs the completions
   std::optional<LazyCallback> cb;
-  if (solver_strategy_input.use_lazy_constraints) {
+  if (solver_strategy_input.use_lazy_constraints ||
+      solver_strategy_input.completion_interval > 0) {
     cb = LazyCallback(this);
     this->solve_init_general_mip(debug_input, overwrite_severity,
                                  &(cb.value()));
@@ -97,8 +99,18 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   const bool time_limit_reached =
       time_limit > 0 && std::chrono::high_resolution_clock::now() - m_start >=
                             std::chrono::seconds(time_limit);
-  if (m_solver_strategy.use_warm_start && !time_limit_reached) {
-    set_warm_start();
+  statistics.completions_attempted = 0;
+  statistics.completions_found     = 0;
+  if (m_solver_strategy.completion_interval > 0 && !time_limit_reached) {
+    m_simulated_incumbent = set_warm_start();
+    statistics.completions_attempted++;
+    if (m_simulated_incumbent.has_value()) {
+      statistics.completions_found++;
+      // Gurobi only has to find solutions at least as good
+      m_incumbent_constraint =
+          m_model->addConstr(m_objective_expr <= m_simulated_incumbent->obj,
+                             "simulated_incumbent");
+    }
   }
 
   m_model_created = std::chrono::high_resolution_clock::now();
@@ -127,7 +139,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     }
   }
 
-  if (m_solver_strategy.use_lazy_constraints) {
+  // The completions bound the objective by lazy constraints
+  if (m_solver_strategy.use_lazy_constraints ||
+      m_solver_strategy.completion_interval > 0) {
     m_model->set(GRB_IntParam_LazyConstraints, 1);
   }
 
@@ -172,6 +186,14 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
     statistics.num_lazy_constraints_added =
         cb.value().get_num_lazy_constraints_added();
   }
+  if (cb.has_value()) {
+    statistics.completions_attempted += cb.value().get_completions_attempted();
+    statistics.completions_found += cb.value().get_completions_found();
+  }
+  if (m_solver_strategy.completion_interval > 0) {
+    PLOGD << "Completions attempted = " << statistics.completions_attempted
+          << ", found = " << statistics.completions_found;
+  }
   if (optimization_started) {
     try {
       statistics.node_count = m_model->get(GRB_DoubleAttr_NodeCount);
@@ -191,6 +213,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   instances::SolGeneralPerformanceOptimizationInstance solution(old_instance);
   extract_solution(solution);
+  statistics.simulated_solution = use_simulated_incumbent(solution);
 
   if (m_solution_settings.export_lp_model) {
     PLOGI << "Saving model";
@@ -210,6 +233,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
           (path / (m_solution_settings.model_name + ".json")).string());
     }
 
+    // The bound by the simulated incumbent is no part of the model
+    if (m_incumbent_constraint.has_value()) {
+      m_model->remove(m_incumbent_constraint.value());
+    }
     PLOGD << "Add " << m_lazy_constraints.size() << " lazy constraints";
     for (size_t i = 0; i < m_lazy_constraints.size(); i++) {
       m_model->addConstr(m_lazy_constraints.at(i), "Lazy" + std::to_string(i));
@@ -736,12 +763,17 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
                         solver_strategy.use_lazy_constraints},
                        {"include_reverse_headways",
                         solver_strategy.include_reverse_headways},
-                       {"use_warm_start", solver_strategy.use_warm_start}},
+                       {"simulated_solution", statistics.simulated_solution}},
       .integer_data = {{"time_limit", time_limit},
                        {"num_lazy_constraints_added",
                         statistics.num_lazy_constraints_added},
                        {"model_num_rows", statistics.model_num_rows},
-                       {"model_num_columns", statistics.model_num_columns}},
+                       {"model_num_columns", statistics.model_num_columns},
+                       {"completion_interval",
+                        static_cast<int>(solver_strategy.completion_interval)},
+                       {"completions_attempted",
+                        statistics.completions_attempted},
+                       {"completions_found", statistics.completions_found}},
       .double_data  = {{"max_velocity_delta", model_detail.max_velocity_delta},
                        {"node_count", statistics.node_count},
                        {"max_exit_delay", model_detail.max_exit_delay},
@@ -3202,6 +3234,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::cleanup() {
   m_tr_stop_data.clear();
   m_velocity_extensions.clear();
   m_relevant_reverse_edges.clear();
+  m_simulated_incumbent.reset();
+  m_incumbent_constraint.reset();
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
