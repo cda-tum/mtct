@@ -43,8 +43,8 @@ struct MbMipSettings {
           solver::mip_based::LazyConstraintSelectionStrategy::OnlyViolated};
   solver::mip_based::LazyTrainSelectionStrategy lazy_train_selection_strategy{
       solver::mip_based::LazyTrainSelectionStrategy::OnlyAdjacent};
-  double abs_mip_gap{10};
-  size_t completion_interval{0};
+  double      abs_mip_gap{10};
+  std::size_t completion_interval{0};
 
   SolvingSettings solving{};
   ExportSettings  exporting{};
