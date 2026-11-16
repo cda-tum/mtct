@@ -196,9 +196,10 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
       ->group("Solver Parameters");
   app.add_option("--completion-interval", settings.completion_interval,
                  "If x > 0, the initial A* state and every x-th node "
-                 "relaxation are completed heuristically and simulated. The "
-                 "best simulated solution is returned unless Gurobi finds a "
-                 "better one. 0 never completes a state.")
+                 "relaxation are completed heuristically and simulated, with "
+                 "fixed routes only the initial state. The best simulated "
+                 "solution is returned unless Gurobi finds a better one. 0 "
+                 "never completes a state.")
       ->capture_default_str()
       ->group("Solver Parameters");
 

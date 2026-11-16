@@ -3278,6 +3278,28 @@ TEST(GenPOMovingBlockMIPSolver, NodeCompletionsImproveSimulatedIncumbent) {
   cleanup_export_dirs();
 }
 
+TEST(GenPOMovingBlockMIPSolver, NoNodeCompletionsWithFixedRoutes) {
+  // With fixed routes, Gurobi also reaches nodes on Overtake, but only the
+  // initial A* state is completed
+  const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "Overtake", "atmos2023", "./data");
+
+  cleanup_export_dirs();
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  const auto                                             sol = solver.solve(
+      {.fix_routes = true}, {.abs_mip_gap = 0, .completion_interval = 1},
+      {{cda_rail::solver::GeneralExportOption::ExportSolution, "tmp5folder",
+        "tmp5file", "tmp5id"}},
+      5);
+  ASSERT_TRUE(sol.has_solution());
+  const auto data =
+      read_solver_data(sol.get_export_path("tmp5folder", "tmp5file", "tmp5id"));
+  EXPECT_GT(data.at("node_count_double").get<double>(), 0);
+  EXPECT_EQ(data.at("completions_attempted_int").get<int>(), 1);
+  EXPECT_EQ(data.at("completions_found_int").get<int>(), 1);
+  cleanup_export_dirs();
+}
+
 TEST(GenPOMovingBlockMIPSolver, ModelExportWithoutIncumbentConstraint) {
   // The objective bound by the simulated incumbent is no part of the
   // exported model

@@ -93,7 +93,6 @@ bool exists(GRBVar var) { return !var.sameAs(GRBVar()); }
 
 std::optional<cda_rail::simulator::SimulatorState> cda_rail::solver::mip_based::
     GenPOMovingBlockMIPSolver::completed_initial_state() const {
-  const auto&               network = m_instance.get_const_network();
   simulator::SimulatorState state{
       .train_edges    = std::vector<cda_rail::index_vector>(m_num_tr),
       .ttd_orders     = std::vector<cda_rail::index_vector>(m_num_ttd),
@@ -106,27 +105,11 @@ std::optional<cda_rail::simulator::SimulatorState> cda_rail::solver::mip_based::
       if (!m_instance.get_const_routes().has_route(tr_name)) {
         continue;
       }
-      const auto& route =
+      state.train_edges.at(tr) =
           m_instance.get_const_routes().get_route(tr_name).get_edges();
-      // Every stop is served at the first valid stop vertex after the previous
-      // one, i.e., at the end of the shortest such beginning of the route
-      cda_rail::index_vector beginning;
-      for (size_t stop = 0;
-           stop < m_instance.get_const_schedule(tr).get_stops().size();
-           stop++) {
-        bool valid_stop_pos = false;
-        while (!valid_stop_pos) {
-          if (beginning.size() == route.size()) {
-            return std::nullopt;
-          }
-          beginning.emplace_back(route.at(beginning.size()));
-          valid_stop_pos =
-              m_instance.is_route_end_valid_stop_pos(tr, beginning, stop);
-        }
-        state.stop_positions.at(tr).emplace_back(
-            network.length_of_path(beginning));
+      if (!astar_based::serve_stops_along_route(m_instance, state, tr)) {
+        return std::nullopt;
       }
-      state.train_edges.at(tr) = route;
     }
   }
   simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
@@ -461,32 +444,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::relaxation_state(
                  ? std::nullopt
                  : best_edge(network.get_successors(next.value()));
     }
-
-    // Every stop is served at the valid stop vertex after the previous one
-    // with the highest value, ties broken by the earlier vertex
-    cda_rail::index_vector served; // The route up to the previous stop
-    for (size_t stop = 0; stop < schedule.get_stops().size(); stop++) {
-      std::optional<cda_rail::index_vector> best_beginning;
-      double                                best_value = -1;
-      auto                                  beginning  = served;
-      while (beginning.size() < route.size()) {
-        beginning.emplace_back(route.at(beginning.size()));
-        const auto val = value_of(m_vars.at("stop").at(
-            tr, stop, network.get_edge(beginning.back()).target));
-        if (val > best_value &&
-            m_instance.is_route_end_valid_stop_pos(tr, beginning, stop)) {
-          best_beginning = beginning;
-          best_value     = val;
-        }
-      }
-      if (!best_beginning.has_value()) {
-        // The completion routes the train from its previous stop on
-        route = served;
-        break;
-      }
-      served = std::move(best_beginning.value());
-      state.stop_positions.at(tr).emplace_back(network.length_of_path(served));
-    }
+    // Stops that cannot be served on the route are left to the completion
+    astar_based::serve_stops_along_route(m_instance, state, tr);
   }
 
   return state;
@@ -517,9 +476,11 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::complete_relaxation(
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
     complete_node_relaxation() {
   const auto interval = solver->m_solver_strategy.completion_interval;
-  // Gurobi does not stop within a callback, hence no completion is started
-  // once the time limit is reached
-  if (interval == 0 || getIntInfo(GRB_CB_MIPNODE_STATUS) != GRB_OPTIMAL ||
+  // With fixed routes, a relaxation cannot change the routes, hence only the
+  // initial state is completed. Gurobi does not stop within a callback, hence
+  // no completion is started once the time limit is reached.
+  if (interval == 0 || solver->m_model_detail.fix_routes ||
+      getIntInfo(GRB_CB_MIPNODE_STATUS) != GRB_OPTIMAL ||
       getDoubleInfo(GRB_CB_RUNTIME) >=
           solver->m_model->get(GRB_DoubleParam_TimeLimit)) {
     return;

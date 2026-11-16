@@ -46,8 +46,6 @@ class GenPOMovingBlockMIPSolver_RelaxationStateFollowsHighestEdges_Test;
 class GenPOMovingBlockMIPSolver_RelaxationStateServesStopsOnRoute_Test;
 class GenPOMovingBlockMIPSolver_RelaxationStateBreaksTiesByEdgeIndex_Test;
 class GenPOMovingBlockMIPSolver_RelaxationStateSkipsEdgesOnRoute_Test;
-class GenPOMovingBlockMIPSolver_RelaxationStateServesStopWithHighestValue_Test;
-class GenPOMovingBlockMIPSolver_RelaxationStateCutsRouteBackToPreviousStop_Test;
 class GenPOMovingBlockMIPSolver_CompleteRelaxationKeepsOnlyBetterSolutions_Test;
 class
     GenPOMovingBlockMIPSolver_SimulatedIncumbentOnlyReplacesWorseSolutions_Test;
@@ -228,7 +226,9 @@ constexpr std::string lazy_velocity_selection_strategy_to_string(
  *
  * If `completion_interval` is some x > 0, the initial A* state, see
  * astar_based::complete_state, and the LP relaxation of every x-th node
- * Gurobi reports are completed heuristically and simulated. The solver keeps
+ * Gurobi reports are completed heuristically and simulated. With fixed
+ * routes, see ModelDetailMovingBlock::fix_routes, only the initial state is
+ * completed, since the relaxations cannot change the routes. The solver keeps
  * the best simulated solution itself, since Gurobi often cannot complete it
  * with the discrete velocities of the model, and only allows Gurobi solutions
  * that are at least as good. It returns this solution unless Gurobi finds a
@@ -276,10 +276,6 @@ private:
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,
               RelaxationStateBreaksTiesByEdgeIndex);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver, RelaxationStateSkipsEdgesOnRoute);
-  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
-              RelaxationStateServesStopWithHighestValue);
-  FRIEND_TEST(::GenPOMovingBlockMIPSolver,
-              RelaxationStateCutsRouteBackToPreviousStop);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,
               CompleteRelaxationKeepsOnlyBetterSolutions);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,
@@ -541,8 +537,8 @@ private:
    *
    * As in the A* search, the completion uses the greedy simulator, since only
    * it decides orders first come, first served. With fixed routes, the
-   * initial state already has the route of every train that has one, and it
-   * serves each of its stops at the first valid stop vertex. A train without
+   * initial state already has the route of every train that has one, and its
+   * stops along it, see astar_based::serve_stops_along_route. A train without
    * a route can take any route in the model, hence the completion routes it.
    *
    * @return The final state, or `std::nullopt` if the completion fails, e.g.,
@@ -647,10 +643,9 @@ private:
    * Every train starts with the edge leaving its entry vertex that has the
    * highest relaxation value, and continues with the successor that has the
    * highest one, until it reaches its exit vertex or no successor has a
-   * positive value. Its stops are served, in order, at the vertex of this
-   * route with the highest relaxation value that is a valid stop position.
-   * If a stop cannot be served on the route, the route is cut back to the
-   * previous stop, respectively emptied, and the completion routes the rest.
+   * positive value. Its stops are served along this route, see
+   * astar_based::serve_stops_along_route, which cuts the route back if a stop
+   * cannot be served on it, so that the completion routes the rest.
    * All orders are left to the completion, which decides them first come,
    * first served, since the orders of a relaxation usually deadlock.
    *
@@ -848,7 +843,8 @@ private:
      * complete_relaxation(). If this replaces the simulated incumbent, the
      * objective is bounded by it as a lazy constraint, and its
      * integer_values() are offered to Gurobi. No completion is started once
-     * the time limit is reached.
+     * the time limit is reached, and none with fixed routes, see
+     * SolverStrategyMovingBlock::completion_interval.
      */
     void complete_node_relaxation();
 

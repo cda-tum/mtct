@@ -487,7 +487,8 @@ Moreover, the delays can be bounded, either separately by `--max-exit-delay` and
 Finally, the granularity of the velocity extensions can be adapted by `--max-velocity-delta` and `--velocity-refinement-strategy`.
 
 To find feasible solutions early, `--completion-interval x` completes the initial A\* state and every x-th node relaxation heuristically.
-A relaxation gives the routes and stops, the trains continue along quickest paths where it gives none, and the orders are decided first come, first served.
+With `--fix-routes`, only the initial A\* state is completed, since the relaxations cannot change the routes.
+A relaxation gives the routes, the trains continue along quickest paths where it gives none, every stop is served at the end of the platform, and the orders are decided first come, first served.
 The best simulated completion is kept, and Gurobi only searches for solutions that are at least as good.
 In the end, the simulated solution is returned unless Gurobi found a better one.
 The simulated solutions are also offered to Gurobi, which rejects them if it cannot compute matching times, e.g., because the velocities of the MILP are discrete.
@@ -588,9 +589,9 @@ Solver Parameters:
                               Absolute MIP gap used as termination criterion of the solver.
           --completion-interval UINT [0]
                               If x > 0, the initial A* state and every x-th node relaxation are
-                              completed heuristically and simulated. The best simulated
-                              solution is returned unless Gurobi finds a better one. 0 never
-                              completes a state.
+                              completed heuristically and simulated, with fixed routes only the
+                              initial state. The best simulated solution is returned unless
+                              Gurobi finds a better one. 0 never completes a state.
 
 Additional Solving Parameters:
   -t,     --time-limit INT [-1]

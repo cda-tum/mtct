@@ -3,6 +3,7 @@
 #include "probleminstances/GeneralProblemInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
 
+#include <cstddef>
 #include <optional>
 
 namespace cda_rail::solver::astar_based {
@@ -32,6 +33,26 @@ namespace cda_rail::solver::astar_based {
 [[nodiscard]] std::optional<simulator::SimulatorState> complete_routes(
     const instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
     simulator::SimulatorState                                     state);
+
+/**
+ * @brief Serves the stops of a train along its route as complete_routes does,
+ * i.e., at the end of the platform.
+ *
+ * Every stop is served on the first passage of the route through tracks of
+ * its station after the previous stop at which the train can stop, at the
+ * last vertex of this passage at which it can stop. If a stop cannot be
+ * served on the rest of the route, the route is cut back to the previous
+ * stop, or emptied if there is none, so that complete_routes can route the
+ * train from there. The train must not have any stops in the state yet.
+ *
+ * @param instance The problem instance.
+ * @param state The state whose route and stops of the train are changed.
+ * @param tr The index of the train.
+ * @return Whether every stop of the train is served on its route.
+ */
+bool serve_stops_along_route(
+    const instances::GeneralProblemInstanceWithScheduleAndRoutes& instance,
+    simulator::SimulatorState& state, std::size_t tr);
 
 /**
  * @brief Completes a state to a final state heuristically.
