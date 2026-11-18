@@ -409,8 +409,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
           r_len +
           m_vars.at("len_out").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
     }
-    // mu only includes the braking distance if it is not convexified
-    if (include_braking_curves && !convexify_braking_distance) {
+    if (include_braking_curves) {
       train_pos_final -=
           m_vars.at("brakelen").at(tr, t_final - 1).get(GRB_DoubleAttr_X);
     }
@@ -775,10 +774,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
         "Braking distances can only be convexified if braking curves are "
         "modelled");
   }
-  if (this->convexify_braking_distance && !this->fix_routes) {
-    PLOGE << "Braking distances can only be convexified if routes are fixed";
+  if (this->convexify_braking_distance &&
+      this->vss_model.get_only_stop_at_vss()) {
+    PLOGE << "Braking distances can only be convexified if trains are not "
+             "restricted to stop at VSS borders";
     throw exceptions::ConsistencyException(
-        "Braking distances can only be convexified if routes are fixed");
+        "Braking distances can only be convexified if trains are not "
+        "restricted to stop at VSS borders");
   }
 
   if (this->fix_routes && !m_instance.has_route_for_every_train()) {

@@ -1412,11 +1412,11 @@ TEST(CliVssOptions, ConvexifiedBrakingDistance) {
                   .convexify_braking_distance);
 }
 
-TEST(CliVssOptions,
-     ConvexifiedBrakingDistanceNeedsBrakingCurvesAndFixedRoutes) {
+TEST(CliVssOptions, ConvexifiedBrakingDistanceNeedsBrakingCurvesAndFreeStops) {
   // Checked once parsing is complete, both for an app and a subcommand
   for (const auto* const options :
-       {"--convexify-braking-distance -k", "-f --convexify-braking-distance"}) {
+       {"--convexify-braking-distance -k",
+        "--only-stop-at-vss --convexify-braking-distance"}) {
     cda_rail::cli::VssMipSettings settings;
     CLI::App                      app;
     cda_rail::cli::add_vss_mip_options(app, settings);
@@ -1439,6 +1439,14 @@ TEST(CliVssOptions,
   app.parse(std::string{"-k --braking-curves --convexify-braking-distance"});
   EXPECT_TRUE(settings.convexify_braking_distance);
   EXPECT_TRUE(settings.braking_curves);
+
+  // Free routes are fine
+  cda_rail::cli::VssMipSettings free_settings;
+  CLI::App                      free_app;
+  cda_rail::cli::add_vss_mip_options(free_app, free_settings);
+  free_app.parse(std::string{"-f --convexify-braking-distance"});
+  EXPECT_TRUE(free_settings.convexify_braking_distance);
+  EXPECT_FALSE(free_settings.fix_routes);
 }
 
 TEST(CliVssOptions, GeneratedIdentifierWithConvexifiedBrakingDistance) {

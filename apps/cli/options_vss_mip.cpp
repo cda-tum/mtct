@@ -231,17 +231,18 @@ void cda_rail::cli::add_vss_mip_options(CLI::App&       app,
                "from below by the function of the velocity, which is convex, "
                "instead of being equal to it. The moving authority may then "
                "reserve more track than needed. Only applicable if braking "
-               "curves are included and the routes are fixed.")
+               "curves are included and trains are not only allowed to stop "
+               "at VSS borders.")
       ->group("Model Parameters");
-  // Whether braking curves are included and the routes are fixed is only known
-  // once everything is parsed, since both are flags that can be negated.
+  // Whether braking curves are included is only known once everything is
+  // parsed, since it is a flag that can be negated.
   app.parse_complete_callback([&settings]() {
     if (settings.convexify_braking_distance &&
-        (!settings.braking_curves || !settings.fix_routes)) {
+        (!settings.braking_curves || settings.only_stop_at_vss)) {
       throw CLI::ValidationError(
           "--convexify-braking-distance",
-          "only applicable if braking curves are included and the routes are "
-          "fixed");
+          "only applicable if braking curves are included and trains are not "
+          "only allowed to stop at VSS borders");
     }
   });
 
