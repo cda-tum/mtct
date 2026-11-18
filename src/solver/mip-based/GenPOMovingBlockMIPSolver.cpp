@@ -727,6 +727,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
         "Reverse headway cannot be used if only violated lazy constraints are "
         "added.");
   }
+  exceptions::throw_if_non_positive(solver_strategy_input.completion_dt,
+                                    "Completion time step");
 
   m_num_tr       = m_instance.get_const_train_list().size();
   m_num_edges    = m_instance.get_const_network().number_of_edges();
@@ -778,7 +780,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
                        {"node_count", statistics.node_count},
                        {"max_exit_delay", model_detail.max_exit_delay},
                        {"max_station_delay", model_detail.max_station_delay},
-                       {"abs_mip_gap", solver_strategy.abs_mip_gap}},
+                       {"abs_mip_gap", solver_strategy.abs_mip_gap},
+                       {"completion_dt", solver_strategy.completion_dt}},
       .string_data = {{"velocity_refinement_strategy",
                        velocity_refinement_strategy_to_string(
                            model_detail.velocity_refinement_strategy)},

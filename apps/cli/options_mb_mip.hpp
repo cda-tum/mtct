@@ -45,6 +45,7 @@ struct MbMipSettings {
       solver::mip_based::LazyTrainSelectionStrategy::OnlyAdjacent};
   double      abs_mip_gap{10};
   std::size_t completion_interval{0};
+  double      completion_dt{solver::mip_based::DEFAULT_COMPLETION_DT};
 
   SolvingSettings solving{};
   ExportSettings  exporting{};

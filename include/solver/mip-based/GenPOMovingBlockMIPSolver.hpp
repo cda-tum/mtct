@@ -51,6 +51,7 @@ class GenPOMovingBlockMIPSolver_SimulateStateFailsWithoutSimulation_Test;
 class
     GenPOMovingBlockMIPSolver_SimulatedIncumbentOnlyReplacesWorseSolutions_Test;
 class GenPOMovingBlockMIPSolver_SimulatedIncumbentWithoutGurobiBound_Test;
+class GenPOMovingBlockMIPSolver_CompletionsUseTheirTimeStep_Test;
 class GenPOMovingBlockMIPSolver_CompletionStopsOnceIncumbentWithinGap_Test;
 class GenPOMovingBlockMIPSolver_NodeCompletionsImproveSimulatedIncumbent_Test;
 class GenPOMovingBlockMIPSolver_SmallCoefficientsAreRemoved_Test;
@@ -83,6 +84,11 @@ velocity_refinement_strategy_to_string(VelocityRefinementStrategy strategy) {
 // is a large but finite one. A delay of more than a day is not to be expected
 // in any realistic instance.
 constexpr double DEFAULT_MAX_DELAY = 24 * 60 * 60; // one day
+
+// Default time step in seconds with which the completions of
+// SolverStrategyMovingBlock are simulated, the default of the A* search, see
+// simulator::GeneralSimulator::simulate
+constexpr double DEFAULT_COMPLETION_DT = 6.0;
 
 // Smallest and default integrality tolerance supported by Gurobi.
 constexpr double MIN_INT_FEAS_TOL     = 1e-9;
@@ -236,6 +242,8 @@ constexpr std::string lazy_velocity_selection_strategy_to_string(
  * better one. Every simulated solution is also offered to Gurobi, fixing every
  * integer variable as in the simulation, i.e., its routes, stops and orders,
  * and the velocities closest to the simulated ones. Gurobi computes the times.
+ * The completions are simulated by the greedy simulator with time step
+ * `completion_dt` in seconds.
  */
 struct SolverStrategyMovingBlock {
   bool use_indicator_constraints = false;
@@ -250,6 +258,7 @@ struct SolverStrategyMovingBlock {
       LazyTrainSelectionStrategy::OnlyAdjacent;
   double abs_mip_gap         = 10;
   size_t completion_interval = 0;
+  double completion_dt       = DEFAULT_COMPLETION_DT;
 };
 
 /**
@@ -284,6 +293,7 @@ private:
               SimulatedIncumbentOnlyReplacesWorseSolutions);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,
               SimulatedIncumbentWithoutGurobiBound);
+  FRIEND_TEST(::GenPOMovingBlockMIPSolver, CompletionsUseTheirTimeStep);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,
               CompletionStopsOnceIncumbentWithinGap);
   FRIEND_TEST(::GenPOMovingBlockMIPSolver,

@@ -1,5 +1,6 @@
 #define TEST_FRIENDS true
 
+#include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "gurobi_c++.h"
@@ -592,6 +593,43 @@ TEST(GenPOMovingBlockMIPSolver, SimulatedIncumbentWithoutGurobiBound) {
   EXPECT_EQ(sol.get_lower_bound(), 0);
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Feasible);
   solver.cleanup();
+}
+
+TEST(GenPOMovingBlockMIPSolver, CompletionsUseTheirTimeStep) {
+  // The completions are simulated with SolverStrategyMovingBlock::
+  // completion_dt. Hence, every sample of a simulated trajectory lies on its
+  // grid, except for the one at which the train leaves.
+  const auto routes = two_routes();
+  for (const double dt :
+       {cda_rail::solver::mip_based::DEFAULT_COMPLETION_DT, 15.0}) {
+    cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(
+        routes.instance);
+    solver.solve_init_general_mip(false, true);
+    solver.create_model({}, {.completion_interval = 1, .completion_dt = dt},
+                        {});
+    const auto completed = solver.completed_initial_state();
+    ASSERT_TRUE(completed.has_value()) << "dt = " << dt;
+    const auto incumbent = solver.simulate_state(completed.value());
+    ASSERT_TRUE(incumbent.has_value()) << "dt = " << dt;
+    for (const auto& trajectory : incumbent->results.train_trajectories) {
+      ASSERT_FALSE(trajectory.empty()) << "dt = " << dt;
+      for (const auto& [t, pos_vel] :
+           trajectory | std::views::take(trajectory.size() - 1)) {
+        EXPECT_NEAR(std::remainder(t, dt), 0, cda_rail::GRB_EPS)
+            << "dt = " << dt << ", t = " << t;
+      }
+    }
+    solver.cleanup();
+  }
+}
+
+TEST(GenPOMovingBlockMIPSolver, CompletionTimeStepMustBePositive) {
+  const auto                                             routes = two_routes();
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(
+      routes.instance);
+  EXPECT_THROW(
+      solver.solve({}, {.completion_interval = 1, .completion_dt = 0}, {}, 60),
+      cda_rail::exceptions::InvalidInputException);
 }
 
 TEST(GenPOMovingBlockMIPSolver, CompletionStopsOnceIncumbentWithinGap) {
