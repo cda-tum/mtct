@@ -783,6 +783,13 @@ public:
   /**
    * @brief Returns an approximate position/velocity pair if available.
    *
+   * Between two stored states, the train is assumed to change its speed
+   * fully to a line speed, drive at it and change it fully to the next stored
+   * speed. The line speed is only determined up to LINE_SPEED_ACCURACY and
+   * LINE_SPEED_TIME_ACCURACY and rounded up, so that the train can reach the
+   * next stored state early. Until its stored time, it then stands there with
+   * the next stored speed.
+   *
    * @param tr_name Name of the train.
    * @param t Query time.
    * @return Approximate position/velocity pair, or `std::nullopt`.
