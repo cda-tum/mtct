@@ -783,6 +783,14 @@ public:
   /**
    * @brief Returns an approximate position/velocity pair if available.
    *
+   * Between two stored states, the train is assumed to change its speed
+   * fully to a line speed, drive at it and change it fully to the next stored
+   * speed. The line speed is found by a bisection that stops as soon as the
+   * candidate speeds differ by at most LINE_SPEED_ACCURACY or the travel time
+   * is less than LINE_SPEED_TIME_ACCURACY too short, and the faster candidate
+   * is used. Hence, the profile can end before the next stored time. From
+   * then on, the position and speed of the next stored state are returned.
+   *
    * @param tr_name Name of the train.
    * @param t Query time.
    * @return Approximate position/velocity pair, or `std::nullopt`.

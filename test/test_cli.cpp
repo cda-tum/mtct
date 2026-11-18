@@ -1245,6 +1245,52 @@ TEST(CliOptions, MbMipCompletionInterval) {
       "OnlyAdjacent_10_-1_50");
 }
 
+TEST(CliOptions, MbMipCompletionDt) {
+  {
+    cda_rail::cli::MbMipSettings settings;
+    CLI::App                     app;
+    cda_rail::cli::add_mb_mip_options(app, settings);
+    app.parse(std::string{"--completion-interval 50 --completion-dt 15"});
+
+    EXPECT_EQ(cda_rail::cli::mb_mip_solver_strategy(settings).completion_dt,
+              15);
+    EXPECT_EQ(
+        cda_rail::cli::generate_mb_mip_identifier(settings),
+        "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_OnlyCurrent_OnlyViolated_"
+        "OnlyAdjacent_10_-1_50_15");
+  }
+  {
+    // The default time step and a time step without completions are not part
+    // of the identifier, so that it stays as it was
+    cda_rail::cli::MbMipSettings settings;
+    CLI::App                     app;
+    cda_rail::cli::add_mb_mip_options(app, settings);
+    app.parse(std::string{"--completion-interval 50 --completion-dt 6"});
+    EXPECT_EQ(cda_rail::cli::mb_mip_solver_strategy(settings).completion_dt,
+              cda_rail::solver::mip_based::DEFAULT_COMPLETION_DT);
+    EXPECT_EQ(
+        cda_rail::cli::generate_mb_mip_identifier(settings),
+        "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_OnlyCurrent_OnlyViolated_"
+        "OnlyAdjacent_10_-1_50");
+  }
+  {
+    cda_rail::cli::MbMipSettings settings;
+    CLI::App                     app;
+    cda_rail::cli::add_mb_mip_options(app, settings);
+    app.parse(std::string{"--completion-dt 15"});
+    EXPECT_EQ(
+        cda_rail::cli::generate_mb_mip_identifier(settings),
+        "f_5.55_MinOneStep_f_f_f_t_86400_86400_f_t_f_OnlyCurrent_OnlyViolated_"
+        "OnlyAdjacent_10_-1");
+  }
+  {
+    cda_rail::cli::MbMipSettings settings;
+    CLI::App                     app;
+    cda_rail::cli::add_mb_mip_options(app, settings);
+    EXPECT_THROW(app.parse(std::string{"--completion-dt 0"}), CLI::ParseError);
+  }
+}
+
 TEST(CliOptions, HashIdentifier) {
   // 32-bit FNV-1a, so that the same settings give the same directory on
   // every platform

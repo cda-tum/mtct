@@ -539,6 +539,52 @@ TEST(GeneralPerformanceOptimizationInstances,
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
+     ApproximatePosAndVelUntilNextSample) {
+  // The train takes 24.9 s for 400 m, entering and leaving with 10 m/s. Its
+  // line speed of about 20.4 m/s is only approximated, and the bisection stops
+  // once the profile is less than LINE_SPEED_TIME_ACCURACY too fast, while the
+  // candidate speeds still differ by more than LINE_SPEED_ACCURACY. The
+  // approximated train hence arrives shortly before 24.9 s, after which the
+  // position and speed at 24.9 s are returned.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge(v0, v1, 400, 30, false);
+  instance.add_train("tr1", 50, 30, 1, 1, 0, 10, v0, 30, 10, v1);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+  sol_instance.add_empty_route("tr1");
+  sol_instance.push_back_edge_to_route("tr1", {"v0", "v1"});
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_speed("tr1", 0, 10);
+  sol_instance.add_train_pos("tr1", 24.9, 400);
+  sol_instance.add_train_speed("tr1", 24.9, 10);
+
+  double prev_pos = 0;
+  for (int i = 0; i <= 2490; ++i) {
+    const auto t = i / 100.0;
+    const auto pos_vel =
+        sol_instance.get_approximate_train_pos_and_vel("tr1", t);
+    ASSERT_TRUE(pos_vel.has_value()) << "t = " << t;
+    EXPECT_GE(pos_vel->pos, prev_pos - GRB_EPS) << "t = " << t;
+    EXPECT_LE(pos_vel->pos, 400 + GRB_EPS) << "t = " << t;
+    EXPECT_GE(pos_vel->vel, 10 - GRB_EPS) << "t = " << t;
+    EXPECT_LE(pos_vel->vel, 30 + GRB_EPS) << "t = " << t;
+    prev_pos = pos_vel->pos;
+  }
+
+  // After the approximated profile, which ends before 24.83 s, and at 24.9 s
+  for (const double t : {24.85, 24.9}) {
+    const auto end = sol_instance.get_approximate_train_pos_and_vel("tr1", t);
+    ASSERT_TRUE(end.has_value()) << "t = " << t;
+    EXPECT_APPROX_EQ_6(end->pos, 400);
+    EXPECT_APPROX_EQ_6(end->vel, 10);
+  }
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
      SolGeneralPerformanceOptimizationInstanceTrainOrderWithReverseEdge) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
 

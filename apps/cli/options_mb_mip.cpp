@@ -202,6 +202,12 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
                  "never completes a state.")
       ->capture_default_str()
       ->group("Solver Parameters");
+  app.add_option("--completion-dt", settings.completion_dt,
+                 "Time step in seconds with which the greedy simulator "
+                 "simulates the completions of --completion-interval.")
+      ->check(CLI::PositiveNumber)
+      ->capture_default_str()
+      ->group("Solver Parameters");
 
   add_solving_options(app, settings.solving);
   add_export_options(app, settings.exporting, {.lp_model = true});
@@ -223,8 +229,12 @@ void cda_rail::cli::finalize_mb_mip_settings(CLI::App&      app,
 
 std::string
 cda_rail::cli::generate_mb_mip_identifier(const MbMipSettings& settings) {
-  // The completion interval is only appended if completions are used, so
-  // that the identifiers of all other settings stay as they were
+  // The completion interval is only appended if completions are used, and their
+  // time step only if it differs from the default, so that the identifiers of
+  // all other settings stay as they were
+  const bool completion_dt_in_identifier =
+      settings.completion_interval > 0 &&
+      settings.completion_dt != solver::mip_based::DEFAULT_COMPLETION_DT;
   return concatenate_string_views(
       {bool_to_str(settings.fix_routes),
        "_",
@@ -265,7 +275,9 @@ cda_rail::cli::generate_mb_mip_identifier(const MbMipSettings& settings) {
        std::to_string(settings.solving.time_limit),
        settings.completion_interval > 0
            ? "_" + std::to_string(settings.completion_interval)
-           : ""});
+           : "",
+       completion_dt_in_identifier ? "_" + format_double(settings.completion_dt)
+                                   : ""});
 }
 
 void cda_rail::cli::log_mb_mip_settings(const MbMipSettings& settings,
@@ -302,6 +314,7 @@ void cda_rail::cli::log_mb_mip_settings(const MbMipSettings& settings,
                settings.lazy_train_selection_strategy);
   PLOGD << "  Absolute MIP gap: " << settings.abs_mip_gap;
   PLOGD << "  Completion interval: " << settings.completion_interval;
+  PLOGD << "  Completion time step (dt): " << settings.completion_dt;
   log_solving_settings(settings.solving);
   log_export_settings(settings.exporting, working_directory);
 }
@@ -332,7 +345,8 @@ cda_rail::cli::mb_mip_solver_strategy(const MbMipSettings& settings) {
           .lazy_train_selection_strategy =
               settings.lazy_train_selection_strategy,
           .abs_mip_gap         = settings.abs_mip_gap,
-          .completion_interval = settings.completion_interval};
+          .completion_interval = settings.completion_interval,
+          .completion_dt       = settings.completion_dt};
 }
 
 cda_rail::solver::mip_based::SolutionSettingsMovingBlock

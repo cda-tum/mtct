@@ -27,9 +27,6 @@ using std::size_t;
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,bugprone-unchecked-optional-access)
 
 namespace {
-// Time step of the simulation, the default of the A* search, see
-// simulator::GeneralSimulator::simulate
-constexpr double WARM_START_DT = 6.0;
 // A train whose front leaves a vertex more than this after arriving there
 // stands still at the vertex
 constexpr double TIME_TOLERANCE = 1e-7;
@@ -113,7 +110,8 @@ std::optional<cda_rail::simulator::SimulatorState> cda_rail::solver::mip_based::
     }
   }
   simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
-  return astar_based::complete_state(simulator, std::move(state), WARM_START_DT,
+  return astar_based::complete_state(simulator, std::move(state),
+                                     m_solver_strategy.completion_dt,
                                      m_model_detail.allow_late_entry, true);
 }
 
@@ -193,8 +191,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::simulate_state(
     simulator::SimulatorState state) const {
   simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
   simulator.set_simulator_state(state);
-  auto results = simulator.simulate(
-      WARM_START_DT, m_model_detail.allow_late_entry, true, true, true);
+  auto results =
+      simulator.simulate(m_solver_strategy.completion_dt,
+                         m_model_detail.allow_late_entry, true, true, true);
   if (!results.success) {
     return std::nullopt;
   }
@@ -456,7 +455,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::complete_relaxation(
     const std::function<double(const GRBVar&)>& value) {
   simulator::GreedySimulator simulator(m_instance, m_ttd_sections);
   auto                       completed = astar_based::complete_state(
-      simulator, relaxation_state(value), WARM_START_DT,
+      simulator, relaxation_state(value), m_solver_strategy.completion_dt,
       m_model_detail.allow_late_entry, true);
   if (!completed.has_value()) {
     return std::nullopt;

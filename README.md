@@ -489,6 +489,7 @@ Finally, the granularity of the velocity extensions can be adapted by `--max-vel
 To find feasible solutions early, `--completion-interval x` completes the initial A\* state and every x-th node relaxation heuristically.
 With `--fix-routes`, only the initial A\* state is completed, since the relaxations cannot change the routes.
 A relaxation gives the routes, the trains continue along quickest paths where it gives none, every stop is served at the end of the platform, and the orders are decided first come, first served.
+The completions are simulated by the greedy simulator with a time step of `--completion-dt` seconds, 6 by default.
 The best simulated completion is kept, and Gurobi only searches for solutions that are at least as good.
 In the end, the simulated solution is returned unless Gurobi found a better one.
 The simulated solutions are also offered to Gurobi, which rejects them if it cannot compute matching times, e.g., because the velocities of the MILP are discrete.
@@ -592,6 +593,9 @@ Solver Parameters:
                               completed heuristically and simulated, with fixed routes only the
                               initial state. The best simulated solution is returned unless
                               Gurobi finds a better one. 0 never completes a state.
+          --completion-dt FLOAT:POSITIVE [6]
+                              Time step in seconds with which the greedy simulator simulates
+                              the completions of --completion-interval.
 
 Additional Solving Parameters:
   -t,     --time-limit INT [-1]

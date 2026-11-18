@@ -752,13 +752,20 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     return std::nullopt;
   }
 
+  // The line speed is rounded up, and its bisection may stop on its time
+  // criterion while the speeds still differ by more than LINE_SPEED_ACCURACY.
+  // Its profile can hence end shortly before t2, after which pos_2 and v2 are
+  // returned.
+  const auto rel_t =
+      std::min(t - t1, time_on_edge(v1, v2, v_line, tr_obj.get_acceleration(),
+                                    tr_obj.get_deceleration(), dist_travelled));
   const auto tr_pos =
       get_train_pos(tr_name, t1) +
       pos_on_edge_at_time(v1, v2, v_line, tr_obj.get_acceleration(),
-                          tr_obj.get_deceleration(), dist_travelled, t - t1);
+                          tr_obj.get_deceleration(), dist_travelled, rel_t);
   const auto tr_vel =
       vel_on_edge_at_time(v1, v2, v_line, tr_obj.get_acceleration(),
-                          tr_obj.get_deceleration(), dist_travelled, t - t1);
+                          tr_obj.get_deceleration(), dist_travelled, rel_t);
 
   return {{.pos = tr_pos, .vel = tr_vel}};
 }
