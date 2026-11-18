@@ -392,7 +392,7 @@ Model Parameters:
                               below by the function of the velocity, which is convex, instead
                               of being equal to it. The moving authority may then reserve more
                               track than needed. Only applicable if braking curves are included
-                              and the routes are fixed.
+                              and trains are not only allowed to stop at VSS borders.
 
 Solver Parameters:
   -x,     --iterative-approach

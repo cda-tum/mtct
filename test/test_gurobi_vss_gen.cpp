@@ -252,20 +252,20 @@ void check_schedule_within_dt_and_order(
 // reserve more track than needed, which never helps. Moreover, the front of a
 // train plus its braking distance never decreases if the train brakes within
 // its deceleration. Hence, the original model and the convexified model have
-// the very same optimum. The trajectory of the convexified model has to be the
-// front of the train, not its moving authority, so that it passes the same
-// checks.
+// the very same optimum.
 // Only usable within this translation unit.
 void check_convexified_braking_distance(const std::string&          instance,
                                         const cda_rail::vss::Model& model_type,
-                                        bool use_pwl, int time_limit) {
+                                        bool use_pwl, bool fix_routes,
+                                        int time_limit) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       instance, "atmos2023", "data");
-  const auto label = instance + (use_pwl ? " (PWL)" : " (quadratic)");
+  const auto label = instance + (use_pwl ? " (PWL" : " (quadratic") +
+                     (fix_routes ? ", fixed)" : ", free)");
 
   const cda_rail::solver::mip_based::ModelDetailVSSGen model_detail{
       .delta_t        = 15,
-      .fix_routes     = true,
+      .fix_routes     = fix_routes,
       .train_dynamics = true,
       .braking_curves = true};
   const auto sol =
@@ -2303,27 +2303,35 @@ TEST(VSSGenSolver, EvaluateSolution) {
 TEST(VSSGenSolver, ConvexifiedBrakingDistanceSimpleStation) {
   for (const bool use_pwl : {false, true}) {
     check_convexified_braking_distance("SimpleStation", cda_rail::vss::Model(),
-                                       use_pwl, 120);
+                                       use_pwl, true, 120);
     check_convexified_braking_distance(
         "SimpleStation",
         cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
                              {cda_rail::vss::UNIFORM}),
-        use_pwl, 120);
-    check_convexified_braking_distance(
-        "SimpleStation",
-        cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true),
-        use_pwl, 240);
+        use_pwl, true, 120);
+  }
+}
+
+TEST(VSSGenSolver, ConvexifiedBrakingDistanceSimpleStationFree) {
+  for (const bool use_pwl : {false, true}) {
+    check_convexified_braking_distance("SimpleStation", cda_rail::vss::Model(),
+                                       use_pwl, false, 240);
   }
 }
 
 TEST(VSSGenSolver, ConvexifiedBrakingDistanceOvertake) {
   check_convexified_braking_distance("Overtake", cda_rail::vss::Model(), false,
-                                     120);
+                                     true, 120);
+}
+
+TEST(VSSGenSolver, ConvexifiedBrakingDistanceOvertakeFree) {
+  check_convexified_braking_distance("Overtake", cda_rail::vss::Model(), false,
+                                     false, 400);
 }
 
 TEST(VSSGenSolver, ConvexifiedBrakingDistanceStammstrecke4) {
   check_convexified_braking_distance("Stammstrecke4Trains",
-                                     cda_rail::vss::Model(), false, 120);
+                                     cda_rail::vss::Model(), false, true, 120);
 }
 
 TEST(VSSGenSolver, ConvexifiedBrakingDistanceEvaluateSolution) {
@@ -2370,15 +2378,17 @@ TEST(VSSGenSolver, ConvexifiedBrakingDistanceEvaluateSolution) {
   // NOLINTEND(bugprone-unchecked-optional-access)
 }
 
-TEST(VSSGenSolver, ConvexifiedBrakingDistanceNeedsBrakingCurvesAndFixedRoutes) {
+TEST(VSSGenSolver, ConvexifiedBrakingDistanceNeedsBrakingCurvesAndFreeStops) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
       "SimpleStation", "atmos2023", "data");
   EXPECT_THROW(
       static_cast<void>(solver.solve({15, true, true, false},
                                      {.convexify_braking_distance = true})),
       cda_rail::exceptions::ConsistencyException);
-  EXPECT_THROW(
-      static_cast<void>(solver.solve({15, false, true, true},
-                                     {.convexify_braking_distance = true})),
-      cda_rail::exceptions::ConsistencyException);
+  EXPECT_THROW(static_cast<void>(solver.solve(
+                   {15, true, true, true},
+                   {.model_type = cda_rail::vss::Model(
+                        cda_rail::vss::ModelType::Continuous, {}, true),
+                    .convexify_braking_distance = true})),
+               cda_rail::exceptions::ConsistencyException);
 }

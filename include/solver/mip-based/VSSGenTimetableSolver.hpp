@@ -105,10 +105,9 @@ struct ModelDetailMBInformation {
  *
  * By default, the braking distance equals the function of the velocity, which
  * is a nonconvex constraint. If convexify_braking_distance is set, it is only
- * bounded from below by that function, which is convex. For this, the
- * position of the train (mu) is separated from its moving authority (ma),
- * which may then reserve more track than needed. Only applicable if braking
- * curves are modelled and the routes are fixed.
+ * bounded from below by that function, which is convex. The moving authority
+ * may then reserve more track than needed. Only applicable if braking curves
+ * are modelled and trains are not restricted to stop at VSS borders.
  */
 struct ModelSettingsVSSGen {
   // NOLINTNEXTLINE(readability-redundant-member-init)
@@ -342,19 +341,6 @@ private:
   void calculate_fwd_bwd_sections_non_discretized();
   /** @brief The maximal braking distance of a train. */
   [[nodiscard]] double get_max_brakelen(const size_t& tr) const;
-  /**
-   * @brief The end of the moving authority of a train with a fixed route.
-   *
-   * Everything separating trains refers to it. Only with convexified braking
-   * distances it is a variable (ma) of its own, otherwise mu includes the
-   * braking distance and hence is the moving authority itself.
-   *
-   * @param tr Index of the train
-   * @param t Time index
-   * @return ma(tr, t) if the braking distance is convexified, mu(tr, t)
-   *         otherwise
-   */
-  [[nodiscard]] GRBVar moving_authority(size_t tr, size_t t);
 
   /**
    * @brief The trains sharing an entry or exit vertex, sorted by the time at
