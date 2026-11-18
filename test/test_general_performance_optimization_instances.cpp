@@ -544,8 +544,8 @@ TEST(GeneralPerformanceOptimizationInstances,
   // line speed of about 20.4 m/s is only approximated, and the bisection stops
   // once the profile is less than LINE_SPEED_TIME_ACCURACY too fast, while the
   // candidate speeds still differ by more than LINE_SPEED_ACCURACY. The
-  // approximated train hence arrives shortly before 24.9 s and stands there
-  // until then.
+  // approximated train hence arrives shortly before 24.9 s, after which the
+  // position and speed at 24.9 s are returned.
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
   const auto v0 = instance.get_editable_network().add_vertex(
       "v0", cda_rail::VertexType::TTD);
@@ -575,10 +575,13 @@ TEST(GeneralPerformanceOptimizationInstances,
     prev_pos = pos_vel->pos;
   }
 
-  const auto end = sol_instance.get_approximate_train_pos_and_vel("tr1", 24.9);
-  ASSERT_TRUE(end.has_value());
-  EXPECT_APPROX_EQ_6(end->pos, 400);
-  EXPECT_APPROX_EQ_6(end->vel, 10);
+  // After the approximated profile, which ends before 24.83 s, and at 24.9 s
+  for (const double t : {24.85, 24.9}) {
+    const auto end = sol_instance.get_approximate_train_pos_and_vel("tr1", t);
+    ASSERT_TRUE(end.has_value()) << "t = " << t;
+    EXPECT_APPROX_EQ_6(end->pos, 400);
+    EXPECT_APPROX_EQ_6(end->vel, 10);
+  }
 }
 
 TEST(GeneralPerformanceOptimizationInstances,
