@@ -26,20 +26,26 @@ jobs:
         env:
           NEW_VERSION: ${{ env.NEW_VERSION }}
           GUROBI_VERSION: ${{ env.gurobiVersion }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "NEW_VERSION: $NEW_VERSION"
           echo "GUROBI_VERSION: $GUROBI_VERSION"
-          if [[ $(git branch -a | grep "update-gurobi-$NEW_VERSION") ]]; then
-            echo "Branch update-gurobi-$NEW_VERSION already exists. Aborting workflow."
-            echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
-          elif [[ $NEW_VERSION == $GUROBI_VERSION ]]; then
+          if [[ $NEW_VERSION == $GUROBI_VERSION ]]; then
             echo "Gurobi version already included. Aborting workflow."
             echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+          elif git ls-remote --exit-code --heads origin "update-gurobi-$NEW_VERSION" > /dev/null; then
+            OPEN_PRS=$(gh pr list --head "update-gurobi-$NEW_VERSION" --state open --json number --jq length)
+            if (( OPEN_PRS > 0 )); then
+              echo "Branch update-gurobi-$NEW_VERSION already has an open PR. Aborting workflow."
+              echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+            else
+              echo "Branch update-gurobi-$NEW_VERSION exists without an open PR. Creating the PR."
+              echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
+            fi
           else
             echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
 
             git checkout -b update-gurobi-$NEW_VERSION
-            git push origin update-gurobi-$NEW_VERSION
 
             # Extract x.y.z format
             X_Y_Z_VERSION=$(echo "$NEW_VERSION" | cut -d '.' -f 1-3)

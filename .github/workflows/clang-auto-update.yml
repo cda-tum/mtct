@@ -1,0 +1,81 @@
+name: Clang Auto Updater
+
+on:
+  schedule:
+    - cron: "0 2 15 * *" # 15th of each month at 02:00 UTC (03:00/04:00 Vienna)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-clang-version:
+    # Same runner as cpp-linter, so the check uses the Ubuntu release the linter runs on.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Get Latest Stable Clang Version
+        run: |
+          NEW_VERSION=$(curl -fsSL https://apt.llvm.org/llvm.sh | sed -n 's/^CURRENT_LLVM_STABLE=\([0-9]\+\).*/\1/p')
+          if [[ -z "$NEW_VERSION" ]]; then
+            echo "Could not read CURRENT_LLVM_STABLE from llvm.sh."
+            exit 1
+          fi
+          CODENAME=$(lsb_release -cs)
+          if ! curl -fsI "https://apt.llvm.org/$CODENAME/dists/llvm-toolchain-$CODENAME-$NEW_VERSION/Release" > /dev/null; then
+            echo "Clang $NEW_VERSION is not yet published for $CODENAME."
+            NEW_VERSION=""
+          fi
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Current Version
+        uses: zlatko-ms/varfiletoenv@v3
+        with:
+          paths: ./.github/clang_version.json
+
+      - name: Make Changes if Applicable
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+          CLANG_VERSION: ${{ env.clangVersion }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "NEW_VERSION: $NEW_VERSION"
+          echo "CLANG_VERSION: $CLANG_VERSION"
+          if [[ -z "$NEW_VERSION" ]]; then
+            echo "No installable stable version found. Aborting workflow."
+            echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+          elif (( NEW_VERSION <= CLANG_VERSION )); then
+            echo "Clang version already up to date. Aborting workflow."
+            echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+          elif git ls-remote --exit-code --heads origin "update-clang-$NEW_VERSION" > /dev/null; then
+            OPEN_PRS=$(gh pr list --head "update-clang-$NEW_VERSION" --state open --json number --jq length)
+            if (( OPEN_PRS > 0 )); then
+              echo "Branch update-clang-$NEW_VERSION already has an open PR. Aborting workflow."
+              echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+            else
+              echo "Branch update-clang-$NEW_VERSION exists without an open PR. Creating the PR."
+              echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
+            fi
+          else
+            echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
+
+            git checkout -b update-clang-$NEW_VERSION
+            echo "{\"clangVersion\": \"$NEW_VERSION\"}" > ./.github/clang_version.json
+
+            git config --local user.email "actions-clang-updater@noreply.github.com"
+            git config --local user.name "GitHub Actions Clang Updater"
+            git add ./.github/clang_version.json
+            git commit -m "Update clang version to $NEW_VERSION"
+            git push origin update-clang-$NEW_VERSION
+          fi
+
+      - name: Create PR
+        if: env.CONTINUE_WORKFLOW == 'true'
+        env:
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --title "Update clang version to $NEW_VERSION" --body "This PR updates the clang version used by cpp-linter to $NEW_VERSION" --reviewer sengels-tum --base main --head update-clang-$NEW_VERSION

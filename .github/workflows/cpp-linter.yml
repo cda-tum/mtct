@@ -15,25 +15,27 @@ concurrency:
 jobs:
   cpp-linter:
     runs-on: ubuntu-latest
-    env:
-      clang-version: 18
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: recursive
-      - name: Install clang-${{ env.clang-version }}
+      - name: Read current clang Version
+        uses: zlatko-ms/varfiletoenv@v3
+        with:
+          paths: ./.github/clang_version.json
+      - name: Install clang-${{ env.clangVersion }}
         run: |
           sudo apt-get update
           wget https://apt.llvm.org/llvm.sh -O ${{ runner.temp }}/llvm_install.sh
           chmod +x ${{ runner.temp }}/llvm_install.sh
-          if sudo ${{ runner.temp }}/llvm_install.sh ${{ env.clang-version }}; then
-            sudo apt-get install -y clang-format-${{ env.clang-version }} clang-tidy-${{ env.clang-version }} || exit 1
+          if sudo ${{ runner.temp }}/llvm_install.sh ${{ env.clangVersion }}; then
+            sudo apt-get install -y clang-format-${{ env.clangVersion }} clang-tidy-${{ env.clangVersion }} || exit 1
           else
             echo "Installation from script failed."
             exit 1
           fi
-          echo "CC=clang-${{ env.clang-version }}" >> $GITHUB_ENV
-          echo "CXX=clang++-${{ env.clang-version }}" >> $GITHUB_ENV
+          echo "CC=clang-${{ env.clangVersion }}" >> $GITHUB_ENV
+          echo "CXX=clang++-${{ env.clangVersion }}" >> $GITHUB_ENV
       - name: Read current gurobi Version
         uses: zlatko-ms/varfiletoenv@v3
         with:
@@ -63,7 +65,7 @@ jobs:
         with:
           style: ""
           tidy-checks: ""
-          version: ${{ env.clang-version }}
+          version: ${{ env.clangVersion }}
           ignore: "build | test/data | test/old-and-temporary-data | gurobi* | cmake-build-debug"
           thread-comments: true
           step-summary: true
@@ -78,7 +80,7 @@ jobs:
         with:
           style: ""
           tidy-checks: ""
-          version: ${{ env.clang-version }}
+          version: ${{ env.clangVersion }}
           ignore: "build | test/data | test/old-and-temporary-data | gurobi* | cmake-build-debug"
           thread-comments: true
           step-summary: true
