@@ -40,6 +40,7 @@ jobs:
         env:
           NEW_VERSION: ${{ env.NEW_VERSION }}
           CLANG_VERSION: ${{ env.clangVersion }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "NEW_VERSION: $NEW_VERSION"
           echo "CLANG_VERSION: $CLANG_VERSION"
@@ -50,8 +51,14 @@ jobs:
             echo "Clang version already up to date. Aborting workflow."
             echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
           elif git ls-remote --exit-code --heads origin "update-clang-$NEW_VERSION" > /dev/null; then
-            echo "Branch update-clang-$NEW_VERSION already exists. Aborting workflow."
-            echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+            OPEN_PRS=$(gh pr list --head "update-clang-$NEW_VERSION" --state open --json number --jq length)
+            if (( OPEN_PRS > 0 )); then
+              echo "Branch update-clang-$NEW_VERSION already has an open PR. Aborting workflow."
+              echo "CONTINUE_WORKFLOW=false" >> $GITHUB_ENV
+            else
+              echo "Branch update-clang-$NEW_VERSION exists without an open PR. Creating the PR."
+              echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
+            fi
           else
             echo "CONTINUE_WORKFLOW=true" >> $GITHUB_ENV
 
