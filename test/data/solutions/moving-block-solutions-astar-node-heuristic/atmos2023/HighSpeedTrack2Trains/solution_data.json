@@ -1,0 +1,46 @@
+{
+  "evaluation": {
+    "dt": 15.0,
+    "greedy": {
+      "obj": 0.0,
+      "success": true,
+      "trains": {
+        "tr1": {
+          "exit_delay": 0.0,
+          "exit_time": 615.0,
+          "stop_delays": [],
+          "stop_times": []
+        },
+        "tr2": {
+          "exit_delay": 0.0,
+          "exit_time": 675.0,
+          "stop_delays": [],
+          "stop_times": []
+        }
+      }
+    },
+    "trains_violating_dynamics": ["tr1", "tr2"],
+    "trajectory": {
+      "obj": 0.0,
+      "success": true,
+      "trains": {
+        "tr1": {
+          "exit_delay": 0.0,
+          "exit_time": 615.0,
+          "stop_delays": [],
+          "stop_times": []
+        },
+        "tr2": {
+          "exit_delay": 0.0,
+          "exit_time": 675.0,
+          "stop_delays": [],
+          "stop_times": []
+        }
+      }
+    }
+  },
+  "has_solution": true,
+  "lb": 0.0,
+  "obj": 0.0,
+  "status": "Optimal"
+}

@@ -1,0 +1,70 @@
+{
+  "evaluation": {
+    "dt": 15.0,
+    "greedy": {
+      "obj": 0.0,
+      "success": true,
+      "trains": {
+        "tr1lr": {
+          "exit_delay": 0.0,
+          "exit_time": 960.0,
+          "stop_delays": [],
+          "stop_times": []
+        },
+        "tr1rl": {
+          "exit_delay": 0.0,
+          "exit_time": 960.0,
+          "stop_delays": [],
+          "stop_times": []
+        },
+        "tr2lr": {
+          "exit_delay": 0.0,
+          "exit_time": 990.0,
+          "stop_delays": [0.0, 0.0],
+          "stop_times": [30.0, 900.0]
+        },
+        "tr2rl": {
+          "exit_delay": 0.0,
+          "exit_time": 990.0,
+          "stop_delays": [0.0, 0.0],
+          "stop_times": [30.0, 900.0]
+        }
+      }
+    },
+    "trains_violating_dynamics": [],
+    "trajectory": {
+      "obj": 0.0,
+      "success": true,
+      "trains": {
+        "tr1lr": {
+          "exit_delay": 0.0,
+          "exit_time": 960.0,
+          "stop_delays": [],
+          "stop_times": []
+        },
+        "tr1rl": {
+          "exit_delay": 0.0,
+          "exit_time": 960.0,
+          "stop_delays": [],
+          "stop_times": []
+        },
+        "tr2lr": {
+          "exit_delay": 0.0,
+          "exit_time": 990.0,
+          "stop_delays": [0.0, 0.0],
+          "stop_times": [30.0, 900.0]
+        },
+        "tr2rl": {
+          "exit_delay": 0.0,
+          "exit_time": 990.0,
+          "stop_delays": [0.0, 0.0],
+          "stop_times": [30.0, 900.0]
+        }
+      }
+    }
+  },
+  "has_solution": true,
+  "lb": 0.0,
+  "obj": 0.0,
+  "status": "Optimal"
+}

@@ -1,0 +1,58 @@
+{
+  "evaluation": {
+    "dt": 15.0,
+    "greedy": {
+      "obj": 0.0,
+      "success": true,
+      "trains": {
+        "tr1": {
+          "exit_delay": 0.0,
+          "exit_time": 390.0,
+          "stop_delays": [0.0],
+          "stop_times": [120.0]
+        },
+        "tr2": {
+          "exit_delay": 0.0,
+          "exit_time": 480.0,
+          "stop_delays": [0.0],
+          "stop_times": [240.0]
+        },
+        "tr3": {
+          "exit_delay": 0.0,
+          "exit_time": 540.0,
+          "stop_delays": [],
+          "stop_times": []
+        }
+      }
+    },
+    "trains_violating_dynamics": [],
+    "trajectory": {
+      "obj": 0.0,
+      "success": true,
+      "trains": {
+        "tr1": {
+          "exit_delay": 0.0,
+          "exit_time": 390.0,
+          "stop_delays": [0.0],
+          "stop_times": [120.0]
+        },
+        "tr2": {
+          "exit_delay": 0.0,
+          "exit_time": 480.0,
+          "stop_delays": [0.0],
+          "stop_times": [240.0]
+        },
+        "tr3": {
+          "exit_delay": 0.0,
+          "exit_time": 540.0,
+          "stop_delays": [],
+          "stop_times": []
+        }
+      }
+    }
+  },
+  "has_solution": true,
+  "lb": 0.0,
+  "obj": 0.0,
+  "status": "Optimal"
+}
