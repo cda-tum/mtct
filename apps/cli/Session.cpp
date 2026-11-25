@@ -107,12 +107,11 @@ void cda_rail::cli::Session::close_instance() {
   m_solution          = nullptr;
 }
 
-std::filesystem::path
-cda_rail::cli::Session::save_instance(bool const withNetwork) {
+std::filesystem::path cda_rail::cli::Session::save_instance(bool with_network) {
   auto& inst = instance();
-  inst.export_instance(m_working_directory, withNetwork);
+  inst.export_instance(m_working_directory, with_network);
   m_instance_modified = false;
-  if (withNetwork) {
+  if (with_network) {
     m_network_modified = false;
   }
   return m_working_directory / "instances" / inst.get_instance_subdirectory() /

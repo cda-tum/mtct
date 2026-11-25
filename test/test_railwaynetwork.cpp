@@ -28,6 +28,31 @@ struct EdgeTarget {
   double      min_block_length;
   double      min_stop_block_length = 100;
 };
+
+// A network of TTD vertices connected by the given bidirectional edges
+cda_rail::Network bidirectional_network(
+    const std::vector<std::pair<std::string, std::string>>& edges) {
+  cda_rail::Network network;
+  for (const auto& [u, w] : edges) {
+    for (const std::string_view name : {u, w}) {
+      if (!network.has_vertex(name)) {
+        network.add_vertex(name, cda_rail::VertexType::TTD);
+      }
+    }
+    network.add_bidirectional_edge({u}, {w}, 100, 10);
+  }
+  return network;
+}
+
+cda_rail::index_set
+edge_set(const cda_rail::Network&                                network,
+         const std::vector<std::pair<std::string, std::string>>& edges) {
+  cda_rail::index_set result;
+  for (const auto& [u, w] : edges) {
+    result.insert(network.get_edge_index({u}, {w}));
+  }
+  return result;
+}
 } // namespace
 
 #define EXPECT_APPROX_EQ_3(a, b) EXPECT_APPROX_EQ(a, b, 1e-3)
@@ -468,7 +493,9 @@ TEST(RailwayNetwork, PathsEndingInTTD) {
   network.add_successor(e21, e10);
 
   std::vector<cda_rail::index_set> const ttd_sections{
-      {e12, e23a, e23b, e32a, e21}, {e45a, e45b, e56, e65, e54a}};
+      {e12, e23a, e23b, e32a, e21},
+      {e45a, e45b, e56, e65, e54a},
+  };
 
   auto const paths_e01 = network.all_paths_ending_at_ttd(e01, ttd_sections);
   EXPECT_EQ(paths_e01.size(), 2);
@@ -1800,19 +1827,20 @@ TEST(RailwayNetwork, NetworkConsistency) {
 TEST(RailwayNetwork, ReversalFreeSuccessors) {
   // Switch v with toe t and branches a and b, plus a diamond crossing c of
   // the tracks p-q and r-s, all bidirectional
-  const auto network_with_switch = []() {
+  const auto network_with_switch = [] {
     cda_rail::Network network;
     for (const auto* name : {"t", "v", "a", "b", "c", "p", "q", "r", "s"}) {
       network.add_vertex(name, cda_rail::VertexType::TTD);
     }
-    for (const auto& [u, w] :
-         std::vector<std::pair<std::string, std::string>>{{"t", "v"},
-                                                          {"v", "a"},
-                                                          {"v", "b"},
-                                                          {"p", "c"},
-                                                          {"c", "q"},
-                                                          {"r", "c"},
-                                                          {"c", "s"}}) {
+    for (const auto& [u, w] : std::vector<std::pair<std::string, std::string>>{
+             {"t", "v"},
+             {"v", "a"},
+             {"v", "b"},
+             {"p", "c"},
+             {"c", "q"},
+             {"r", "c"},
+             {"c", "s"},
+         }) {
       network.add_bidirectional_edge({u}, {w}, 100, 10);
     }
     network.add_successor({"t", "v"}, {"v", "a"});
@@ -1839,6 +1867,84 @@ TEST(RailwayNetwork, ReversalFreeSuccessors) {
   EXPECT_FALSE(zig_zag.has_reversal_free_successors());
 }
 
+TEST(RailwayNetwork, TrivialSuccessors) {
+  // The track a-b-c, continued by the one-way edge c->d
+  auto network = bidirectional_network({{"a", "b"}, {"b", "c"}});
+  network.add_vertex("d", cda_rail::VertexType::TTD);
+  network.add_edge({"c"}, {"d"}, 100, 10);
+  network.add_trivial_successors();
+
+  EXPECT_EQ(network.get_successors({"a", "b"}),
+            edge_set(network, {{"b", "c"}}));
+  EXPECT_EQ(network.get_successors({"c", "b"}),
+            edge_set(network, {{"b", "a"}}));
+  EXPECT_EQ(network.get_successors({"b", "c"}),
+            edge_set(network, {{"c", "d"}}));
+  EXPECT_TRUE(network.get_successors({"b", "a"}).empty());
+  EXPECT_TRUE(network.get_successors({"c", "d"}).empty());
+  EXPECT_TRUE(network.has_reversal_free_successors());
+}
+
+TEST(RailwayNetwork, TurnoutSuccessors) {
+  // Turnout v with toe t and branches a and b
+  auto network = bidirectional_network({{"t", "v"}, {"v", "a"}, {"v", "b"}});
+  network.add_vertex("x", cda_rail::VertexType::TTD);
+  network.add_turnout_successors({"v"}, {"t"}, {"a"}, {"b"});
+
+  EXPECT_EQ(network.get_successors({"t", "v"}),
+            edge_set(network, {{"v", "a"}, {"v", "b"}}));
+  EXPECT_EQ(network.get_successors({"a", "v"}),
+            edge_set(network, {{"v", "t"}}));
+  EXPECT_EQ(network.get_successors({"b", "v"}),
+            edge_set(network, {{"v", "t"}}));
+  EXPECT_TRUE(network.has_reversal_free_successors());
+
+  EXPECT_THROW(network.add_turnout_successors({"v"}, {"t"}, {"a"}, {"a"}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.add_turnout_successors({"v"}, {"t"}, {"a"}, {"x"}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.add_turnout_successors({"t"}, {"v"}, {"a"}, {"b"}),
+               cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(RailwayNetwork, CrossingSuccessors) {
+  // Diamond crossing c of the tracks p-q and r-s
+  auto network =
+      bidirectional_network({{"p", "c"}, {"c", "q"}, {"r", "c"}, {"c", "s"}});
+  network.add_crossing_successors({"c"}, {"p"}, {"q"}, {"r"}, {"s"});
+
+  EXPECT_EQ(network.get_successors({"p", "c"}),
+            edge_set(network, {{"c", "q"}}));
+  EXPECT_EQ(network.get_successors({"q", "c"}),
+            edge_set(network, {{"c", "p"}}));
+  EXPECT_EQ(network.get_successors({"r", "c"}),
+            edge_set(network, {{"c", "s"}}));
+  EXPECT_EQ(network.get_successors({"s", "c"}),
+            edge_set(network, {{"c", "r"}}));
+  EXPECT_TRUE(network.has_reversal_free_successors());
+
+  EXPECT_THROW(
+      network.add_crossing_successors({"c"}, {"p"}, {"q"}, {"r"}, {"r"}),
+      cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(RailwayNetwork, DoubleSlipSuccessors) {
+  // Double slip switch c of the tracks p-q and r-s, with p and r on one side
+  auto network =
+      bidirectional_network({{"p", "c"}, {"c", "q"}, {"r", "c"}, {"c", "s"}});
+  network.add_double_slip_successors({"c"}, {"p"}, {"q"}, {"r"}, {"s"});
+
+  EXPECT_EQ(network.get_successors({"p", "c"}),
+            edge_set(network, {{"c", "q"}, {"c", "s"}}));
+  EXPECT_EQ(network.get_successors({"r", "c"}),
+            edge_set(network, {{"c", "q"}, {"c", "s"}}));
+  EXPECT_EQ(network.get_successors({"q", "c"}),
+            edge_set(network, {{"c", "p"}, {"c", "r"}}));
+  EXPECT_EQ(network.get_successors({"s", "c"}),
+            edge_set(network, {{"c", "p"}, {"c", "r"}}));
+  EXPECT_TRUE(network.has_reversal_free_successors());
+}
+
 TEST(RailwayNetwork, ReadNetwork) {
   const cda_rail::Network network =
       cda_rail::Network::import_network("SimpleStation", "./data/");
@@ -1847,14 +1953,16 @@ TEST(RailwayNetwork, ReadNetwork) {
 
   // Check vertices properties
   std::vector<std::string> vertex_names = {
-      "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
+      "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11",
+  };
   std::vector<cda_rail::VertexType> type = {
       cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
       cda_rail::VertexType::TTD,      cda_rail::VertexType::NoBorder,
       cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
       cda_rail::VertexType::NoBorder, cda_rail::VertexType::TTD,
       cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
-      cda_rail::VertexType::TTD};
+      cda_rail::VertexType::TTD,
+  };
 
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
@@ -1870,142 +1978,186 @@ TEST(RailwayNetwork, ReadNetwork) {
 
   // Check edges properties
   std::vector<EdgeTarget> edge_targets;
-  edge_targets.push_back({.source           = "l0",
-                          .target           = "l1",
-                          .length           = 500,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "l1",
-                          .target           = "l2",
-                          .length           = 500,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "l2",
-                          .target           = "l3",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l3",
-                          .target           = "g00",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l3",
-                          .target           = "g10",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source                = "g00",
-                          .target                = "g01",
-                          .length                = 300,
-                          .max_speed             = 27.77777777777778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source                = "g10",
-                          .target                = "g11",
-                          .length                = 300,
-                          .max_speed             = 27.77777777777778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source           = "g01",
-                          .target           = "r2",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "g11",
-                          .target           = "r2",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r2",
-                          .target           = "r1",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r1",
-                          .target           = "r0",
-                          .length           = 500,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "r0",
-                          .target           = "r1",
-                          .length           = 500,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "r1",
-                          .target           = "r2",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r2",
-                          .target           = "g01",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r2",
-                          .target           = "g11",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source                = "g01",
-                          .target                = "g00",
-                          .length                = 300,
-                          .max_speed             = 27.77777777777778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source                = "g11",
-                          .target                = "g10",
-                          .length                = 300,
-                          .max_speed             = 27.77777777777778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source           = "g00",
-                          .target           = "l3",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "g10",
-                          .target           = "l3",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l3",
-                          .target           = "l2",
-                          .length           = 5,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l2",
-                          .target           = "l1",
-                          .length           = 500,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "l1",
-                          .target           = "l0",
-                          .length           = 500,
-                          .max_speed        = 27.77777777777778,
-                          .breakable        = true,
-                          .min_block_length = 10});
+  edge_targets.push_back({
+      .source           = "l0",
+      .target           = "l1",
+      .length           = 500,
+      .max_speed        = 27.77777777777778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "l1",
+      .target           = "l2",
+      .length           = 500,
+      .max_speed        = 27.77777777777778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "l2",
+      .target           = "l3",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l3",
+      .target           = "g00",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l3",
+      .target           = "g10",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source                = "g00",
+      .target                = "g01",
+      .length                = 300,
+      .max_speed             = 27.77777777777778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source                = "g10",
+      .target                = "g11",
+      .length                = 300,
+      .max_speed             = 27.77777777777778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source           = "g01",
+      .target           = "r2",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "g11",
+      .target           = "r2",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r2",
+      .target           = "r1",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r1",
+      .target           = "r0",
+      .length           = 500,
+      .max_speed        = 27.77777777777778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "r0",
+      .target           = "r1",
+      .length           = 500,
+      .max_speed        = 27.77777777777778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "r1",
+      .target           = "r2",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r2",
+      .target           = "g01",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r2",
+      .target           = "g11",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source                = "g01",
+      .target                = "g00",
+      .length                = 300,
+      .max_speed             = 27.77777777777778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source                = "g11",
+      .target                = "g10",
+      .length                = 300,
+      .max_speed             = 27.77777777777778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source           = "g00",
+      .target           = "l3",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "g10",
+      .target           = "l3",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l3",
+      .target           = "l2",
+      .length           = 5,
+      .max_speed        = 27.77777777777778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l2",
+      .target           = "l1",
+      .length           = 500,
+      .max_speed        = 27.77777777777778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "l1",
+      .target           = "l0",
+      .length           = 500,
+      .max_speed        = 27.77777777777778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
 
   EXPECT_EQ(network.number_of_edges(), edge_targets.size());
   for (const auto& edge : edge_targets) {
@@ -2155,13 +2307,13 @@ TEST(RailwayNetwork, WriteNetwork) {
   network.add_successor(network.get_edge_index({"v2"}, {"v0"}),
                         network.get_edge_index({"v0"}, {"v1"}));
 
-  network.export_network("./tmp/write_network_test");
+  network.export_network("./tmp-WriteNetwork/write_network_test");
 
   auto network_read = cda_rail::Network::import_network(
-      "TestNetwork", "./tmp/write_network_test");
+      "TestNetwork", "./tmp-WriteNetwork/write_network_test");
 
   // Delete created directory and everything in it
-  std::filesystem::remove_all("./tmp");
+  std::filesystem::remove_all("./tmp-WriteNetwork");
 
   EXPECT_EQ(network_read.get_network_name(), network.get_network_name());
 
@@ -2601,14 +2753,19 @@ TEST(RailwayNetwork, SortPairs) {
   network.add_edge({"v5"}, {"v4"}, 100, 100, false);
 
   // Edge pairs
-  const std::vector<size_t> to_combine = {v3_v4, v4_v3, v2_v1, v1_v2,
-                                          v1_v0, v0_v1, v2_v3};
+  const std::vector<size_t> to_combine = {
+      v3_v4, v4_v3, v2_v1, v1_v2, v1_v0, v0_v1, v2_v3,
+  };
   const auto& combined_edges = network.combine_reverse_edges(to_combine, true);
 
   // Check correctness
   std::vector<std::pair<std::optional<size_t>, std::optional<size_t>>>
       expected_combined_edges = {
-          {v0_v1, v1_v0}, {v1_v2, v2_v1}, {v2_v3, {}}, {v3_v4, v4_v3}};
+          {v0_v1, v1_v0},
+          {v1_v2, v2_v1},
+          {v2_v3, {}},
+          {v3_v4, v4_v3},
+  };
   EXPECT_EQ(combined_edges.size(), expected_combined_edges.size());
   size_t expected_index = 0;
   size_t expected_incr  = 1;
@@ -3947,8 +4104,8 @@ void print_paths_vector(std::vector<cda_rail::index_vector> const& paths,
   std::cout << "Number of paths: " << paths.size() << '\n';
   for (size_t i = 0; i < paths.size(); ++i) {
     std::cout << "Path " << i << ": ";
-    for (size_t j = 0; j < paths[i].size(); ++j) {
-      auto const& edge = network.get_edge(paths.at(i).at(j));
+    for (const auto edge_index : paths.at(i)) {
+      auto const& edge = network.get_edge(edge_index);
       std::cout << network.get_vertex(edge.source).name << " -> "
                 << network.get_vertex(edge.target).name << " / ";
     }
@@ -4218,25 +4375,29 @@ TEST(RailwayNetwork, TTDBorder) {
   network.add_successor(v9b_v10, v10_v11);
   network.add_successor(v9c_v10, v10_v11);
 
-  cda_rail::index_set const ttd_1{v1_v2,
-                                  v2_v3a,
-                                  v2_v3b,
-                                  v3b_v4b,
-                                  inverse_edges.at(v1_v2),
-                                  inverse_edges.at(v2_v3a),
-                                  inverse_edges.at(v2_v3b),
-                                  inverse_edges.at(v3b_v4b)};
+  cda_rail::index_set const ttd_1{
+      v1_v2,
+      v2_v3a,
+      v2_v3b,
+      v3b_v4b,
+      inverse_edges.at(v1_v2),
+      inverse_edges.at(v2_v3a),
+      inverse_edges.at(v2_v3b),
+      inverse_edges.at(v3b_v4b),
+  };
   cda_rail::index_set const ttd_1_single{v1_v2, v2_v3a, v2_v3b, v3b_v4b};
-  cda_rail::index_set const ttd_2{v5a_v6,
-                                  v5b_v6,
-                                  v6_v7b,
-                                  v6_v7c,
-                                  v7c_v8c,
-                                  inverse_edges.at(v5a_v6),
-                                  inverse_edges.at(v5b_v6),
-                                  inverse_edges.at(v6_v7b),
-                                  inverse_edges.at(v6_v7c),
-                                  inverse_edges.at(v7c_v8c)};
+  cda_rail::index_set const ttd_2{
+      v5a_v6,
+      v5b_v6,
+      v6_v7b,
+      v6_v7c,
+      v7c_v8c,
+      inverse_edges.at(v5a_v6),
+      inverse_edges.at(v5b_v6),
+      inverse_edges.at(v6_v7b),
+      inverse_edges.at(v6_v7c),
+      inverse_edges.at(v7c_v8c),
+  };
   cda_rail::index_set const ttd_3{v9b_v10, v9c_v10, v10_v11};
 
   // --------------
@@ -4338,25 +4499,29 @@ TEST(RailwayNetwork, TTDPath) {
   network.add_successor(v9b_v10, v10_v11);
   network.add_successor(v9c_v10, v10_v11);
 
-  cda_rail::index_set const ttd_1{v1_v2,
-                                  v2_v3a,
-                                  v2_v3b,
-                                  v3b_v4b,
-                                  inverse_edges.at(v1_v2),
-                                  inverse_edges.at(v2_v3a),
-                                  inverse_edges.at(v2_v3b),
-                                  inverse_edges.at(v3b_v4b)};
+  cda_rail::index_set const ttd_1{
+      v1_v2,
+      v2_v3a,
+      v2_v3b,
+      v3b_v4b,
+      inverse_edges.at(v1_v2),
+      inverse_edges.at(v2_v3a),
+      inverse_edges.at(v2_v3b),
+      inverse_edges.at(v3b_v4b),
+  };
   cda_rail::index_set const ttd_1_single{v1_v2, v2_v3a, v2_v3b, v3b_v4b};
-  cda_rail::index_set const ttd_2{v5a_v6,
-                                  v5b_v6,
-                                  v6_v7b,
-                                  v6_v7c,
-                                  v7c_v8c,
-                                  inverse_edges.at(v5a_v6),
-                                  inverse_edges.at(v5b_v6),
-                                  inverse_edges.at(v6_v7b),
-                                  inverse_edges.at(v6_v7c),
-                                  inverse_edges.at(v7c_v8c)};
+  cda_rail::index_set const ttd_2{
+      v5a_v6,
+      v5b_v6,
+      v6_v7b,
+      v6_v7c,
+      v7c_v8c,
+      inverse_edges.at(v5a_v6),
+      inverse_edges.at(v5b_v6),
+      inverse_edges.at(v6_v7b),
+      inverse_edges.at(v6_v7c),
+      inverse_edges.at(v7c_v8c),
+  };
   cda_rail::index_set const ttd_3{v9b_v10, v9c_v10, v10_v11};
 
   // --------------
@@ -4483,25 +4648,29 @@ TEST(RailwayNetwork, OtherTTDTraversal) {
   network.add_successor(v9b_v10, v10_v11);
   network.add_successor(v9c_v10, v10_v11);
 
-  cda_rail::index_set const ttd_1{v1_v2,
-                                  v2_v3a,
-                                  v2_v3b,
-                                  v3b_v4b,
-                                  inverse_edges.at(v1_v2),
-                                  inverse_edges.at(v2_v3a),
-                                  inverse_edges.at(v2_v3b),
-                                  inverse_edges.at(v3b_v4b)};
+  cda_rail::index_set const ttd_1{
+      v1_v2,
+      v2_v3a,
+      v2_v3b,
+      v3b_v4b,
+      inverse_edges.at(v1_v2),
+      inverse_edges.at(v2_v3a),
+      inverse_edges.at(v2_v3b),
+      inverse_edges.at(v3b_v4b),
+  };
   cda_rail::index_set const ttd_1_single{v1_v2, v2_v3a, v2_v3b, v3b_v4b};
-  cda_rail::index_set const ttd_2{v5a_v6,
-                                  v5b_v6,
-                                  v6_v7b,
-                                  v6_v7c,
-                                  v7c_v8c,
-                                  inverse_edges.at(v5a_v6),
-                                  inverse_edges.at(v5b_v6),
-                                  inverse_edges.at(v6_v7b),
-                                  inverse_edges.at(v6_v7c),
-                                  inverse_edges.at(v7c_v8c)};
+  cda_rail::index_set const ttd_2{
+      v5a_v6,
+      v5b_v6,
+      v6_v7b,
+      v6_v7c,
+      v7c_v8c,
+      inverse_edges.at(v5a_v6),
+      inverse_edges.at(v5b_v6),
+      inverse_edges.at(v6_v7b),
+      inverse_edges.at(v6_v7c),
+      inverse_edges.at(v7c_v8c),
+  };
   cda_rail::index_set const ttd_3{v9b_v10, v9c_v10, v10_v11};
 
   // --------------

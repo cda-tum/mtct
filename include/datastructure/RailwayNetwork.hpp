@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_DATASTRUCTURE_RAILWAYNETWORK_HPP
+#define CDA_RAIL_DATASTRUCTURE_RAILWAYNETWORK_HPP
+
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "StringHelper.hpp"
@@ -1578,16 +1580,33 @@ public:
   size_t add_vertex(Vertex vertex);
 
   /**
-   * @brief Constructs a vertex from @p args and adds it to the network.
-   * @tparam Args Argument types forwarded to the `Vertex` constructor.
-   * @param args Arguments forwarded to `Vertex(args...)`.
+   * @brief Constructs a vertex and adds it to the network.
+   * @param name    Name of the vertex.
+   * @param type    Type of the vertex.
+   * @param headway Additional minimal headway at the vertex in s.
    * @return Index of the newly added vertex.
    * @throws cda_rail::exceptions::InvalidInputException If a vertex with the
    *         same name already exists.
    */
-  template <typename... Args> size_t add_vertex(Args... args) {
-    return add_vertex(Vertex(std::forward<Args>(args)...));
-  };
+  size_t add_vertex(std::string_view name, VertexType type,
+                    double headway = Vertex::HEADWAY_DEFAULT) {
+    return add_vertex(Vertex(name, type, headway));
+  }
+
+  /**
+   * @brief Constructs a vertex and adds it to the network.
+   * @param name    Name of the vertex.
+   * @param type    Type of the vertex.
+   * @param headway Additional minimal headway at the vertex in s;
+   *                `std::nullopt` uses `Vertex::HEADWAY_DEFAULT`.
+   * @return Index of the newly added vertex.
+   * @throws cda_rail::exceptions::InvalidInputException If a vertex with the
+   *         same name already exists.
+   */
+  size_t add_vertex(std::string_view name, VertexType type,
+                    std::optional<double> const& headway) {
+    return add_vertex(Vertex(name, type, headway));
+  }
 
 private:
   /**
@@ -1703,6 +1722,115 @@ public:
     // Pass 'this' to the inputs so they can resolve themselves
     add_successor_helper(edge_in.resolve(this), edge_out.resolve(this));
   }
+
+private:
+  /**
+   * @brief Lets trains pass straight through @p via between @p from and
+   *        @p to in both directions.
+   *
+   * Registers (from, via) -> (via, to) and (to, via) -> (via, from), each only
+   * if both of its edges exist.
+   *
+   * @param from Index of the vertex on one side of @p via.
+   * @param via  Index of the vertex passed through.
+   * @param to   Index of the vertex on the other side of @p via.
+   */
+  void add_successors_via_helper(size_t from, size_t via, size_t to);
+
+  /**
+   * @brief Checks that @p vertices are exactly the neighbors of @p vertex.
+   * @param vertex   Index of the vertex to check.
+   * @param vertices Indices of the expected neighbors.
+   * @throws cda_rail::exceptions::InvalidInputException If @p vertices contains
+   *         a vertex twice, misses a neighbor of @p vertex, or contains a
+   *         vertex that is not a neighbor of @p vertex.
+   */
+  void throw_if_not_exactly_the_neighbors(
+      size_t vertex, cda_rail::index_vector const& vertices) const;
+
+public:
+  /**
+   * @brief Lets trains pass straight through every vertex with exactly two
+   *        neighbors.
+   *
+   * For a vertex v with neighbors u and w, (u, v) -> (v, w) and
+   * (w, v) -> (v, u) are registered, each only if both of its edges exist.
+   * An edge never becomes a successor of its reverse edge.
+   */
+  void add_trivial_successors();
+
+  /**
+   * @brief Registers the successors of a simple turnout.
+   *
+   * Trains coming from @p toe may continue to either branch, and trains
+   * coming from either branch continue to @p toe. A train can never move from
+   * one branch to the other. Each successor is only registered if both of its
+   * edges exist.
+   *
+   * @param turnout  Vertex descriptor of the turnout.
+   * @param toe      Neighbor of @p turnout from which both branches can be
+   *                 reached.
+   * @param branch_1 Neighbor of @p turnout on the first branch.
+   * @param branch_2 Neighbor of @p turnout on the second branch.
+   * @throws cda_rail::exceptions::InvalidInputException If @p toe, @p branch_1
+   *         and @p branch_2 are not exactly the neighbors of @p turnout.
+   */
+  void add_turnout_successors(VertexInput const& turnout,
+                              VertexInput const& toe,
+                              VertexInput const& branch_1,
+                              VertexInput const& branch_2);
+
+  /**
+   * @brief Registers the successors of a diamond crossing, where two tracks
+   *        cross without being connected.
+   *
+   * Trains pass straight through @p crossing on the first track, i.e., between
+   * @p track_1_a and @p track_1_b, and on the second track, i.e., between
+   * @p track_2_a and @p track_2_b. Each successor is only registered if both
+   * of its edges exist.
+   *
+   * @param crossing  Vertex descriptor of the crossing.
+   * @param track_1_a Neighbor of @p crossing on one side of the first track.
+   * @param track_1_b Neighbor of @p crossing on the other side of the first
+   *                  track.
+   * @param track_2_a Neighbor of @p crossing on one side of the second track.
+   * @param track_2_b Neighbor of @p crossing on the other side of the second
+   *                  track.
+   * @throws cda_rail::exceptions::InvalidInputException If the four tracks
+   *         are not exactly the neighbors of @p crossing.
+   */
+  void add_crossing_successors(VertexInput const& crossing,
+                               VertexInput const& track_1_a,
+                               VertexInput const& track_1_b,
+                               VertexInput const& track_2_a,
+                               VertexInput const& track_2_b);
+
+  /**
+   * @brief Registers the successors of a double slip switch, i.e., a diamond
+   *        crossing whose tracks are additionally connected on both sides.
+   *
+   * @p track_1_a and @p track_2_a lie on the same side of @p double_slip, and
+   * @p track_1_b and @p track_2_b on the other. Trains coming from either
+   * vertex of one side may continue to either vertex of the other side. Each
+   * successor is only registered if both of its edges exist.
+   *
+   * @param double_slip Vertex descriptor of the double slip switch.
+   * @param track_1_a   Neighbor of @p double_slip on one side of the first
+   *                    track.
+   * @param track_1_b   Neighbor of @p double_slip on the other side of the
+   *                    first track.
+   * @param track_2_a   Neighbor of @p double_slip on one side of the second
+   *                    track, the same side as @p track_1_a.
+   * @param track_2_b   Neighbor of @p double_slip on the other side of the
+   *                    second track, the same side as @p track_1_b.
+   * @throws cda_rail::exceptions::InvalidInputException If the four tracks
+   *         are not exactly the neighbors of @p double_slip.
+   */
+  void add_double_slip_successors(VertexInput const& double_slip,
+                                  VertexInput const& track_1_a,
+                                  VertexInput const& track_1_b,
+                                  VertexInput const& track_2_a,
+                                  VertexInput const& track_2_b);
 
   // ----------------------
   // Transformation Functions
@@ -2797,10 +2925,15 @@ public:
                                     EdgeInput const& edge_out) const {
     if (!is_valid_successor(edge_in, edge_out)) {
       throw cda_rail::exceptions::InvalidInputException(
-          concatenate_string_views({get_edge_name(edge_out),
-                                    " is not a valid successor of ",
-                                    get_edge_name(edge_in), "."}));
+          concatenate_string_views({
+              get_edge_name(edge_out),
+              " is not a valid successor of ",
+              get_edge_name(edge_in),
+              ".",
+          }));
     }
   }
 };
 } // namespace cda_rail
+
+#endif // CDA_RAIL_DATASTRUCTURE_RAILWAYNETWORK_HPP

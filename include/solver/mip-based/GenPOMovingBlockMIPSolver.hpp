@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SOLVER_MIP_BASED_GENPOMOVINGBLOCKMIPSOLVER_HPP
+#define CDA_RAIL_SOLVER_MIP_BASED_GENPOMOVINGBLOCKMIPSOLVER_HPP
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
@@ -36,7 +37,6 @@
 #define TEST_FRIENDS false
 #endif
 #if TEST_FRIENDS
-class GenPOMovingBlockMIPSolver;
 class GenPOMovingBlockMIPSolver_PrivateFillFunctions_Test;
 class GenPOMovingBlockMIPSolver_WarmStartIsFeasible_Test;
 class GenPOMovingBlockMIPSolver_WarmStartRoutesTrainWithoutRoute_Test;
@@ -396,7 +396,7 @@ private:
                    int time_limit, const SolveStatistics& statistics);
 
   /** @brief The scheduled exit time of a train plus the allowed delay. */
-  double latest_exit_time(size_t tr) const;
+  [[nodiscard]] double latest_exit_time(size_t tr) const;
   /** @brief The earliest time the front of a train can reach a vertex. */
   [[nodiscard]] double minimum_arrival_time(size_t tr, size_t v) const {
     return m_minimum_arrival_times.at(tr).at(v);
@@ -429,7 +429,7 @@ private:
   void fill_velocity_extensions_using_min_one_step_strategy();
 
   /** @brief The largest number of velocities of any train and vertex. */
-  size_t get_maximal_velocity_extension_size() const;
+  [[nodiscard]] size_t get_maximal_velocity_extension_size() const;
 
   /**
    * @brief The headways a train has to obey at both ends of an edge.
@@ -534,15 +534,15 @@ private:
    *
    * @param tr_obj The train
    * @param e_obj The edge
-   * @param v_0 Velocity at the source of the edge
-   * @param v_1 Velocity at its target
+   * @param v_1 Velocity at the source of the edge
+   * @param v_2 Velocity at its target
    * @param entry_vertex Whether the source is the entry vertex of the train,
    *        at which it is not yet fully in the network
    * @return The time by which the corresponding events of a following train
    *         have to be apart, which can be negative
    */
-  static double headway(const Train& tr_obj, const Edge& e_obj, double v_0,
-                        double v_1, bool entry_vertex = false);
+  static double headway(const Train& tr_obj, const Edge& e_obj, double v_1,
+                        double v_2, bool entry_vertex = false);
 
   /**
    * @brief The initial A* state, completed by astar_based::complete_state.
@@ -941,3 +941,5 @@ public:
 };
 
 } // namespace cda_rail::solver::mip_based
+
+#endif // CDA_RAIL_SOLVER_MIP_BASED_GENPOMOVINGBLOCKMIPSOLVER_HPP

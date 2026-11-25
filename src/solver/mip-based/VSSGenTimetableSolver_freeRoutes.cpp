@@ -36,8 +36,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     if (this->include_braking_curves) {
       len_out_ub += get_max_brakelen(tr);
     }
-    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-         ++t) {
+    for (size_t t = train_interval.at(tr).first;
+         t <= train_interval.at(tr).second; ++t) {
       for (size_t e = 0; e < num_edges; ++e) {
         const auto& edge = m_instance.get_editable_network().get_edge(e);
         const auto& edge_name =
@@ -46,7 +46,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             "," +
             m_instance.get_editable_network().get_vertex(edge.target).name +
             "]";
-        if (t < train_interval[tr].second) {
+        if (t < train_interval.at(tr).second) {
           m_vars["overlap"](tr, t, e) = m_model->addVar(
               0, m_instance.get_editable_network().get_edge(e).length, 0,
               GRB_CONTINUOUS,
@@ -114,8 +114,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         m_instance.get_const_train_list().get_train(tr_name).get_length();
     const auto entry = m_instance.get_const_schedule(tr).get_entry_vertex();
     const auto exit  = m_instance.get_const_schedule(tr).get_exit_vertex();
-    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-         ++t) {
+    for (size_t t = train_interval.at(tr).first;
+         t <= train_interval.at(tr).second; ++t) {
       // Train position has the correct length
       // full pos: sum_e (e_mu - e_lda) + len_in + len_out = len + (v(t) +
       // v(t+1))/2 * dt + brakelen (if applicable)
@@ -199,7 +199,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         const auto& e_len =
             m_instance.get_editable_network().get_edge(e1).length;
         for (const auto& e2 : out_edges) {
-          if (t < train_interval[tr].second &&
+          if (t < train_interval.at(tr).second &&
               m_instance.get_editable_network().is_valid_successor(e1, e2)) {
             // Prohibit train going backwards
             // x_e1(t+1) <= x_e1(t) + (1-x_e2(t))
@@ -221,7 +221,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         }
 
         // Only going forward on edge
-        if (t < train_interval[tr].second) {
+        if (t < train_interval.at(tr).second) {
           // e_lda(t) <= e_lda(t+1) + e_len * (1 - x_e(t+1))
           // e_mu(t) <= e_mu(t+1) + e_len * (1 - x_e(t+1))
           m_model->addConstr(m_vars["e_lda"](tr, t, e1), GRB_LESS_EQUAL,
@@ -236,7 +236,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
                                  std::to_string(t) + "_" + std::to_string(e1));
         }
       }
-      if (t < train_interval[tr].second) {
+      if (t < train_interval.at(tr).second) {
         // Also for in and out position, i.e.,
         // len_in is decreasing, len_out is increasing
         m_model->addConstr(m_vars["len_in"](tr, t + 1), GRB_LESS_EQUAL,
@@ -260,8 +260,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_len  = train_list.get_train(tr_name).get_length();
     const auto  entry   = m_instance.get_const_schedule(tr).get_entry_vertex();
     const auto  exit    = m_instance.get_const_schedule(tr).get_exit_vertex();
-    for (size_t t = train_interval[tr].first;
-         t <= train_interval[tr].second - 1; ++t) {
+    for (size_t t = train_interval.at(tr).first;
+         t <= train_interval.at(tr).second - 1; ++t) {
       // Correct overlap length
       GRBLinExpr lhs = m_vars["len_in"](tr, t + 1) + m_vars["len_out"](tr, t);
       for (size_t e = 0; e < num_edges; ++e) {
@@ -351,8 +351,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto& tr_name = train_list.get_train(tr).get_name();
     const auto& tr_len  = train_list.get_train(tr_name).get_length();
-    const auto& t0      = train_interval[tr].first;
-    const auto& tn      = train_interval[tr].second;
+    const auto& t0      = train_interval.at(tr).first;
+    const auto& tn      = train_interval.at(tr).second;
     // len_in(t0) = tr_len
     m_model->addConstr(m_vars["len_in"](tr, t0), GRB_EQUAL, tr_len,
                        "train_boundary_len_in_" + tr_name + "_" +
@@ -381,8 +381,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
       const auto& in_edges  = m_instance.get_editable_network().in_edges(e_v0);
       const auto& out_edges = m_instance.get_editable_network().out_edges(e_v1);
       const auto  e_len = m_instance.get_editable_network().get_edge(e).length;
-      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-           ++t) {
+      for (size_t t = train_interval.at(tr).first;
+           t <= train_interval.at(tr).second; ++t) {
         // e_lda <= e_mu
         m_model->addConstr(
             m_vars["e_lda"](tr, t, e), GRB_LESS_EQUAL, m_vars["e_mu"](tr, t, e),
@@ -448,8 +448,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     if (this->include_braking_curves) {
       len_out_ub += get_max_brakelen(tr);
     }
-    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-         ++t) {
+    for (size_t t = train_interval.at(tr).first;
+         t <= train_interval.at(tr).second; ++t) {
       // x_in = 1 if, and only if, len_in > 0, i.e.,
       // x_in <= len_in, tr_len * x_in >= len_in
       m_model->addConstr(m_vars["x_in"](tr, t), GRB_LESS_EQUAL,
@@ -484,8 +484,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     const auto tr_name  = train_list.get_train(tr).get_name();
     const auto tr_edges = m_instance.edges_used_by_train(tr, this->fix_routes);
-    for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-         ++t) {
+    for (size_t t = train_interval.at(tr).first;
+         t <= train_interval.at(tr).second; ++t) {
       const auto before_after_struct =
           get_temporary_impossibility_struct(tr, t);
       if (!before_after_struct.to_use) {
@@ -514,7 +514,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         double dist_after  = NAN;
 
         // Constraint inferred from before position
-        if (before_after_struct.t_before <= train_interval[tr].first) {
+        if (before_after_struct.t_before <= train_interval.at(tr).first) {
           auto entry_edges = m_instance.get_editable_network().out_edges(
               m_instance.get_const_schedule(tr).get_entry_vertex());
           if (entry_edges.empty()) {
@@ -523,12 +523,12 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
             const auto e_before = *entry_edges.begin();
             const auto e_len_before =
                 m_instance.get_editable_network().get_edge(e_before).length;
-            dist_before = apsp[e_before][e] + e_len_before - e_len;
+            dist_before = apsp.at(e_before).at(e) + e_len_before - e_len;
           }
         } else {
           dist_before = INF;
           for (const auto& e_tmp : before_after_struct.edges_before) {
-            const auto tmp_val = apsp[e_tmp][e] - e_len;
+            const auto tmp_val = apsp.at(e_tmp).at(e) - e_len;
             dist_before        = std::min(tmp_val, dist_before);
           }
         }
@@ -551,20 +551,20 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
         // Otherwise no constraint can be inferred
 
         // Constraint inferred from after position
-        if (before_after_struct.t_after >= train_interval[tr].second) {
+        if (before_after_struct.t_after >= train_interval.at(tr).second) {
           auto exit_edges = m_instance.get_editable_network().in_edges(
               m_instance.get_const_schedule(tr).get_exit_vertex());
           if (exit_edges.empty()) {
             dist_after = INF;
           } else {
             const auto e_after = *exit_edges.begin();
-            dist_after         = apsp[e][e_after];
+            dist_after         = apsp.at(e).at(e_after);
           }
         } else {
           dist_after = INF;
           for (const auto& e_tmp : before_after_struct.edges_after) {
             const auto tmp_val =
-                apsp[e][e_tmp] -
+                apsp.at(e).at(e_tmp) -
                 m_instance.get_editable_network().get_edge(e_tmp).length;
             dist_after = std::min(tmp_val, dist_after);
           }
@@ -598,15 +598,15 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     const auto& tr_name  = train_list.get_train(tr).get_name();
     const auto  tr_edges = m_instance.edges_used_by_train(tr, this->fix_routes);
     for (size_t e_index = 0; e_index < breakable_edges.size(); ++e_index) {
-      const auto& e = breakable_edges[e_index];
+      const auto& e = breakable_edges.at(e_index);
       if (!tr_edges.contains(e)) {
         // The train cannot use e, hence it has no borders on it
         continue;
       }
       const auto e_len = m_instance.get_editable_network().get_edge(e).length;
       const auto vss_number_e = max_vss_per_edge.at(e);
-      for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-           ++t) {
+      for (size_t t = train_interval.at(tr).first;
+           t <= train_interval.at(tr).second; ++t) {
         for (size_t vss = 0; vss < vss_number_e; ++vss) {
           // e_mu(e) <= b_pos(e_index) + M1 * (1 - b_front(e_index))
           const auto m1 = e_len;
@@ -646,24 +646,26 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   // before the second train enters
   for (const auto& tr_list : train_entry_exit_pairs.first) {
     for (size_t i = 0; i < tr_list.size() - 1; ++i) {
-      const auto& tr1_entry = train_interval[tr_list[i]].first;
-      const auto& tr2_entry = train_interval[tr_list[i + 1]].first;
+      const auto& tr1_entry = train_interval.at(tr_list.at(i)).first;
+      const auto& tr2_entry = train_interval.at(tr_list.at(i + 1)).first;
       if (tr1_entry >= tr2_entry) {
         throw exceptions::ModelCreationException(
-            "Something went wrong with trains " + std::to_string(tr_list[i]) +
-            " and " + std::to_string(tr_list[i + 1]) + " at common entry");
+            "Something went wrong with trains " +
+            std::to_string(tr_list.at(i)) + " and " +
+            std::to_string(tr_list.at(i + 1)) + " at common entry");
       }
-      for (size_t t = tr2_entry; t < train_interval[tr_list[i]].second; ++t) {
+      for (size_t t = tr2_entry; t < train_interval.at(tr_list.at(i)).second;
+           ++t) {
         // len_in(tr1, t) = 0 AND x_in(tr1, t) = 0
-        m_model->addConstr(m_vars["len_in"](tr_list[i], t), GRB_EQUAL, 0,
+        m_model->addConstr(m_vars["len_in"](tr_list.at(i), t), GRB_EQUAL, 0,
                            "train_occupation_free_routes_common_entry_len_in_" +
-                               std::to_string(tr_list[i]) + "_" +
-                               std::to_string(tr_list[i + 1]) + "_" +
+                               std::to_string(tr_list.at(i)) + "_" +
+                               std::to_string(tr_list.at(i + 1)) + "_" +
                                std::to_string(t));
-        m_model->addConstr(m_vars["x_in"](tr_list[i], t), GRB_EQUAL, 0,
+        m_model->addConstr(m_vars["x_in"](tr_list.at(i), t), GRB_EQUAL, 0,
                            "train_occupation_free_routes_common_entry_x_in_" +
-                               std::to_string(tr_list[i]) + "_" +
-                               std::to_string(tr_list[i + 1]) + "_" +
+                               std::to_string(tr_list.at(i)) + "_" +
+                               std::to_string(tr_list.at(i + 1)) + "_" +
                                std::to_string(t));
       }
     }
@@ -673,24 +675,26 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
   // before the second train enters
   for (const auto& tr_list : train_entry_exit_pairs.second) {
     for (size_t i = 0; i < tr_list.size() - 1; ++i) {
-      const auto& tr1_exit = train_interval[tr_list[i]].second;
-      const auto& tr2_exit = train_interval[tr_list[i + 1]].second;
+      const auto& tr1_exit = train_interval.at(tr_list.at(i)).second;
+      const auto& tr2_exit = train_interval.at(tr_list.at(i + 1)).second;
       if (tr1_exit <= tr2_exit) {
         throw exceptions::ModelCreationException(
-            "Something went wrong with trains " + std::to_string(tr_list[i]) +
-            " and " + std::to_string(tr_list[i + 1]) + " at common exit");
+            "Something went wrong with trains " +
+            std::to_string(tr_list.at(i)) + " and " +
+            std::to_string(tr_list.at(i + 1)) + " at common exit");
       }
-      for (size_t t = train_interval[tr_list[i]].first; t <= tr2_exit; ++t) {
+      for (size_t t = train_interval.at(tr_list.at(i)).first; t <= tr2_exit;
+           ++t) {
         // len_out(tr1, t) = 0 AND x_out(tr1, t) = 0
-        m_model->addConstr(m_vars["len_out"](tr_list[i], t), GRB_EQUAL, 0,
+        m_model->addConstr(m_vars["len_out"](tr_list.at(i), t), GRB_EQUAL, 0,
                            "train_occupation_free_routes_common_exit_len_out_" +
-                               std::to_string(tr_list[i]) + "_" +
-                               std::to_string(tr_list[i + 1]) + "_" +
+                               std::to_string(tr_list.at(i)) + "_" +
+                               std::to_string(tr_list.at(i + 1)) + "_" +
                                std::to_string(t));
-        m_model->addConstr(m_vars["x_out"](tr_list[i], t), GRB_EQUAL, 0,
+        m_model->addConstr(m_vars["x_out"](tr_list.at(i), t), GRB_EQUAL, 0,
                            "train_occupation_free_routes_common_exit_x_out_" +
-                               std::to_string(tr_list[i]) + "_" +
-                               std::to_string(tr_list[i + 1]) + "_" +
+                               std::to_string(tr_list.at(i)) + "_" +
+                               std::to_string(tr_list.at(i + 1)) + "_" +
                                std::to_string(t));
       }
     }
@@ -701,7 +705,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     create_non_discretized_free_routes_only_stop_at_vss_constraints() {
   // For every breakable edge position exactly b_pos if tight
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
-    const auto& e            = breakable_edges[i];
+    const auto& e            = breakable_edges.at(i);
     const auto  vss_number_e = max_vss_per_edge.at(e);
     const auto& edge         = m_instance.get_editable_network().get_edge(e);
     const auto& edge_name =
@@ -714,8 +718,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
            m_instance.all_trains_on_edge(e, this->fix_routes, false)) {
         const auto& tr_name =
             m_instance.get_const_train_list().get_train(tr).get_name();
-        for (size_t t = train_interval[tr].first + 2;
-             t <= train_interval[tr].second; ++t) {
+        for (size_t t = train_interval.at(tr).first + 2;
+             t <= train_interval.at(tr).second; ++t) {
           m_model->addConstr(m_vars["e_mu"](tr, t - 1, e), GRB_GREATER_EQUAL,
                              m_vars["b_pos"](i, vss) - STOP_TOLERANCE -
                                  e_len * (1 - m_vars["b_tight"](tr, t, i, vss)),
@@ -745,8 +749,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
          m_instance.all_trains_on_edge(e, this->fix_routes, false)) {
       const auto& tr_name =
           m_instance.get_const_train_list().get_train(tr).get_name();
-      for (size_t t = train_interval[tr].first + 2;
-           t <= train_interval[tr].second; ++t) {
+      for (size_t t = train_interval.at(tr).first + 2;
+           t <= train_interval.at(tr).second; ++t) {
         m_model->addConstr(m_vars["e_mu"](tr, t - 1, e), GRB_GREATER_EQUAL,
                            e_len * m_vars["e_tight"](tr, t, e) - STOP_TOLERANCE,
                            "tight_ttd_border_constraint_" + tr_name + "_" +
@@ -767,8 +771,8 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::
     // NOLINTBEGIN(readability-identifier-naming)
     const double M = tr_len + max_brakelen;
     // NOLINTEND(readability-identifier-naming)
-    for (size_t t = train_interval[tr].first + 2;
-         t <= train_interval[tr].second; ++t) {
+    for (size_t t = train_interval.at(tr).first + 2;
+         t <= train_interval.at(tr).second; ++t) {
       // len_out(t-1) <= M * v(t) with M = (tr_len + max_brakelen) / V_MIN
       m_model->addConstr(m_vars["len_out"](tr, t - 1), GRB_LESS_EQUAL,
                          M * m_vars["stopped"](tr, t),

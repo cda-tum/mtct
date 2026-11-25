@@ -21,7 +21,7 @@
 
 std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>>
 cda_rail::Station::get_stop_tracks(
-    double const trLen, cda_rail::Network const& network,
+    double tr_len, cda_rail::Network const& network,
     cda_rail::index_set const& edges_to_consider) const {
   auto station_tracks_to_consider =
       edges_to_consider.empty() ? tracks : cda_rail::index_set{};
@@ -34,7 +34,7 @@ cda_rail::Station::get_stop_tracks(
   std::vector<std::pair<size_t, std::vector<cda_rail::index_vector>>> ret_val;
   for (const auto& e : station_tracks_to_consider) {
     const auto stop_paths = network.all_paths_of_length_ending_in_edge(
-        e, trLen, {}, station_tracks_to_consider);
+        e, tr_len, {}, station_tracks_to_consider);
     if (!stop_paths.empty()) {
       ret_val.emplace_back(e, stop_paths);
     }
@@ -154,7 +154,8 @@ void cda_rail::StationList::export_stations(const std::filesystem::path& p,
     throw exceptions::ExportException(
         "Could not open stations.json for writing");
   }
-  if (!(file << j << '\n')) {
+  file << j << '\n';
+  if (!file) {
     throw exceptions::ExportException("Failed to write stations.json");
   }
 }

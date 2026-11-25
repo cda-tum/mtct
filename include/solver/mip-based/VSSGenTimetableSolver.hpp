@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_SOLVER_MIP_BASED_VSSGENTIMETABLESOLVER_HPP
+#define CDA_RAIL_SOLVER_MIP_BASED_VSSGENTIMETABLESOLVER_HPP
+
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "GeneralMIPSolver.hpp"
@@ -355,11 +357,11 @@ private:
    *        get_temporary_impossibility_struct.
    */
   struct TemporaryImpossibilityStruct {
-    bool                   to_use;
-    size_t                 t_before;
-    size_t                 t_after;
-    double                 v_before;
-    double                 v_after;
+    bool                   to_use{false};
+    size_t                 t_before{0};
+    size_t                 t_after{0};
+    double                 v_before{0};
+    double                 v_after{0};
     cda_rail::index_vector edges_before;
     cda_rail::index_vector edges_after;
   };
@@ -579,3 +581,5 @@ public:
 };
 
 } // namespace cda_rail::solver::mip_based
+
+#endif // CDA_RAIL_SOLVER_MIP_BASED_VSSGENTIMETABLESOLVER_HPP

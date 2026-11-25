@@ -24,7 +24,8 @@ TEST(TimetableFunctionality, ReadTimetable) {
       network.get_edge_index({"g00"}, {"g01"}),
       network.get_edge_index({"g10"}, {"g11"}),
       network.get_edge_index({"g01"}, {"g00"}),
-      network.get_edge_index({"g11"}, {"g10"})};
+      network.get_edge_index({"g11"}, {"g10"}),
+  };
   EXPECT_EQ(station.tracks, track_ids_target);
 
   // Check if the timetable has the correct trains
@@ -145,13 +146,15 @@ TEST(TimetableFunctionality, WriteTimetable) {
       network.get_edge_index({"g00"}, {"g01"}),
       network.get_edge_index({"g10"}, {"g11"}),
       network.get_edge_index({"g01"}, {"g00"}),
-      network.get_edge_index({"g11"}, {"g10"})};
+      network.get_edge_index({"g11"}, {"g10"}),
+  };
   EXPECT_EQ(st1.tracks, s1_expected_tracks);
   const auto& st2 = stations.get_station("Station2");
   EXPECT_EQ(st2.name, "Station2");
   EXPECT_EQ(st2.tracks.size(), 1);
   const cda_rail::index_set s2_expected_tracks{
-      network.get_edge_index({"r1"}, {"r0"})};
+      network.get_edge_index({"r1"}, {"r0"}),
+  };
   EXPECT_EQ(st2.tracks, s2_expected_tracks);
 
   // Check if the timetable has the correct trains
@@ -208,14 +211,14 @@ TEST(TimetableFunctionality, WriteTimetable) {
   EXPECT_EQ(stations.get_station(stop3.get_station().name).name, "Station1");
 
   // Write timetable to directory
-  timetable.export_timetable("./tmp/test-timetable/", network);
+  timetable.export_timetable("./tmp-WriteTimetable/test-timetable/", network);
 
   // Read timetable from directory
-  auto timetable_read =
-      cda_rail::Timetable::import_timetable("./tmp/test-timetable/", network);
+  auto timetable_read = cda_rail::Timetable::import_timetable(
+      "./tmp-WriteTimetable/test-timetable/", network);
 
   // Delete temporary files
-  std::filesystem::remove_all("./tmp");
+  std::filesystem::remove_all("./tmp-WriteTimetable");
 
   // Check if the timetable is as expected
   // Check if the timetable has the correct stations

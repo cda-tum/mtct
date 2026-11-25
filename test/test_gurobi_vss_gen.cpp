@@ -18,8 +18,12 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
+
+using namespace std::string_view_literals;
 
 using std::size_t;
 
@@ -259,7 +263,7 @@ void check_convexified_braking_distance(const std::string&          instance,
                                         bool use_pwl, bool fix_routes,
                                         int time_limit) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      instance, "atmos2023", "data");
+      instance, "atmos2023"sv, "data"sv);
   const auto label = instance + (use_pwl ? " (PWL" : " (quadratic") +
                      (fix_routes ? ", fixed)" : ", free)");
 
@@ -267,14 +271,17 @@ void check_convexified_braking_distance(const std::string&          instance,
       .delta_t        = 15,
       .fix_routes     = fix_routes,
       .train_dynamics = true,
-      .braking_curves = true};
+      .braking_curves = true,
+  };
   const auto sol =
       solver.solve(model_detail, {.model_type = model_type, .use_pwl = use_pwl},
                    {}, {}, time_limit, true);
   const auto sol_convex = solver.solve(model_detail,
-                                       {.model_type = model_type,
-                                        .use_pwl    = use_pwl,
-                                        .convexify_braking_distance = true},
+                                       {
+                                           .model_type = model_type,
+                                           .use_pwl    = use_pwl,
+                                           .convexify_braking_distance = true,
+                                       },
                                        {}, {}, time_limit, true);
 
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal) << label;
@@ -322,14 +329,17 @@ TEST(VSSGenSolver, OptimalityStrategyToString) {
 
 TEST(VSSGenSolver, GurobiVSSDiscretizeInstanceWithoutChange) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto num_vertices =
       solver.get_instance().get_const_network().number_of_vertices();
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
-  solver.solve({30, true},
-               {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                     {cda_rail::vss::UNIFORM})});
+  solver.solve(
+      {.delta_t = 30, .fix_routes = true},
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      });
 
   EXPECT_EQ(num_vertices,
             solver.get_instance().get_const_network().number_of_vertices());
@@ -337,23 +347,23 @@ TEST(VSSGenSolver, GurobiVSSDiscretizeInstanceWithoutChange) {
 
 TEST(VSSGenSolver, GurobiVSSGenDeltaTDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
-  auto obj_val_6 = solver.solve({6});
+  auto obj_val_6 = solver.solve({.delta_t = 6});
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
-  auto obj_val_15 = solver.solve({15});
+  auto obj_val_15 = solver.solve({.delta_t = 15});
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
-  auto obj_val_11 = solver.solve({11});
+  auto obj_val_11 = solver.solve({.delta_t = 11});
   std::cout << "--------------------- TEST 4 ---------------------------"
             << '\n';
-  auto obj_val_18 = solver.solve({18});
+  auto obj_val_18 = solver.solve({.delta_t = 18});
   std::cout << "--------------------- TEST 5 ---------------------------"
             << '\n';
-  auto obj_val_30 = solver.solve({30});
+  auto obj_val_30 = solver.solve({.delta_t = 30});
 
   EXPECT_EQ(obj_val_6.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_15.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -376,20 +386,27 @@ TEST(VSSGenSolver, GurobiVSSGenDeltaTDefault) {
 
 TEST(VSSGenSolver, GurobiVSSGenDeltaT) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
-  const auto obj_val_2 = solver.solve({30, false});
+  const auto obj_val_2 = solver.solve({.delta_t = 30, .fix_routes = false});
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
-  const auto obj_val_1 = solver.solve({30, true});
+  const auto obj_val_1 = solver.solve({.delta_t = 30, .fix_routes = true});
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
-  const auto obj_val_3 =
-      solver.solve({30, true, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})});
+  const auto obj_val_3 = solver.solve(
+      {
+          .delta_t        = 30,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      });
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -406,7 +423,7 @@ TEST(VSSGenSolver, GurobiVSSGenDeltaT) {
 
 TEST(VSSGenSolver, GurobiVSSGenDefault) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
@@ -435,7 +452,7 @@ TEST(VSSGenSolver, GurobiVSSGenDefaultInstance) {
 
 TEST(VSSGenSolver, GurobiVSSGenDefaultInstanceForward) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   // Test various options
   std::cout << "--------------------- DEFAULT ---------------------------"
@@ -449,7 +466,7 @@ TEST(VSSGenSolver, GurobiVSSGenDefaultInstanceForward) {
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFixed) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -461,28 +478,54 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFixed) {
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
-  const auto obj_val_3 =
-      solver.solve({15, true, true, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-                    false, false},
-                   {}, {}, 60, true);
+  const auto obj_val_3 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {
+          .model_type =
+              cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+          .use_pwl           = false,
+          .use_schedule_cuts = false,
+      },
+      {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << '\n';
-  const auto obj_val_4 = solver.solve(
-      {},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous), true, true},
-      {}, {}, 60, true);
+  const auto obj_val_4 =
+      solver.solve({},
+                   {
+                       .model_type = cda_rail::vss::Model(
+                           cda_rail::vss::ModelType::Continuous),
+                       .use_pwl           = true,
+                       .use_schedule_cuts = true,
+                   },
+                   {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 5 ---------------------------"
             << '\n';
-  const auto obj_val_5 =
-      solver.solve({15, true, true, false}, {}, {}, {}, 60, true);
+  const auto obj_val_5 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 60, true);
 
   std::cout << "--------------------- TEST 6 ---------------------------"
             << '\n';
-  const auto obj_val_6 =
-      solver.solve({15, true, false, false}, {}, {}, {}, 60, true);
+  const auto obj_val_6 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -509,11 +552,12 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFixed) {
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
-  const auto obj_val_1 = solver.solve({15, false}, {}, {}, {}, 280, true);
+  const auto obj_val_1 =
+      solver.solve({.delta_t = 15, .fix_routes = false}, {}, {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
@@ -523,11 +567,12 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree1) {
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
-  const auto obj_val_2 = solver.solve({15, false}, {}, {}, {}, 280, true);
+  const auto obj_val_2 =
+      solver.solve({.delta_t = 15, .fix_routes = false}, {}, {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
@@ -537,12 +582,17 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree2) {
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
-  const auto obj_val_3 = solver.solve(
-      {15, false}, {cda_rail::vss::Model(), true, true}, {}, {}, 280, true);
+  const auto obj_val_3 = solver.solve({.delta_t = 15, .fix_routes = false},
+                                      {
+                                          .model_type = cda_rail::vss::Model(),
+                                          .use_pwl    = true,
+                                          .use_schedule_cuts = true,
+                                      },
+                                      {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_3.get_obj(), 1);
@@ -552,12 +602,18 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree3) {
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 4 ---------------------------"
             << '\n';
-  const auto obj_val_4 =
-      solver.solve({15, false, true, false}, {}, {}, {}, 280, true);
+  const auto obj_val_4 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_4.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_4.get_obj(), 1);
@@ -567,12 +623,18 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree4) {
 
 TEST(VSSGenSolver, GurobiVSSGenModelDetailFree5) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 5 ---------------------------"
             << '\n';
-  const auto obj_val_5 =
-      solver.solve({15, false, false, false}, {}, {}, {}, 280, true);
+  const auto obj_val_5 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 280, true);
 
   EXPECT_EQ(obj_val_5.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_5.get_obj(), 1);
@@ -582,13 +644,20 @@ TEST(VSSGenSolver, GurobiVSSGenModelDetailFree5) {
 
 TEST(VSSGenSolver, GurobiVSSGenVSSDiscrete) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val =
-      solver.solve({15, true, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {}, 600, true);
+  const auto obj_val = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {}, 600, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -623,11 +692,18 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteFree) {
   // leaves the network.
   const std::vector<double> expected_vss_pos{100, 200};
 
-  const auto obj_val_free =
-      solver.solve({5, false, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {}, 300, true);
+  const auto obj_val_free = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = false,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {}, 300, true);
 
   EXPECT_EQ(obj_val_free.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_free.get_obj(), 2);
@@ -637,11 +713,18 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteFree) {
 
   // The very same borders are obtained if the routes are fixed to the only
   // possible route.
-  const auto obj_val_fixed =
-      solver.solve({5, true, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {}, 300, true);
+  const auto obj_val_fixed = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {}, 300, true);
 
   EXPECT_EQ(obj_val_fixed.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_fixed.get_obj(), 2);
@@ -654,7 +737,7 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteExport) {
   // The instance is read relative to the current working directory, hence the
   // solver has to be created before switching to the temporary directory.
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   // The export happens relative to the current working directory. Hence, the
   // test is executed within a temporary directory that is removed afterwards,
@@ -665,7 +748,12 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteExport) {
     ~ScopedTempWorkingDirectory() {
       std::error_code ignored;
       std::filesystem::current_path(original_directory, ignored);
-      std::filesystem::remove_all(temporary_directory, ignored);
+      try {
+        std::filesystem::remove_all(temporary_directory, ignored);
+      } catch (...) {
+        // Not being able to clean up must not end the test run
+        ignored = std::make_error_code(std::errc::not_enough_memory);
+      }
     }
   };
 
@@ -675,7 +763,9 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteExport) {
   std::filesystem::remove_all(temp_dir);
   ASSERT_TRUE(std::filesystem::create_directories(temp_dir));
   const ScopedTempWorkingDirectory temp_working_directory{
-      std::filesystem::current_path(), temp_dir};
+      .original_directory  = std::filesystem::current_path(),
+      .temporary_directory = temp_dir,
+  };
   std::filesystem::current_path(temp_dir);
 
   cda_rail::solver::mip_based::SolutionSettingsVSSGen export_settings;
@@ -683,11 +773,18 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteExport) {
       cda_rail::solver::GeneralExportOption::ExportSolution;
   export_settings.solution_subdirectory = "discrete";
 
-  const auto obj_val =
-      solver.solve({15, true, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, export_settings, 600, true);
+  const auto obj_val = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, export_settings, 600, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
@@ -698,10 +795,16 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteExport) {
   const std::filesystem::path solution_dir =
       std::filesystem::path("solutions") / "discrete" / "atmos2023" /
       "SimpleStation";
-  for (const auto& file_name :
-       {"solution_data.json", "routes.json", "train_pos.json",
-        "train_speed.json", "train_exit_times.json", "train_stop_times.json",
-        "vss_pos.json", "solver_data.json"}) {
+  for (const auto& file_name : {
+           "solution_data.json",
+           "routes.json",
+           "train_pos.json",
+           "train_speed.json",
+           "train_exit_times.json",
+           "train_stop_times.json",
+           "vss_pos.json",
+           "solver_data.json",
+       }) {
     const auto file_path = solution_dir / file_name;
     EXPECT_TRUE(std::filesystem::exists(file_path))
         << "Missing file " << file_path;
@@ -712,7 +815,7 @@ TEST(VSSGenSolver, GurobiVSSGenVSSDiscreteExport) {
 
 TEST(VSSGenSolver, GurobiVSSGenTim) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -724,7 +827,7 @@ TEST(VSSGenSolver, GurobiVSSGenTim) {
   EXPECT_TRUE(
       solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
-  const auto obj_val_1 = solver.solve({15, false});
+  const auto obj_val_1 = solver.solve({.delta_t = 15, .fix_routes = false});
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
 
@@ -737,7 +840,7 @@ TEST(VSSGenSolver, GurobiVSSGenTim) {
   EXPECT_TRUE(
       solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
-  const auto obj_val_2 = solver.solve({15, false});
+  const auto obj_val_2 = solver.solve({.delta_t = 15, .fix_routes = false});
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
 
@@ -751,7 +854,7 @@ TEST(VSSGenSolver, GurobiVSSGenTim) {
   EXPECT_TRUE(
       solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
-  const auto obj_val_3 = solver.solve({15, false});
+  const auto obj_val_3 = solver.solve({.delta_t = 15, .fix_routes = false});
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -766,7 +869,7 @@ TEST(VSSGenSolver, GurobiVSSGenTim) {
 
 TEST(VSSGenSolver, GurobiVSSGenTimFixed) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -822,13 +925,19 @@ TEST(VSSGenSolver, GurobiVSSGenPostprocessTrainsNotOnEveryEdge) {
   // The trains follow different routes, so a train does not have border
   // variables on every edge with a used VSS. Postprocessing must not read them.
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke4Trains", "atmos2023", "data");
+      "Stammstrecke4Trains"sv, "atmos2023"sv, "data"sv);
 
   cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
   solution_settings.postprocess = true;
 
-  const auto obj_val = solver.solve({15, true, true, false}, {}, {},
-                                    solution_settings, 120, true);
+  const auto obj_val = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, solution_settings, 120, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 6);
@@ -840,14 +949,14 @@ TEST(VSSGenSolver, GurobiVSSGenPostprocessNoTim) {
   // A train without TIM has no rear border variables. Postprocessing must not
   // read them.
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
   solver.editable_instance().editable_train("tr1").set_no_tim();
 
   cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
   solution_settings.postprocess = true;
 
-  const auto obj_val =
-      solver.solve({15, false}, {}, {}, solution_settings, 280, true);
+  const auto obj_val = solver.solve({.delta_t = 15, .fix_routes = false}, {},
+                                    {}, solution_settings, 280, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 1);
@@ -884,8 +993,8 @@ TEST(VSSGenSolver, GurobiVSSGenPostprocessFreeRoutesEdgeOutsidePath) {
   cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
   solution_settings.postprocess = true;
 
-  const auto obj_val =
-      solver.solve({5, false}, {}, {}, solution_settings, 300, true);
+  const auto obj_val = solver.solve({.delta_t = 5, .fix_routes = false}, {}, {},
+                                    solution_settings, 300, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 2);
@@ -951,11 +1060,13 @@ TEST(VSSGenSolver, GurobiVSSGenFreeRoutesUnbreakableSiding) {
   const auto instance = create_siding_instance(false);
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  const auto obj_val_fixed = solver.solve({5, true}, {}, {}, {}, 120, true);
+  const auto obj_val_fixed =
+      solver.solve({.delta_t = 5, .fix_routes = true}, {}, {}, {}, 120, true);
 
   EXPECT_EQ(obj_val_fixed.get_status(), cda_rail::SolutionStatus::Infeasible);
 
-  const auto obj_val_free = solver.solve({5, false}, {}, {}, {}, 120, true);
+  const auto obj_val_free =
+      solver.solve({.delta_t = 5, .fix_routes = false}, {}, {}, {}, 120, true);
 
   EXPECT_EQ(obj_val_free.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_free.get_obj(), 2);
@@ -982,21 +1093,24 @@ TEST(VSSGenSolver, GurobiVSSGenFreeRoutesIgnoreRoutes) {
   const auto instance = create_siding_instance(true);
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  const auto obj_val_fixed = solver.solve({5, true}, {}, {}, {}, 120, true);
+  const auto obj_val_fixed =
+      solver.solve({.delta_t = 5, .fix_routes = true}, {}, {}, {}, 120, true);
 
   EXPECT_EQ(obj_val_fixed.get_status(), cda_rail::SolutionStatus::Infeasible);
 
   const std::vector<std::string> tr_names{"Train1", "Train2", "Train3"};
   const auto                     siding =
       instance.get_const_network().get_edge_index({"v1"}, {"va"});
-  for (const auto& model_type :
-       {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
-        cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                             {cda_rail::vss::UNIFORM})}) {
+  for (const auto& model_type : {
+           cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous),
+           cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                {cda_rail::vss::UNIFORM}),
+       }) {
     const auto label =
         cda_rail::vss::model_type_to_string(model_type.get_model_type());
     const auto obj_val_free =
-        solver.solve({5, false}, {model_type}, {}, {}, 120, true);
+        solver.solve({.delta_t = 5, .fix_routes = false},
+                     {.model_type = model_type}, {}, {}, 120, true);
 
     EXPECT_EQ(obj_val_free.get_status(), cda_rail::SolutionStatus::Optimal)
         << label;
@@ -1020,7 +1134,7 @@ TEST(VSSGenSolver, GurobiVSSGenFreeRoutesIgnoreRoutes) {
 
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 1 ---------------------------"
             << '\n';
@@ -1032,11 +1146,18 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
   EXPECT_TRUE(
       solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
-  const auto obj_val_1 =
-      solver.solve({15, true, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {}, 600, true);
+  const auto obj_val_1 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_1.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_1.get_obj(), 1);
@@ -1046,7 +1167,7 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete1) {
 
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 2 ---------------------------"
             << '\n';
@@ -1060,11 +1181,18 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete2) {
   EXPECT_TRUE(
       solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
-  const auto obj_val_2 =
-      solver.solve({15, true, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {}, 600, true);
+  const auto obj_val_2 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_2.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_2.get_obj(), 1);
@@ -1074,7 +1202,7 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete2) {
 
 TEST(VSSGenSolver, GurobiVSSGenTimDiscrete3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   std::cout << "--------------------- TEST 3 ---------------------------"
             << '\n';
@@ -1088,25 +1216,50 @@ TEST(VSSGenSolver, GurobiVSSGenTimDiscrete3) {
   EXPECT_TRUE(
       solver.get_instance().get_const_train_list().get_train("tr3").has_tim());
 
-  const auto obj_val_3 =
-      solver.solve({15, true, false, false},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {}, 600, true);
+  const auto obj_val_3 = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Discrete,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {}, 600, true);
 
   EXPECT_EQ(obj_val_3.get_status(), cda_rail::SolutionStatus::Infeasible);
 }
 
 TEST(VSSGenSolver, OvertakeFixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Overtake", "atmos2023", "data");
+      "Overtake"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val_base =
-      solver.solve({15, true, false, false}, {}, {}, {}, 120);
-  const auto obj_val_dynamics =
-      solver.solve({15, true, true, false}, {}, {}, {}, 120);
-  const auto obj_val_braking =
-      solver.solve({15, true, true, true}, {}, {}, {}, 120);
+  const auto obj_val_base = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 120);
+  const auto obj_val_dynamics = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 120);
+  const auto obj_val_braking = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = true,
+      },
+      {}, {}, {}, 120);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1123,14 +1276,32 @@ TEST(VSSGenSolver, OvertakeFixedContinuous) {
 
 TEST(VSSGenSolver, OvertakeFreeContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Overtake", "atmos2023", "data");
+      "Overtake"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val_base =
-      solver.solve({15, false, false, false}, {}, {}, {}, 100);
-  const auto obj_val_dynamics =
-      solver.solve({15, false, true, false}, {}, {}, {}, 200);
-  const auto obj_val_braking =
-      solver.solve({15, false, true, true}, {}, {}, {}, 400);
+  const auto obj_val_base = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 100);
+  const auto obj_val_dynamics = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 200);
+  const auto obj_val_braking = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = true,
+      },
+      {}, {}, {}, 400);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1147,14 +1318,32 @@ TEST(VSSGenSolver, OvertakeFreeContinuous) {
 
 TEST(VSSGenSolver, Stammstrecke4FixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke4Trains", "atmos2023", "data");
+      "Stammstrecke4Trains"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val_base =
-      solver.solve({15, true, false, false}, {}, {}, {}, 120);
-  const auto obj_val_dynamics =
-      solver.solve({15, true, true, false}, {}, {}, {}, 120);
-  const auto obj_val_braking =
-      solver.solve({15, true, true, true}, {}, {}, {}, 120);
+  const auto obj_val_base = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 120);
+  const auto obj_val_dynamics = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 120);
+  const auto obj_val_braking = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = true,
+      },
+      {}, {}, {}, 120);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1171,14 +1360,32 @@ TEST(VSSGenSolver, Stammstrecke4FixedContinuous) {
 
 TEST(VSSGenSolver, Stammstrecke8FixedContinuous) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke8Trains", "atmos2023", "data");
+      "Stammstrecke8Trains"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val_base =
-      solver.solve({15, true, false, false}, {}, {}, {}, 120);
-  const auto obj_val_dynamics =
-      solver.solve({15, true, true, false}, {}, {}, {}, 120);
-  const auto obj_val_braking =
-      solver.solve({15, true, true, true}, {}, {}, {}, 120);
+  const auto obj_val_base = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 120);
+  const auto obj_val_dynamics = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 120);
+  const auto obj_val_braking = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = true,
+      },
+      {}, {}, {}, 120);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1195,10 +1402,16 @@ TEST(VSSGenSolver, Stammstrecke8FixedContinuous) {
 
 TEST(VSSGenSolver, Stammstrecke16FixedContinuousBase) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke16Trains", "atmos2023", "data");
+      "Stammstrecke16Trains"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val_base =
-      solver.solve({15, true, false, false}, {}, {}, {}, 600);
+  const auto obj_val_base = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 600);
 
   EXPECT_EQ(obj_val_base.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_base.get_obj(), 0);
@@ -1208,10 +1421,16 @@ TEST(VSSGenSolver, Stammstrecke16FixedContinuousBase) {
 
 TEST(VSSGenSolver, Stammstrecke16FixedContinuousDynamics) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke16Trains", "atmos2023", "data");
+      "Stammstrecke16Trains"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val_dynamics =
-      solver.solve({15, true, true, false}, {}, {}, {}, 600);
+  const auto obj_val_dynamics = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 600);
 
   EXPECT_EQ(obj_val_dynamics.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_dynamics.get_obj(), 15);
@@ -1221,10 +1440,16 @@ TEST(VSSGenSolver, Stammstrecke16FixedContinuousDynamics) {
 
 TEST(VSSGenSolver, Stammstrecke16FixedContinuousBraking) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke16Trains", "atmos2023", "data");
+      "Stammstrecke16Trains"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val_braking =
-      solver.solve({15, true, true, true}, {}, {}, {}, 600);
+  const auto obj_val_braking = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = true,
+      },
+      {}, {}, {}, 600);
 
   EXPECT_EQ(obj_val_braking.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val_braking.get_obj(), 15);
@@ -1234,13 +1459,15 @@ TEST(VSSGenSolver, Stammstrecke16FixedContinuousBraking) {
 
 TEST(VSSGenSolver, SimpleStationInferredUniform) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val =
-      solver.solve({},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {}, 60, true);
+  const auto obj_val = solver.solve(
+      {},
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1251,13 +1478,15 @@ TEST(VSSGenSolver, SimpleStationInferredUniform) {
 
 TEST(VSSGenSolver, SimpleStationInferredUniformPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val =
-      solver.solve({},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {{}, true}, 60, true);
+  const auto obj_val = solver.solve(
+      {},
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {}, {{}, true}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1268,13 +1497,15 @@ TEST(VSSGenSolver, SimpleStationInferredUniformPostprocess) {
 
 TEST(VSSGenSolver, SimpleStationInferredAltUniformPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val =
-      solver.solve({},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                                         {cda_rail::vss::UNIFORM})},
-                   {}, {{}, true}, 60, true);
+  const auto obj_val = solver.solve(
+      {},
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::InferredAlt, {cda_rail::vss::UNIFORM}),
+      },
+      {}, {{}, true}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1285,9 +1516,10 @@ TEST(VSSGenSolver, SimpleStationInferredAltUniformPostprocess) {
 
 TEST(VSSGenSolver, SimpleStationContinuousPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val = solver.solve({15, false}, {}, {}, {{}, true}, 240, true);
+  const auto obj_val = solver.solve({.delta_t = 15, .fix_routes = false}, {},
+                                    {}, {{}, true}, 240, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1298,9 +1530,10 @@ TEST(VSSGenSolver, SimpleStationContinuousPostprocess) {
 
 TEST(VSSGenSolver, SimpleStationContinuousFixedPostprocess) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val = solver.solve({15, true}, {}, {}, {{}, true}, 60, true);
+  const auto obj_val = solver.solve({.delta_t = 15, .fix_routes = true}, {}, {},
+                                    {{}, true}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1311,13 +1544,15 @@ TEST(VSSGenSolver, SimpleStationContinuousFixedPostprocess) {
 
 TEST(VSSGenSolver, SimpleStationInferredChebychev) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val =
-      solver.solve({},
-                   {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                                         {cda_rail::vss::CHEBYSHEV})},
-                   {}, {}, 60, true);
+  const auto obj_val = solver.solve(
+      {},
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                                             {cda_rail::vss::CHEBYSHEV}),
+      },
+      {}, {}, 60, true);
 
   // Check if all objective values are 1
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1328,13 +1563,15 @@ TEST(VSSGenSolver, SimpleStationInferredChebychev) {
 
 TEST(VSSGenSolver, SimpleStationInferredBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val =
       solver.solve({},
-                   {cda_rail::vss::Model(
-                       cda_rail::vss::ModelType::Inferred,
-                       {cda_rail::vss::UNIFORM, cda_rail::vss::CHEBYSHEV})},
+                   {
+                       .model_type = cda_rail::vss::Model(
+                           cda_rail::vss::ModelType::Inferred,
+                           {cda_rail::vss::UNIFORM, cda_rail::vss::CHEBYSHEV}),
+                   },
                    {}, {}, 60, true);
 
   // Check if all objective values are 1
@@ -1346,13 +1583,15 @@ TEST(VSSGenSolver, SimpleStationInferredBoth) {
 
 TEST(VSSGenSolver, SimpleStationInferredAltBoth) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val =
       solver.solve({},
-                   {cda_rail::vss::Model(
-                       cda_rail::vss::ModelType::InferredAlt,
-                       {cda_rail::vss::UNIFORM, cda_rail::vss::CHEBYSHEV})},
+                   {
+                       .model_type = cda_rail::vss::Model(
+                           cda_rail::vss::ModelType::InferredAlt,
+                           {cda_rail::vss::UNIFORM, cda_rail::vss::CHEBYSHEV}),
+                   },
                    {}, {}, 60, true);
 
   // Check if all objective values are 1
@@ -1364,10 +1603,15 @@ TEST(VSSGenSolver, SimpleStationInferredAltBoth) {
 
 TEST(VSSGenSolver, IterativeContinuousSingleTrack) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SingleTrack", "atmos2023", "data");
+      "SingleTrack"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {}, {}, {true, cda_rail::OptimalityStrategy::Optimal}, {}, 60, true);
+      {}, {},
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+      },
+      {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
@@ -1377,12 +1621,19 @@ TEST(VSSGenSolver, IterativeContinuousSingleTrack) {
 
 TEST(VSSGenSolver, IterativeContinuousSingleTrackCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SingleTrack", "atmos2023", "data");
+      "SingleTrack"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
       {}, {},
-      {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 1, 2, true},
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+          .update_strategy =
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed,
+          .initial_value = 1,
+          .update_value  = 2,
+          .include_cuts  = true,
+      },
       {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1393,14 +1644,20 @@ TEST(VSSGenSolver, IterativeContinuousSingleTrackCuts) {
 
 TEST(VSSGenSolver, IterativeContinuousSingleRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SingleTrack", "atmos2023", "data");
+      "SingleTrack"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val =
-      solver.solve({}, {},
-                   {true, cda_rail::OptimalityStrategy::Optimal,
-                    cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative,
-                    0.025, 0.05, true},
-                   {}, 60, true);
+  const auto obj_val = solver.solve(
+      {}, {},
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+          .update_strategy =
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative,
+          .initial_value = 0.025,
+          .update_value  = 0.05,
+          .include_cuts  = true,
+      },
+      {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 9);
@@ -1410,14 +1667,28 @@ TEST(VSSGenSolver, IterativeContinuousSingleRelative) {
 
 TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, true, true, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
-                            {cda_rail::vss::UNIFORM})},
-      {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(cda_rail::vss::ModelType::Inferred,
+                                             {cda_rail::vss::UNIFORM}),
+      },
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+          .update_strategy =
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed,
+          .initial_value = 0,
+          .update_value  = 2,
+          .include_cuts  = true,
+      },
       {}, 60, true);
 
   check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
@@ -1425,12 +1696,25 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredCuts) {
 
 TEST(VSSGenSolver, IterativeContinuousSimpleStationCuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, true, true, false}, {},
-      {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {},
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+          .update_strategy =
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed,
+          .initial_value = 0,
+          .update_value  = 2,
+          .include_cuts  = true,
+      },
       {}, 60, true);
 
   check_schedule_within_dt_and_order(obj_val, 15, "obj_val");
@@ -1438,10 +1722,15 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationCuts) {
 
 TEST(VSSGenSolver, IterativeContinuousFeasible) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke4Trains", "atmos2023", "data");
+      "Stammstrecke4Trains"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {}, {}, {true, cda_rail::OptimalityStrategy::Feasible}, {}, 60, true);
+      {}, {},
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Feasible,
+      },
+      {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Feasible);
   EXPECT_GE(obj_val.get_obj(), 6);
@@ -1451,32 +1740,48 @@ TEST(VSSGenSolver, IterativeContinuousFeasible) {
 
 TEST(VSSGenSolver, IterativeTimeout1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SingleTrackCorridor", "atmos2023", "data");
+      "SingleTrackCorridor"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val = solver.solve({15, false}, {}, {true}, {}, 30, true);
+  const auto obj_val = solver.solve({.delta_t = 15, .fix_routes = false}, {},
+                                    {.iterative_approach = true}, {}, 30, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Timeout);
 }
 
 TEST(VSSGenSolver, IterativeTimeout2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SingleTrackCorridor", "atmos2023", "data");
+      "SingleTrackCorridor"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val = solver.solve({}, {}, {true}, {}, 1, true);
+  const auto obj_val =
+      solver.solve({}, {}, {.iterative_approach = true}, {}, 1, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Timeout);
 }
 
 TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredAlt) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, true, true, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::InferredAlt,
-                            {cda_rail::vss::UNIFORM})},
-      {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::InferredAlt, {cda_rail::vss::UNIFORM}),
+      },
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+          .update_strategy =
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed,
+          .initial_value = 0,
+          .update_value  = 2,
+          .include_cuts  = true,
+      },
       {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1487,9 +1792,10 @@ TEST(VSSGenSolver, IterativeContinuousSimpleStationInferredAlt) {
 
 TEST(VSSGenSolver, IterativeContinuousStammstrecke4) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke4Trains", "atmos2023", "data");
+      "Stammstrecke4Trains"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val = solver.solve({}, {}, {true}, {}, 60, true);
+  const auto obj_val =
+      solver.solve({}, {}, {.iterative_approach = true}, {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 6);
@@ -1499,12 +1805,19 @@ TEST(VSSGenSolver, IterativeContinuousStammstrecke4) {
 
 TEST(VSSGenSolver, IterativeContinuousStammstrecke4Cuts) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Stammstrecke4Trains", "atmos2023", "data");
+      "Stammstrecke4Trains"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
       {}, {},
-      {true, cda_rail::OptimalityStrategy::Optimal,
-       cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed, 0, 2, true},
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+          .update_strategy =
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed,
+          .initial_value = 0,
+          .update_value  = 2,
+          .include_cuts  = true,
+      },
       {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -1515,14 +1828,20 @@ TEST(VSSGenSolver, IterativeContinuousStammstrecke4Cuts) {
 
 TEST(VSSGenSolver, IterativeContinuousOvertakeRelative) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "Overtake", "atmos2023", "data");
+      "Overtake"sv, "atmos2023"sv, "data"sv);
 
-  const auto obj_val =
-      solver.solve({}, {},
-                   {true, cda_rail::OptimalityStrategy::Optimal,
-                    cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative,
-                    0.05, 0.05, true},
-                   {}, 60, true);
+  const auto obj_val = solver.solve(
+      {}, {},
+      {
+          .iterative_approach  = true,
+          .optimality_strategy = cda_rail::OptimalityStrategy::Optimal,
+          .update_strategy =
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative,
+          .initial_value = 0.05,
+          .update_value  = 0.05,
+          .include_cuts  = true,
+      },
+      {}, 60, true);
 
   EXPECT_EQ(obj_val.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(obj_val.get_obj(), 7);
@@ -1532,11 +1851,19 @@ TEST(VSSGenSolver, IterativeContinuousOvertakeRelative) {
 
 TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, true, false, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true)},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::Continuous, {}, true),
+      },
       {}, {}, 240, true);
 
   // Check if all objective values are 1
@@ -1563,7 +1890,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed1) {
     constexpr double dt = 15.0;
     const auto& [t0, tn] =
         obj_val.get_instance()->time_index_interval(tr, dt, false);
-    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+    for (int t = static_cast<int>(t0) + 1; std::cmp_less_equal(t, tn); ++t) {
       const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
@@ -1588,11 +1915,19 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed1) {
 
 TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, true, true, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true)},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::Continuous, {}, true),
+      },
       {}, {}, 240, true);
 
   // Check if all objective values are 1
@@ -1619,7 +1954,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed2) {
     constexpr double dt = 15.0;
     const auto& [t0, tn] =
         obj_val.get_instance()->time_index_interval(tr, dt, false);
-    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+    for (int t = static_cast<int>(t0) + 1; std::cmp_less_equal(t, tn); ++t) {
       const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
@@ -1644,11 +1979,19 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed2) {
 
 TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, true, true, true},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true)},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = true,
+      },
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::Continuous, {}, true),
+      },
       {}, {}, 240, true);
 
   // Check if all objective values are 1
@@ -1675,7 +2018,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed3) {
     constexpr double dt = 15.0;
     const auto& [t0, tn] =
         obj_val.get_instance()->time_index_interval(tr, dt, false);
-    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+    for (int t = static_cast<int>(t0) + 1; std::cmp_less_equal(t, tn); ++t) {
       const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
@@ -1700,11 +2043,19 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFixed3) {
 
 TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree1) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, false, false, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true)},
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = false,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::Continuous, {}, true),
+      },
       {}, {}, 240, true);
 
   // Check if all objective values are 1
@@ -1731,7 +2082,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree1) {
     constexpr double dt = 15.0;
     const auto& [t0, tn] =
         obj_val.get_instance()->time_index_interval(tr, dt, false);
-    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+    for (int t = static_cast<int>(t0) + 1; std::cmp_less_equal(t, tn); ++t) {
       const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
@@ -1756,11 +2107,19 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree1) {
 
 TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree2) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, false, true, false},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true)},
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::Continuous, {}, true),
+      },
       {}, {}, 240, true);
 
   // Check if all objective values are 1
@@ -1787,7 +2146,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree2) {
     constexpr double dt = 15.0;
     const auto& [t0, tn] =
         obj_val.get_instance()->time_index_interval(tr, dt, false);
-    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+    for (int t = static_cast<int>(t0) + 1; std::cmp_less_equal(t, tn); ++t) {
       const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
@@ -1812,11 +2171,19 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree2) {
 
 TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree3) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   const auto obj_val = solver.solve(
-      {15, false, true, true},
-      {cda_rail::vss::Model(cda_rail::vss::ModelType::Continuous, {}, true)},
+      {
+          .delta_t        = 15,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = true,
+      },
+      {
+          .model_type = cda_rail::vss::Model(
+              cda_rail::vss::ModelType::Continuous, {}, true),
+      },
       {}, {}, 240, true);
 
   // Check if all objective values are 1
@@ -1843,7 +2210,7 @@ TEST(VSSGenSolver, OnlyStopAtBoundariesContinuousFree3) {
     constexpr double dt = 15.0;
     const auto& [t0, tn] =
         obj_val.get_instance()->time_index_interval(tr, dt, false);
-    for (int t = static_cast<int>(t0) + 1; t <= static_cast<int>(tn); ++t) {
+    for (int t = static_cast<int>(t0) + 1; std::cmp_less_equal(t, tn); ++t) {
       const auto& train_speed = obj_val.get_train_speed(train_name, t * dt);
       if (train_speed > cda_rail::GRB_EPS) {
         continue;
@@ -1880,8 +2247,14 @@ TEST(VSSGenSolver, InfeasibleFree) {
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  auto const sol_obj =
-      solver.solve({5, false, true, false}, {}, {}, {}, 100, true);
+  auto const sol_obj = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 100, true);
   EXPECT_FALSE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
 }
@@ -1899,8 +2272,14 @@ TEST(VSSGenSolver, BarelyInfeasibleFree) {
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  auto const sol_obj =
-      solver.solve({5, false, true, false}, {}, {}, {}, 100, true);
+  auto const sol_obj = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 100, true);
   EXPECT_FALSE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
 }
@@ -1918,8 +2297,14 @@ TEST(VSSGenSolver, FeasibleFree) {
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  auto const sol_obj =
-      solver.solve({5, false, true, false}, {}, {}, {}, 100, true);
+  auto const sol_obj = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = false,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 100, true);
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj.get_obj(), 0);
@@ -1940,8 +2325,14 @@ TEST(VSSGenSolver, InfeasibleFixed) {
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  auto const sol_obj =
-      solver.solve({5, true, true, false}, {}, {}, {}, 100, true);
+  auto const sol_obj = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 100, true);
   EXPECT_FALSE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
 }
@@ -1959,8 +2350,14 @@ TEST(VSSGenSolver, BarelyInfeasibleFixed) {
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  auto const sol_obj =
-      solver.solve({5, true, true, false}, {}, {}, {}, 100, true);
+  auto const sol_obj = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 100, true);
   EXPECT_FALSE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Infeasible);
 }
@@ -1978,8 +2375,14 @@ TEST(VSSGenSolver, FeasibleFixed) {
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(instance);
 
-  auto const sol_obj =
-      solver.solve({5, true, true, false}, {}, {}, {}, 100, true);
+  auto const sol_obj = solver.solve(
+      {
+          .delta_t        = 5,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, {}, 100, true);
   EXPECT_TRUE(sol_obj.has_solution());
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj.get_obj(), 0);
@@ -1990,7 +2393,7 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   // The instance is read relative to the current working directory, hence the
   // solver has to be created before switching to the temporary directory.
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   // All exports happen relative to the current working directory. Hence, the
   // test is executed within a temporary directory that is removed afterwards,
@@ -2001,7 +2404,12 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
     ~ScopedTempWorkingDirectory() {
       std::error_code ignored;
       std::filesystem::current_path(original_directory, ignored);
-      std::filesystem::remove_all(temporary_directory, ignored);
+      try {
+        std::filesystem::remove_all(temporary_directory, ignored);
+      } catch (...) {
+        // Not being able to clean up must not end the test run
+        ignored = std::make_error_code(std::errc::not_enough_memory);
+      }
     }
   };
 
@@ -2011,7 +2419,9 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all(temp_dir);
   ASSERT_TRUE(std::filesystem::create_directories(temp_dir));
   const ScopedTempWorkingDirectory temp_working_directory{
-      std::filesystem::current_path(), temp_dir};
+      .original_directory  = std::filesystem::current_path(),
+      .temporary_directory = temp_dir,
+  };
   std::filesystem::current_path(temp_dir);
 
   std::error_code ec;
@@ -2104,7 +2514,13 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
       };
 
   const auto obj_val = solver.solve(
-      {15, true, true, false}, {}, {},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {},
       export_settings(cda_rail::solver::GeneralExportOption::NoExport,
                       "tmp1folder", "tmp1file", true, "tmp1file", "tmp1id"),
       20, true);
@@ -2128,7 +2544,13 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all("tmp1folder");
 
   const auto obj_val2 = solver.solve(
-      {15, true, true, false}, {}, {},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {},
       export_settings(cda_rail::solver::GeneralExportOption::ExportSolution,
                       "tmp2folder", "tmp2file", false, "tmp2file"),
       20, true);
@@ -2152,7 +2574,13 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all("tmp2folder");
 
   const auto obj_val3 = solver.solve(
-      {15, true, true, false}, {}, {},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {},
       export_settings(
           cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
           "tmp3folder", "tmp3file", false, "tmp3file"),
@@ -2176,7 +2604,13 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all("tmp3folder");
 
   const auto obj_val4 = solver.solve(
-      {15, true, true, false}, {}, {},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {},
       export_settings(cda_rail::solver::GeneralExportOption::NoExport,
                       "tmp4folder", "tmp4file", false, "tmp4file"),
       20, true);
@@ -2190,7 +2624,13 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   EXPECT_FALSE(std::filesystem::exists("tmp4folder"));
 
   const auto obj_val5 = solver.solve(
-      {15, true, true, false}, {}, {},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {},
       export_settings(cda_rail::solver::GeneralExportOption::ExportSolution,
                       "tmp5folder", "tmp5file", true, "tmp5file"),
       20, false);
@@ -2213,7 +2653,13 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   std::filesystem::remove_all("tmp5folder");
 
   const auto obj_val6 = solver.solve(
-      {15, true, true, false}, {}, {},
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {},
       export_settings(
           cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance,
           "tmp6folder", "tmp6file", true, "tmp6model", "tmp6id"),
@@ -2244,8 +2690,14 @@ TEST(VSSGenSolver, SimpleStationExportOptions) {
   default_settings.export_option =
       cda_rail::solver::GeneralExportOption::ExportSolutionWithInstance;
   default_settings.export_lp_model = true;
-  const auto obj_val7 = solver.solve({15, true, true, false}, {}, {},
-                                     default_settings, 20, false);
+  const auto obj_val7              = solver.solve(
+      {
+          .delta_t        = 15,
+          .fix_routes     = true,
+          .train_dynamics = true,
+          .braking_curves = false,
+      },
+      {}, {}, default_settings, 20, false);
 
   // Expect optimal value of 1
   EXPECT_EQ(obj_val7.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -2268,7 +2720,7 @@ TEST(VSSGenSolver, EvaluateSolution) {
   // A VSS solution operates the timetable as scheduled, which simulating it
   // confirms. Without its VSS borders, its trains delay each other.
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
   auto sol = solver.solve();
   ASSERT_TRUE(sol.has_solution());
   EXPECT_GT(sol.get_obj(), 0);
@@ -2342,7 +2794,7 @@ TEST(VSSGenSolver, ConvexifiedBrakingDistanceEvaluateSolution) {
   std::filesystem::remove_all(export_dir);
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
   cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
   solution_settings.export_option =
       cda_rail::solver::GeneralExportOption::ExportSolution;
@@ -2380,7 +2832,7 @@ TEST(VSSGenSolver, ConvexifiedBrakingDistanceEvaluateSolution) {
 
 TEST(VSSGenSolver, ConvexifiedBrakingDistanceNeedsBrakingCurvesAndFreeStops) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
   EXPECT_THROW(
       static_cast<void>(solver.solve({15, true, true, false},
                                      {.convexify_braking_distance = true})),

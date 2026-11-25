@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SIMULATOR_GREEDYSIMULATOR_HPP
+#define CDA_RAIL_SIMULATOR_GREEDYSIMULATOR_HPP
 
 #include "Definitions.hpp"
 #include "datastructure/Train.hpp"
@@ -25,7 +26,6 @@
 #define TEST_FRIENDS false
 #endif
 #if TEST_FRIENDS
-class GreedySimulator;
 class GreedySimulator_BasicPrivateFunctions_Test;
 class GreedySimulator_EdgePositions_Test;
 class GreedySimulator_TrainsOnEdges_Test;
@@ -51,7 +51,7 @@ namespace cda_rail::simulator {
  * @brief After how many time steps without any movement, in which no train has
  *        a reason to wait, a simulation is given up as deadlocked.
  */
-enum : std::uint16_t { CycleLimit = 1000 };
+inline constexpr int CYCLE_LIMIT = 1000;
 
 /**
  * @brief Simulates the trains of a moving block instance greedily.
@@ -60,7 +60,7 @@ enum : std::uint16_t { CycleLimit = 1000 };
  * and the orders of the state allow, so that the simulated trajectories are
  * the best ones for the given routing, ordering, and stopping decisions. The
  * simulation advances in time steps of the given length until every train has
- * left the network, or until nothing moves any more, see CycleLimit.
+ * left the network, or until nothing moves any more, see CYCLE_LIMIT.
  *
  * As in the moving block MILP, a train leaves the network once its rear has
  * passed its exit vertex, which is when its scheduled exit time and speed
@@ -132,11 +132,11 @@ public:
   /** @brief Copy constructor. */
   GreedySimulator(GreedySimulator const&) = default;
   /** @brief Move constructor. */
-  GreedySimulator(GreedySimulator&&) = default;
+  GreedySimulator(GreedySimulator&&) noexcept = default;
   /** @brief Copy assignment operator. */
   GreedySimulator& operator=(GreedySimulator const&) = default;
   /** @brief Move assignment operator. */
-  GreedySimulator& operator=(GreedySimulator&&) = default;
+  GreedySimulator& operator=(GreedySimulator&&) noexcept = default;
   /** @brief Virtual destructor. */
   ~GreedySimulator() override = default;
 
@@ -319,7 +319,7 @@ private:
   enum class TTDOccupationType : std::uint8_t {
     OnlyOccupied,
     OnlyBehind,
-    OccupiedOrBehind
+    OccupiedOrBehind,
   };
   /**
    * @brief Checks whether a train occupies a TTD section or has left it.
@@ -749,3 +749,5 @@ private:
 };
 
 } // namespace cda_rail::simulator
+
+#endif // CDA_RAIL_SIMULATOR_GREEDYSIMULATOR_HPP

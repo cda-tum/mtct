@@ -88,7 +88,7 @@ bool let_pass_first(cda_rail::simulator::SimulatorState&       given,
 }
 } // namespace
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 // ----------------
 // CONSTRUCTOR
@@ -190,17 +190,18 @@ cda_rail::simulator::GreedySimulator::simulate(
     if (it == order.begin()) {
       return std::nullopt;
     }
-    return *(it - 1);
+    return *std::prev(it);
   };
 
   auto build_results = [&exit_times, &stop_times, &vertex_headways,
                         &train_trajectories](bool success) {
-    return SimulatorResults{.success         = success,
-                            .exit_times      = std::move(exit_times),
-                            .stop_times      = std::move(stop_times),
-                            .vertex_headways = vertex_headways,
-                            .train_trajectories =
-                                std::move(train_trajectories)};
+    return SimulatorResults{
+        .success            = success,
+        .exit_times         = std::move(exit_times),
+        .stop_times         = std::move(stop_times),
+        .vertex_headways    = vertex_headways,
+        .train_trajectories = std::move(train_trajectories),
+    };
   };
 
   const auto trains_on_edges = tr_on_edges();
@@ -217,7 +218,7 @@ cda_rail::simulator::GreedySimulator::simulate(
   }
 
   int cycles_without_movement = 0;
-  while (cycles_without_movement < CycleLimit) {
+  while (cycles_without_movement < CYCLE_LIMIT) {
     PLOGV << "----------------------------";
     PLOGV << "Current time: " << t;
 
@@ -245,9 +246,10 @@ cda_rail::simulator::GreedySimulator::simulate(
           train_trajectories.at(tr).rbegin()->first < t - dt - GRB_EPS) {
         // The train was skipped since its last sample, i.e., it stood in a
         // station. Hence, the end of that standstill is saved as well.
-        train_trajectories.at(tr)[t - dt] = {.pos =
-                                                 train_positions.at(tr).front,
-                                             .vel = train_velocities.at(tr)};
+        train_trajectories.at(tr)[t - dt] = {
+            .pos = train_positions.at(tr).front,
+            .vel = train_velocities.at(tr),
+        };
       }
 
       // Calculate MA
@@ -363,7 +365,8 @@ cda_rail::simulator::GreedySimulator::simulate(
             tr)[exit_passing.has_value() ? exit_passing->t : t] = {
             .pos = train_positions.at(tr).front,
             .vel = exit_passing.has_value() ? exit_passing->vel
-                                            : train_velocities.at(tr)};
+                                            : train_velocities.at(tr),
+        };
       }
     }
 
@@ -622,9 +625,10 @@ cda_rail::simulator::GreedySimulator::simulate(
         trains_in_network.insert(tr);
         vertex_headways.at(train_schedule.get_entry_vertex()) =
             t + entry_vertex.headway;
-        train_positions.at(tr)  = {.rear =
-                                       -train_list.get_train(tr).get_length(),
-                                   .front = 0.0}; // Initialize positions
+        train_positions.at(tr) = {
+            .rear  = -train_list.get_train(tr).get_length(),
+            .front = 0.0,
+        }; // Initialize positions
         train_velocities.at(tr) = train_schedule.get_initial_velocity();
         if (!get_stop_positions_of_tr(tr).empty()) {
           tr_next_stop_id.at(tr) = 0;
@@ -635,8 +639,10 @@ cda_rail::simulator::GreedySimulator::simulate(
         PLOGV << "New entry blocked until time "
               << vertex_headways.at(train_schedule.get_entry_vertex());
         if (save_trajectories) {
-          train_trajectories.at(tr)[t] = {.pos = train_positions.at(tr).front,
-                                          .vel = train_velocities.at(tr)};
+          train_trajectories.at(tr)[t] = {
+              .pos = train_positions.at(tr).front,
+              .vel = train_velocities.at(tr),
+          };
         }
       }
     }
@@ -717,7 +723,7 @@ cda_rail::simulator::GreedySimulator::simulate(
   // NOLINTEND(*-inconsistent-ifelse-braces)
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 // ---------------------------------
 // FIRST COME, FIRST SERVED ORDERS
@@ -853,7 +859,10 @@ cda_rail::simulator::GreedySimulator::FirstComeFirstServed::
       const auto ttd = edge_ttds.at(edge);
       if (ttd.has_value()) {
         const Resource resource{
-            .is_vertex = false, .index = ttd.value(), .pos = pos};
+            .is_vertex = false,
+            .index     = ttd.value(),
+            .pos       = pos,
+        };
         const auto it = std::ranges::find(resources, resource);
         edge_resources.emplace_back(
             static_cast<size_t>(it - resources.begin()));
@@ -1013,20 +1022,27 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
     milestones = edge_milestones(tr);
   }
   if (get_train_edges_of_tr(tr).size() + 1 != milestones.size()) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"Milestones size does not match number of edges for train ",
-         get_instance()->get_const_train_list().get_train(tr).get_name(),
-         ". Expected: ", std::to_string(get_train_edges_of_tr(tr).size() + 1),
-         ", Actual: ", std::to_string(milestones.size()), "."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "Milestones size does not match number of edges for train ",
+        get_instance()->get_const_train_list().get_train(tr).get_name(),
+        ". Expected: ",
+        std::to_string(get_train_edges_of_tr(tr).size() + 1),
+        ", Actual: ",
+        std::to_string(milestones.size()),
+        ".",
+    }));
   }
 
   if (edge_number >= get_train_edges_of_tr(tr).size()) {
-    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views(
-        {"Edge number (", std::to_string(edge_number),
-         ") out of bounds for train ",
-         get_instance()->get_const_train_list().get_train(tr).get_name(),
-         ". Train has only ", std::to_string(get_train_edges_of_tr(tr).size()),
-         " edges."}));
+    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views({
+        "Edge number (",
+        std::to_string(edge_number),
+        ") out of bounds for train ",
+        get_instance()->get_const_train_list().get_train(tr).get_name(),
+        ". Train has only ",
+        std::to_string(get_train_edges_of_tr(tr).size()),
+        " edges.",
+    }));
   }
 
   const std::pair<double, double> milestone_pair = {
@@ -1039,13 +1055,20 @@ cda_rail::simulator::GreedySimulator::get_position_on_route_edge(
   const bool rear_on_edge  = is_on_edge && (pos.rear >= milestone_pair.first);
   const bool front_on_edge = is_on_edge && (pos.front <= milestone_pair.second);
 
-  return {.tr_on_edge_indicator = {.tr_on_edge    = is_on_edge,
-                                   .rear_on_edge  = rear_on_edge,
-                                   .front_on_edge = front_on_edge},
-          .tr_position_on_edge  = {
+  return {
+      .tr_on_edge_indicator =
+          {
+              .tr_on_edge    = is_on_edge,
+              .rear_on_edge  = rear_on_edge,
+              .front_on_edge = front_on_edge,
+          },
+      .tr_position_on_edge =
+          {
               .rear  = std::max(0.0, pos.rear - milestone_pair.first),
               .front = std::min(milestone_pair.second - milestone_pair.first,
-                                pos.front - milestone_pair.first)}};
+                                pos.front - milestone_pair.first),
+          },
+  };
 }
 
 cda_rail::simulator::GreedySimulator::PosOnEdgeReturn
@@ -1060,12 +1083,13 @@ cda_rail::simulator::GreedySimulator::get_position_on_edge(
   const auto& tr_edges    = get_train_edges_of_tr(tr);
   const auto  edge_number = std::ranges::find(tr_edges, edge_id);
   if (edge_number == tr_edges.end()) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"Train ",
-         get_instance()->get_const_train_list().get_train(tr).get_name(),
-         " does not have edge ",
-         get_instance()->get_const_network().get_edge_name(edge_id),
-         " on its route."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "Train ",
+        get_instance()->get_const_train_list().get_train(tr).get_name(),
+        " does not have edge ",
+        get_instance()->get_const_network().get_edge_name(edge_id),
+        " on its route.",
+    }));
   }
   const auto edge_index = std::distance(tr_edges.begin(), edge_number);
   return get_position_on_route_edge(tr, pos, edge_index, std::move(milestones));
@@ -1075,10 +1099,13 @@ bool cda_rail::simulator::GreedySimulator::is_on_ttd(
     size_t tr, size_t ttd, const TrainPosition& pos,
     TTDOccupationType occupation_type) const {
   if (ttd >= get_ttd_sections().size()) {
-    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views(
-        {"TTD index out of bounds: ", std::to_string(ttd),
-         ". Maximum index is ", std::to_string(get_ttd_sections().size() - 1),
-         "."}));
+    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views({
+        "TTD index out of bounds: ",
+        std::to_string(ttd),
+        ". Maximum index is ",
+        std::to_string(get_ttd_sections().size() - 1),
+        ".",
+    }));
   }
 
   const auto  milestones         = edge_milestones(tr);
@@ -1158,10 +1185,12 @@ std::optional<size_t> cda_rail::simulator::GreedySimulator::entry_blocker(
         // false positive
         [[maybe_unused]] const auto [occ_rev, pos_rev] = get_position_on_edge(
             other_tr,
-            {.rear = train_positions.at(other_tr).rear,
-             .front =
-                 train_positions.at(other_tr).front +
-                 tr_braking_distance(other_tr, train_velocities.at(other_tr))},
+            {
+                .rear  = train_positions.at(other_tr).rear,
+                .front = train_positions.at(other_tr).front +
+                         tr_braking_distance(other_tr,
+                                             train_velocities.at(other_tr)),
+            },
             reverse_edge_id.value());
         // NOLINTEND(bugprone-unchecked-optional-access)
         if (occ_rev.tr_on_edge) {
@@ -1182,7 +1211,8 @@ std::optional<size_t> cda_rail::simulator::GreedySimulator::entry_blocker(
         continue; // Train is the first in the TTD order, no other train can
                   // block it
       }
-      const auto& other_tr  = *(ttd_pos - 1); // Previous train in the TTD order
+      const auto& other_tr =
+          *std::prev(ttd_pos); // Previous train in the TTD order
       const auto& other_pos = train_positions.at(other_tr);
       if (!trains_left.contains(other_tr) &&
           (!trains_in_network.contains(other_tr) ||
@@ -1236,7 +1266,7 @@ cda_rail::simulator::GreedySimulator::get_entering_trains(
     if (it != entry_order.begin()) {
       // Check if any previous train in the entry order is already in the
       // network
-      const auto& prev_tr = *(it - 1);
+      const auto& prev_tr = *std::prev(it);
       const auto& prev_entry =
           get_instance()->get_const_schedule(prev_tr).get_entry_vertex();
       if (((entry_node != prev_entry) || !tr_present.contains(prev_tr)) &&
@@ -1269,10 +1299,11 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
     const std::vector<std::unordered_set<size_t>>& tr_on_edges,
     bool also_check_reverse_edges) const {
   if (!trains_in_network.contains(tr)) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"Train ",
-         get_instance()->get_const_train_list().get_train(tr).get_name(),
-         " is not in the network. Cannot calculate distance to next train."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "Train ",
+        get_instance()->get_const_train_list().get_train(tr).get_name(),
+        " is not in the network. Cannot calculate distance to next train.",
+    }));
   }
   cda_rail::exceptions::throw_if_negative(max_displacement,
                                           "Maximum displacement");
@@ -1311,7 +1342,7 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
           const auto  ttd_pos   = std::ranges::find(ttd_order, tr);
           if (ttd_pos != ttd_order.begin()) {
             const auto& other_tr =
-                *(ttd_pos - 1); // Previous train in the TTD order
+                *std::prev(ttd_pos); // Previous train in the TTD order
             const auto& other_pos = train_positions.at(other_tr);
             if (!trains_left.contains(other_tr) &&
                 (!trains_in_network.contains(other_tr) ||
@@ -1338,10 +1369,12 @@ double cda_rail::simulator::GreedySimulator::get_absolute_distance_ma(
             [[maybe_unused]] const auto [occ_rev, pos_rev] =
                 get_position_on_edge(
                     other_tr,
-                    {.rear  = train_positions.at(other_tr).rear,
-                     .front = train_positions.at(other_tr).front +
-                              tr_braking_distance(
-                                  other_tr, train_velocities.at(other_tr))},
+                    {
+                        .rear  = train_positions.at(other_tr).rear,
+                        .front = train_positions.at(other_tr).front +
+                                 tr_braking_distance(
+                                     other_tr, train_velocities.at(other_tr)),
+                    },
                     reverse_edge_id.value());
             if (occ_rev.tr_on_edge) {
               // Other train has already been cleared to enter the reverse edge
@@ -1421,7 +1454,7 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     double max_displacement, double current_time, double dt,
     cda_rail::index_set const& blocked_vertices,
     bool                       also_limit_by_leaving_edges) const {
-  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
   round_small_numbers_to_zero_inplace(pos);
   round_small_numbers_to_zero_inplace(v_0);
   round_small_numbers_to_zero_inplace(max_displacement);
@@ -1432,9 +1465,11 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
                                           "Maximum displacement");
   cda_rail::exceptions::throw_if_negative(dt, "Time step");
 
-  PosVel retval = {.pos = max_displacement,
-                   .vel = std::min(train.get_max_speed(),
-                                   v_0 + (train.get_acceleration() * dt))};
+  PosVel retval = {
+      .pos = max_displacement,
+      .vel = std::min(train.get_max_speed(),
+                      v_0 + (train.get_acceleration() * dt)),
+  };
 
   const auto milestones = edge_milestones(tr);
   for (size_t i = 0; i < get_train_edges_of_tr(tr).size() &&
@@ -1511,14 +1546,14 @@ cda_rail::simulator::GreedySimulator::get_future_max_speed_constraints(
     }
   }
   return {.ma = retval.pos, .max_v = retval.vel};
-  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 }
 
 cda_rail::simulator::PosVel
 cda_rail::simulator::GreedySimulator::apply_exit_time(
     size_t tr, const cda_rail::Train& train, double pos, double v_0,
     PosVel ma_and_max_v, double current_time, double dt) const {
-  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
   const auto exit_time = get_instance()->get_const_schedule(tr).get_exit_time();
   if (current_time - dt + GRB_EPS >= exit_time) {
     // This time step starts at or after the exit time
@@ -1622,7 +1657,7 @@ cda_rail::simulator::GreedySimulator::apply_exit_time(
            exit_pos + GRB_EPS;
   };
 
-  const auto v_1 = [&]() {
+  const auto v_1 = [&] {
     return std::min(ma_and_max_v.vel,
                     get_v1_from_ma(v_0, ma_and_max_v.pos, d, dt));
   };
@@ -1669,7 +1704,7 @@ cda_rail::simulator::GreedySimulator::apply_exit_time(
     ma_and_max_v.vel = std::min(ma_and_max_v.vel, v_allowed);
   }
   return ma_and_max_v;
-  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 }
 
 double cda_rail::simulator::GreedySimulator::earliest_exit(
@@ -1751,8 +1786,9 @@ bool cda_rail::simulator::GreedySimulator::is_exit_vertex_blocked(
     return false;
   }
 
-  const auto& prev_tr = *(idx - 1); // Previous train in the exit vertex order
-  const auto  prev_tr_entering =
+  const auto& prev_tr =
+      *std::prev(idx); // Previous train in the exit vertex order
+  const auto prev_tr_entering =
       (get_instance()->get_const_schedule(prev_tr).get_entry_vertex() ==
        tr_schedule.get_exit_vertex());
   const bool previous_train_cleared_vertex =

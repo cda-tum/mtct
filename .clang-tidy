@@ -61,3 +61,12 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.VariableCase
     value: lower_case
+  # operator[] of a json object inserts missing keys like that of std::map, and std::unique_ptr<T[]> has no checked access
+  - key: cppcoreguidelines-pro-bounds-avoid-unchecked-container-access.ExcludeClasses
+    value: "::std::map;::std::unordered_map;::std::flat_map;::nlohmann::basic_json;::std::unique_ptr"
+  # The plog macros use __FUNCTION__, also when logging inside a lambda
+  - key: bugprone-lambda-function-name.IgnoreMacros
+    value: true
+  # Removing the trailing comma of single-line lists also deletes the separator after an empty list such as in f({}, x)
+  - key: readability-trailing-comma.SingleLineCommaPolicy
+    value: Ignore

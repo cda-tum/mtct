@@ -93,7 +93,8 @@ TEST(VSSGenMBInfoSolver, Default3) {
       solver(load_moving_block_solution("HighSpeedTrack5Trains",
                                         SOLUTION_SUBDIRECTORY));
 
-  const auto sol = solver.solve({15, true, false});
+  const auto sol = solver.solve(
+      {.delta_t = 15, .train_dynamics = true, .braking_curves = false});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -105,7 +106,8 @@ TEST(VSSGenMBInfoSolver, Default3NoTolerance) {
       solver(load_moving_block_solution("HighSpeedTrack5Trains",
                                         SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
-  const auto sol = solver.solve({15, true, false});
+  const auto sol = solver.solve(
+      {.delta_t = 15, .train_dynamics = true, .braking_curves = false});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -176,7 +178,12 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
     ~ScopedTempWorkingDirectory() {
       std::error_code ignored;
       std::filesystem::current_path(original_directory, ignored);
-      std::filesystem::remove_all(temporary_directory, ignored);
+      try {
+        std::filesystem::remove_all(temporary_directory, ignored);
+      } catch (...) {
+        // Not being able to clean up must not end the test run
+        ignored = std::make_error_code(std::errc::not_enough_memory);
+      }
     }
   };
 
@@ -186,7 +193,9 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
   std::filesystem::remove_all(temp_dir);
   ASSERT_TRUE(std::filesystem::create_directories(temp_dir));
   const ScopedTempWorkingDirectory temp_working_directory{
-      std::filesystem::current_path(), temp_dir};
+      .original_directory  = std::filesystem::current_path(),
+      .temporary_directory = temp_dir,
+  };
   std::filesystem::current_path(temp_dir);
 
   cda_rail::solver::mip_based::SolutionSettingsVSSGen solution_settings;
@@ -194,7 +203,7 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
       cda_rail::solver::GeneralExportOption::ExportSolution;
   solution_settings.parameter_identifier = "tmpid";
 
-  const auto sol = solver.solve({5}, {}, {}, solution_settings, 10);
+  const auto sol = solver.solve({.delta_t = 5}, {}, {}, solution_settings, 10);
 
   EXPECT_FALSE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Timeout);
@@ -208,10 +217,16 @@ TEST(VSSGenMBInfoSolver, Default5TimeoutExport) {
       INSTANCE_SUBDIRECTORY / "SingleTrackCorridor-tmpid";
   EXPECT_TRUE(std::filesystem::is_directory(solution_dir));
   std::error_code ec;
-  for (const auto& file_name :
-       {"solution_data.json", "routes.json", "train_pos.json",
-        "train_speed.json", "train_exit_times.json", "train_stop_times.json",
-        "vss_pos.json", "solver_data.json"}) {
+  for (const auto& file_name : {
+           "solution_data.json",
+           "routes.json",
+           "train_pos.json",
+           "train_speed.json",
+           "train_exit_times.json",
+           "train_stop_times.json",
+           "vss_pos.json",
+           "solver_data.json",
+       }) {
     const auto file_path = solution_dir / file_name;
     EXPECT_TRUE(std::filesystem::exists(file_path))
         << "Missing file " << file_path;
@@ -279,7 +294,7 @@ TEST(VSSGenMBInfoSolver, Default8) {
       solver(load_moving_block_solution("Stammstrecke4Trains",
                                         SOLUTION_SUBDIRECTORY));
 
-  const auto sol = solver.solve({5});
+  const auto sol = solver.solve({.delta_t = 5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -291,7 +306,7 @@ TEST(VSSGenMBInfoSolver, Default8NoTolerance) {
       solver(load_moving_block_solution("Stammstrecke4Trains",
                                         SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
-  const auto sol = solver.solve({5});
+  const auto sol = solver.solve({.delta_t = 5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -303,7 +318,7 @@ TEST(VSSGenMBInfoSolver, Default9) {
       solver(load_moving_block_solution("Stammstrecke8Trains",
                                         SOLUTION_SUBDIRECTORY));
 
-  const auto sol = solver.solve({5});
+  const auto sol = solver.solve({.delta_t = 5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -315,7 +330,7 @@ TEST(VSSGenMBInfoSolver, Default9NoTolerance) {
       solver(load_moving_block_solution("Stammstrecke8Trains",
                                         SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
 
-  const auto sol = solver.solve({5});
+  const auto sol = solver.solve({.delta_t = 5});
 
   EXPECT_TRUE(sol.has_solution());
   EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);

@@ -29,7 +29,7 @@ namespace cda_rail {
 using std::size_t;
 }
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
 cda_rail::index_vector
 cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
@@ -38,7 +38,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::unbreakable_section_indices(
   // Without fixed routes, these are all edges the train can use
   const auto tr_edges = m_instance.edges_used_by_train(train_index, fix_routes);
   for (size_t i = 0; i < unbreakable_sections.size(); ++i) {
-    if (std::ranges::any_of(unbreakable_sections[i], [&tr_edges](size_t e) {
+    if (std::ranges::any_of(unbreakable_sections.at(i), [&tr_edges](size_t e) {
           return tr_edges.contains(e);
         })) {
       indices.push_back(i);
@@ -67,8 +67,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::
   const auto& tr_schedule = m_instance.get_const_schedule(tr_name);
 
   s.to_use   = true;
-  s.t_before = train_interval[tr].first;
-  s.t_after  = train_interval[tr].second + 1;
+  s.t_before = train_interval.at(tr).first;
+  s.t_after  = train_interval.at(tr).second + 1;
   s.v_before = tr_schedule.get_initial_velocity();
   s.v_after  = tr_schedule.get_exit_velocity();
 
@@ -110,14 +110,14 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::max_distance_travelled(
     ret_val += time_diff * v_max;
     final_speed = v_max;
   } else if (time_diff < (v_max - v0) / a_max) {
-    ret_val +=
-        0.5 * time_diff *
-        (a_max * time_diff + 2 * v0); // int_{0}^{time_diff} (a_max*t + v0) dt
-    final_speed = a_max * time_diff + v0;
+    ret_val += 0.5 * time_diff *
+               ((a_max * time_diff) +
+                (2 * v0)); // int_{0}^{time_diff} (a_max*t + v0) dt
+    final_speed = (a_max * time_diff) + v0;
   } else {
     ret_val += (v_max - v0) * (v_max + v0) /
                (2 * a_max); // int_{0}^{(v_max-v0)/a_max} (a_max*t + v0) dt
-    ret_val += (time_diff - (v_max - v0) / a_max) *
+    ret_val += (time_diff - ((v_max - v0) / a_max)) *
                v_max; // int_{(v_max-v0)/a_max}^{time_diff} v_max dt
     final_speed = v_max;
   }
@@ -339,8 +339,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
 
   for (size_t tr = 0; tr < num_tr; ++tr) {
     const auto train = m_instance.get_const_train_list().get_train(tr);
-    for (size_t t = train_interval[tr].first;
-         t <= train_interval[tr].second + 1; ++t) {
+    for (size_t t = train_interval.at(tr).first;
+         t <= train_interval.at(tr).second + 1; ++t) {
       auto const& tr_name = sol_obj.get_instance()
                                 ->get_const_train_list()
                                 .get_train(tr)
@@ -363,8 +363,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
     // has reached the length of its route plus its length.
     const double          pos_left_network = r_len + tr_len;
     std::optional<double> exit_time;
-    for (auto t = train_interval[tr].first; t <= train_interval[tr].second;
-         ++t) {
+    for (auto t = train_interval.at(tr).first;
+         t <= train_interval.at(tr).second; ++t) {
       double train_pos = r_len;
       if (fix_routes) {
         train_pos = m_vars.at("lda").at(tr, t).get(GRB_DoubleAttr_X);
@@ -399,7 +399,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_solution(
       }
     }
 
-    auto   t_final         = train_interval[tr].second + 1;
+    auto   t_final         = train_interval.at(tr).second + 1;
     double train_pos_final = NAN;
     if (fix_routes) {
       train_pos_final =
@@ -497,8 +497,8 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::extract_model_route(
     size_t tr) const {
   cda_rail::index_vector route;
   size_t current_vertex = m_instance.get_const_schedule(tr).get_entry_vertex();
-  for (size_t t = train_interval[tr].first; t <= train_interval[tr].second;
-       ++t) {
+  for (size_t t = train_interval.at(tr).first;
+       t <= train_interval.at(tr).second; ++t) {
     std::unordered_set<size_t> edge_list;
     for (size_t e = 0; e < num_edges; ++e) {
       const auto tr_on_edge =
@@ -533,10 +533,10 @@ std::pair<std::vector<cda_rail::index_vector>,
 cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
     const {
   auto compare_entry = [this](size_t tr1, size_t tr2) {
-    return train_interval[tr1].first < train_interval[tr2].first;
+    return train_interval.at(tr1).first < train_interval.at(tr2).first;
   };
   auto compare_exit = [this](size_t tr1, size_t tr2) {
-    return train_interval[tr1].second > train_interval[tr2].second;
+    return train_interval.at(tr1).second > train_interval.at(tr2).second;
   };
 
   std::pair<std::vector<cda_rail::index_vector>,
@@ -554,13 +554,13 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::common_entry_exit_vertices()
 
   for (auto& [_, tr_list] : entry_vertices) {
     if (tr_list.size() > 1) {
-      std::sort(tr_list.begin(), tr_list.end(), compare_entry);
+      std::ranges::sort(tr_list, compare_entry);
       ret_val.first.push_back(tr_list);
     }
   }
   for (auto& [_, tr_list] : exit_vertices) {
     if (tr_list.size() > 1) {
-      std::sort(tr_list.begin(), tr_list.end(), compare_exit);
+      std::ranges::sort(tr_list, compare_exit);
       ret_val.second.push_back(tr_list);
     }
   }
@@ -641,7 +641,7 @@ void cda_rail::solver::mip_based::VSSGenTimetableSolver::update_max_vss_on_edge(
   const auto  vss_number_e = max_vss_per_edge.at(e);
   const auto  old_max_vss =
       max_vss_per_edge_in_iteration.at(relevant_edge_index);
-  max_vss_per_edge_in_iteration[relevant_edge_index] = new_max_vss;
+  max_vss_per_edge_in_iteration.at(relevant_edge_index) = new_max_vss;
 
   IF_PLOG(plog::debug) {
     const auto& u =
@@ -840,7 +840,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     // Sections of non-discretized graph
     breakable_edges = m_instance.get_editable_network().breakable_edges();
     for (size_t i = 0; i < breakable_edges.size(); ++i) {
-      breakable_edge_indices[breakable_edges[i]] = i;
+      breakable_edge_indices[breakable_edges.at(i)] = i;
     }
     breakable_edges_pairs =
         m_instance.get_editable_network().combine_reverse_edges(
@@ -867,11 +867,11 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
     const auto  vss_number_e = max_vss_per_edge.at(e);
     if (iterative_vss) {
       if (iterative_update_strategy == UpdateStrategyVSSGen::Fixed) {
-        max_vss_per_edge_in_iteration[i] = std::min<size_t>(
+        max_vss_per_edge_in_iteration.at(i) = std::min<size_t>(
             vss_number_e,
             static_cast<size_t>(std::ceil(iterative_initial_value)));
       } else if (iterative_update_strategy == UpdateStrategyVSSGen::Relative) {
-        max_vss_per_edge_in_iteration[i] = std::min<size_t>(
+        max_vss_per_edge_in_iteration.at(i) = std::min<size_t>(
             vss_number_e,
             static_cast<size_t>(std::ceil(iterative_initial_value *
                                           static_cast<double>(vss_number_e))));
@@ -880,7 +880,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::initialize_variables(
         throw exceptions::ConsistencyException("Unknown update strategy");
       }
     } else {
-      max_vss_per_edge_in_iteration[i] = vss_number_e;
+      max_vss_per_edge_in_iteration.at(i) = vss_number_e;
     }
   }
 
@@ -1000,7 +1000,7 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::optimize(
       }
       obj_lb = std::max(obj_lb_tmp, obj_lb);
 
-      if (obj_lb + GRB_EPS >= obj_ub && (sol_object->has_solution())) {
+      if (obj_lb + GRB_EPS >= obj_ub && sol_object->has_solution()) {
         PLOGD << "Break because obj_lb (" << obj_lb << ") >= obj_ub (" << obj_ub
               << ") -> Proven optimal";
         sol_object->set_status(SolutionStatus::Optimal);
@@ -1126,31 +1126,50 @@ cda_rail::solver::mip_based::VSSGenTimetableSolver::FurtherData
 cda_rail::solver::mip_based::VSSGenTimetableSolver::get_further_data(
     const SolutionSettingsVSSGen& solution_settings, int time_limit) const {
   return {
-      .bool_data = {{"fix_routes", fix_routes},
-                    {"train_dynamics", include_train_dynamics},
-                    {"braking_curves", include_braking_curves},
-                    {"only_stop_at_vss", vss_model.get_only_stop_at_vss()},
-                    {"use_pwl", use_pwl},
-                    {"use_schedule_cuts", use_schedule_cuts},
-                    {"convexify_braking_distance", convexify_braking_distance},
-                    {"iterative_approach", iterative_vss},
-                    {"iterative_include_cuts", iterative_include_cuts},
-                    {"postprocess", postprocess}},
+      .bool_data =
+          {
+              {"fix_routes", fix_routes},
+              {"train_dynamics", include_train_dynamics},
+              {"braking_curves", include_braking_curves},
+              {"only_stop_at_vss", vss_model.get_only_stop_at_vss()},
+              {"use_pwl", use_pwl},
+              {"use_schedule_cuts", use_schedule_cuts},
+              {"convexify_braking_distance", convexify_braking_distance},
+              {"iterative_approach", iterative_vss},
+              {"iterative_include_cuts", iterative_include_cuts},
+              {"postprocess", postprocess},
+          },
       .integer_data = {{"time_limit", time_limit}},
-      .double_data  = {{"delta_t", dt},
-                       {"iterative_initial_value", iterative_initial_value},
-                       {"iterative_update_value", iterative_update_value}},
-      .string_data  = {{"vss_model_type",
-                        vss::model_type_to_string(vss_model.get_model_type())},
-                       {"separation_functions",
-                        vss_model.get_separation_function_names()},
-                       {"optimality_strategy",
-                        optimality_strategy_to_string(optimality_strategy)},
-                       {"iterative_update_strategy",
-                        update_strategy_to_string(iterative_update_strategy)},
-                       {"parameter_identifier",
-                        solution_settings.parameter_identifier.value_or("")}},
+      .double_data =
+          {
+              {"delta_t", dt},
+              {"iterative_initial_value", iterative_initial_value},
+              {"iterative_update_value", iterative_update_value},
+          },
+      .string_data =
+          {
+              {
+                  "vss_model_type",
+                  vss::model_type_to_string(vss_model.get_model_type()),
+              },
+              {
+                  "separation_functions",
+                  vss_model.get_separation_function_names(),
+              },
+              {
+                  "optimality_strategy",
+                  optimality_strategy_to_string(optimality_strategy),
+              },
+              {
+                  "iterative_update_strategy",
+                  update_strategy_to_string(iterative_update_strategy),
+              },
+              {
+                  "parameter_identifier",
+                  solution_settings.parameter_identifier.value_or(""),
+              },
+          },
   };
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_CLI_OPTIONS_VSS_MIP_HPP
+#define CDA_RAIL_CLI_OPTIONS_VSS_MIP_HPP
 
 #include "CLI/CLI.hpp"
 #include "Definitions.hpp"
@@ -53,7 +54,8 @@ struct VssMipSettings {
   bool               iterative_approach{false};
   OptimalityStrategy optimality_strategy{OptimalityStrategy::Optimal};
   solver::mip_based::UpdateStrategyVSSGen iterative_update_strategy{
-      solver::mip_based::UpdateStrategyVSSGen::Fixed};
+      solver::mip_based::UpdateStrategyVSSGen::Fixed,
+  };
   double iterative_initial_value{1};
   double iterative_update_value{2};
   bool   iterative_include_cuts{true};
@@ -110,3 +112,5 @@ vss_mip_solution_settings(const VssMipSettings& settings,
                           const std::string&    working_directory);
 
 } // namespace cda_rail::cli
+
+#endif // CDA_RAIL_CLI_OPTIONS_VSS_MIP_HPP

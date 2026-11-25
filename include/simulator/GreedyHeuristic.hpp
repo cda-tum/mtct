@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SIMULATOR_GREEDYHEURISTIC_HPP
+#define CDA_RAIL_SIMULATOR_GREEDYHEURISTIC_HPP
 
 #include "CustomExceptions.hpp"
 #include "GeneralSimulator.hpp"
@@ -109,9 +110,11 @@ struct RemainingTimeHeuristicResult {
     bool consider_earliest_exit) {
   switch (type) {
   case RemainingTimeHeuristicType::Zero:
-    return {.feasible                     = true,
-            .remaining_exit_time          = 0.0,
-            .average_remaining_stop_delay = 0.0};
+    return {
+        .feasible                     = true,
+        .remaining_exit_time          = 0.0,
+        .average_remaining_stop_delay = 0.0,
+    };
   case RemainingTimeHeuristicType::Simple:
     return simple_remaining_time_heuristic(tr, instance, state, tr_exit_time,
                                            consider_earliest_exit);
@@ -179,3 +182,5 @@ struct HeuristicResult {
     bool consider_earliest_exit);
 
 } // namespace cda_rail::simulator
+
+#endif // CDA_RAIL_SIMULATOR_GREEDYHEURISTIC_HPP

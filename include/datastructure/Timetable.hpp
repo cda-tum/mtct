@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_DATASTRUCTURE_TIMETABLE_HPP
+#define CDA_RAIL_DATASTRUCTURE_TIMETABLE_HPP
+
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
@@ -518,7 +520,8 @@ private:
     }
   }
 
-  std::pair<bool, std::optional<cda_rail::exceptions::CustomException>>
+  [[nodiscard]] std::pair<bool,
+                          std::optional<cda_rail::exceptions::CustomException>>
   check_consistency_helper() const;
 
 public:
@@ -1054,3 +1057,5 @@ public:
   };
 };
 } // namespace cda_rail
+
+#endif // CDA_RAIL_DATASTRUCTURE_TIMETABLE_HPP

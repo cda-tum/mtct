@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cctype>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -29,10 +28,10 @@
 // CONSTRUCTORS
 // -----------------------------
 
-cda_rail::Network::Network(std::string_view const       networkName,
+cda_rail::Network::Network(std::string_view             network_name,
                            const std::filesystem::path& working_directory)
-    : Network(networkName) {
-  auto const path = working_directory / "networks" / networkName;
+    : Network(network_name) {
+  auto const path = working_directory / "networks" / network_name;
   if (!std::filesystem::exists(path)) {
     throw exceptions::ImportException("Path " + path.string() +
                                       " does not exist");
@@ -236,14 +235,14 @@ const cda_rail::Edge& cda_rail::Network::get_edge_helper(size_t index) const {
 }
 
 std::string cda_rail::Network::get_edge_name_helper(
-    std::string_view v1, std::string_view v2, bool const checkExistence) const {
-  if (checkExistence && !has_vertex(v1)) {
+    std::string_view v1, std::string_view v2, bool check_existence) const {
+  if (check_existence && !has_vertex(v1)) {
     throw exceptions::VertexNotExistentException(v1);
   }
-  if (checkExistence && !has_vertex(v2)) {
+  if (check_existence && !has_vertex(v2)) {
     throw exceptions::VertexNotExistentException(v2);
   }
-  if (checkExistence && !has_edge(v1, v2)) {
+  if (check_existence && !has_edge(v1, v2)) {
     throw exceptions::EdgeNotExistentException(v1, v2);
   }
   return std::string(v1).append("-").append(v2);
@@ -378,9 +377,13 @@ cda_rail::Network::common_vertex_helper(size_t e_idx_1, size_t e_idx_2) const {
     if (v == e2.source || v == e2.target) {
       if (shared.has_value()) {
         throw cda_rail::exceptions::ConsistencyException(
-            concatenate_string_views({"Edges", std::to_string(e_idx_1), " and ",
-                                      std::to_string(e_idx_2),
-                                      " have more than one common vertex"}));
+            concatenate_string_views({
+                "Edges",
+                std::to_string(e_idx_1),
+                " and ",
+                std::to_string(e_idx_2),
+                " have more than one common vertex",
+            }));
       }
       shared = v;
     }
@@ -715,17 +718,17 @@ size_t cda_rail::Network::max_vss_on_edge_helper(
 // SETTER
 // -----------------------------
 
-void cda_rail::Network::change_vertex_name_helper(
-    size_t index, std::string_view const newName) {
+void cda_rail::Network::change_vertex_name_helper(size_t           index,
+                                                  std::string_view new_name) {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  if (has_vertex(newName)) {
+  if (has_vertex(new_name)) {
     throw exceptions::InvalidInputException("Vertex already exists");
   }
   m_vertex_name_to_index.erase(m_vertices.at(index).name);
-  m_vertices.at(index).name = newName;
-  m_vertex_name_to_index.emplace(newName, index);
+  m_vertices.at(index).name = new_name;
+  m_vertex_name_to_index.emplace(new_name, index);
 }
 
 void cda_rail::Network::change_vertex_type_helper(size_t     index,
@@ -807,15 +810,15 @@ size_t cda_rail::Network::add_edge_helper(
 
 std::pair<size_t, size_t> cda_rail::Network::add_bidirectional_edge(
     VertexInput const& source, VertexInput const& target, double const length,
-    double const maxSpeed, std::optional<bool> const& breakable,
+    double max_speed, std::optional<bool> const& breakable,
     std::optional<double> const& min_block_length,
     std::optional<double> const& min_stop_block_length) {
   size_t const forward_edge_index =
-      add_edge(source, target, length, maxSpeed, breakable, min_block_length,
+      add_edge(source, target, length, max_speed, breakable, min_block_length,
                min_stop_block_length);
   size_t const reverse_edge_index =
       add_edge( // NOLINT(readability-suspicious-call-argument)
-          target, source, length, maxSpeed, breakable, min_block_length,
+          target, source, length, max_speed, breakable, min_block_length,
           min_stop_block_length);
   return {forward_edge_index, reverse_edge_index};
 }
@@ -833,6 +836,79 @@ void cda_rail::Network::add_successor_helper(size_t edge_in, size_t edge_out) {
                                            std::to_string(edge_in));
   }
   m_successors.at(edge_in).insert(edge_out);
+}
+
+void cda_rail::Network::add_successors_via_helper(size_t from, size_t via,
+                                                  size_t to) {
+  for (const auto& [in, out] : {std::pair{from, to}, std::pair{to, from}}) {
+    if (has_edge(in, via) && has_edge(via, out)) {
+      add_successor({in, via}, {via, out});
+    }
+  }
+}
+
+void cda_rail::Network::throw_if_not_exactly_the_neighbors(
+    size_t vertex, cda_rail::index_vector const& vertices) const {
+  const cda_rail::index_set given(vertices.begin(), vertices.end());
+  if (given.size() != vertices.size() || given != neighbors_helper(vertex)) {
+    throw exceptions::InvalidInputException(
+        "The given vertices are not exactly the neighbors of " +
+        get_vertex(vertex).name + ".");
+  }
+}
+
+void cda_rail::Network::add_trivial_successors() {
+  for (size_t v = 0; v < number_of_vertices(); ++v) {
+    const auto neighbors = neighbors_helper(v);
+    if (neighbors.size() == 2) {
+      add_successors_via_helper(*neighbors.begin(), v,
+                                *std::next(neighbors.begin()));
+    }
+  }
+}
+
+void cda_rail::Network::add_turnout_successors(VertexInput const& turnout,
+                                               VertexInput const& toe,
+                                               VertexInput const& branch_1,
+                                               VertexInput const& branch_2) {
+  const auto turnout_index  = turnout.resolve(this);
+  const auto toe_index      = toe.resolve(this);
+  const auto branch_1_index = branch_1.resolve(this);
+  const auto branch_2_index = branch_2.resolve(this);
+  throw_if_not_exactly_the_neighbors(
+      turnout_index, {toe_index, branch_1_index, branch_2_index});
+  add_successors_via_helper(toe_index, turnout_index, branch_1_index);
+  add_successors_via_helper(toe_index, turnout_index, branch_2_index);
+}
+
+void cda_rail::Network::add_crossing_successors(VertexInput const& crossing,
+                                                VertexInput const& track_1_a,
+                                                VertexInput const& track_1_b,
+                                                VertexInput const& track_2_a,
+                                                VertexInput const& track_2_b) {
+  const auto crossing_index  = crossing.resolve(this);
+  const auto track_1_a_index = track_1_a.resolve(this);
+  const auto track_1_b_index = track_1_b.resolve(this);
+  const auto track_2_a_index = track_2_a.resolve(this);
+  const auto track_2_b_index = track_2_b.resolve(this);
+  throw_if_not_exactly_the_neighbors(
+      crossing_index,
+      {track_1_a_index, track_1_b_index, track_2_a_index, track_2_b_index});
+  add_successors_via_helper(track_1_a_index, crossing_index, track_1_b_index);
+  add_successors_via_helper(track_2_a_index, crossing_index, track_2_b_index);
+}
+
+void cda_rail::Network::add_double_slip_successors(
+    VertexInput const& double_slip, VertexInput const& track_1_a,
+    VertexInput const& track_1_b, VertexInput const& track_2_a,
+    VertexInput const& track_2_b) {
+  add_crossing_successors(double_slip, track_1_a, track_1_b, track_2_a,
+                          track_2_b);
+  const auto double_slip_index = double_slip.resolve(this);
+  add_successors_via_helper(track_1_a.resolve(this), double_slip_index,
+                            track_2_b.resolve(this));
+  add_successors_via_helper(track_2_a.resolve(this), double_slip_index,
+                            track_1_b.resolve(this));
 }
 
 std::vector<std::pair<size_t, cda_rail::index_vector>>

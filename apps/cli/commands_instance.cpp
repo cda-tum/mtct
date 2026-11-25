@@ -93,7 +93,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
                    "standalone network of this session, that in-memory "
                    "network is adopted instead of being read from disk.")
       ->required();
-  new_cmd->callback([&session, new_options]() {
+  new_cmd->callback([&session, new_options] {
     const bool had_unsaved_changes = session.has_unsaved_changes();
     session.new_instance(new_options->name, new_options->subdirectory,
                          new_options->network_name);
@@ -116,7 +116,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
       ->add_option("-s,--instance-subdirectory", load_options->subdirectory,
                    "Subdirectory of the instance")
       ->required();
-  load_cmd->callback([&session, load_options]() {
+  load_cmd->callback([&session, load_options] {
     const bool had_unsaved_changes = session.has_unsaved_changes();
     session.load_instance(load_options->name, load_options->subdirectory);
     warn_about_discarded(had_unsaved_changes);
@@ -127,7 +127,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
   // ------------------------------------------------------------------ list
   instance_cmd
       ->add_subcommand("list", "List the instances in the working directory")
-      ->callback([&session]() { list_instances(session); });
+      ->callback([&session] { list_instances(session); });
 
   // ------------------------------------------------------------------ save
   auto* save_cmd = instance_cmd->add_subcommand(
@@ -145,7 +145,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
       "-w,--with-network", save_options->with_network,
       "Also write the network. Without this flag the network on disk is left "
       "untouched, even if it was edited in this session.");
-  save_cmd->callback([&session, save_options, save_as_opt]() {
+  save_cmd->callback([&session, save_options, save_as_opt] {
     if (save_as_opt->count() > 0) {
       session.instance().set_instance_name(save_options->name);
     }
@@ -168,7 +168,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
       ->add_subcommand("reload",
                        "Reread the instance from disk, discarding unsaved "
                        "changes")
-      ->callback([&session]() {
+      ->callback([&session] {
         const bool had_unsaved_changes = session.has_unsaved_changes();
         session.reload_instance();
         warn_about_discarded(had_unsaved_changes);
@@ -179,7 +179,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
   // ----------------------------------------------------------------- close
   instance_cmd
       ->add_subcommand("close", "Unload the instance without writing it")
-      ->callback([&session]() {
+      ->callback([&session] {
         const bool had_unsaved_changes = session.has_unsaved_changes();
         session.close_instance();
         warn_about_discarded(had_unsaved_changes);
@@ -188,7 +188,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
 
   // ------------------------------------------------------------------ info
   instance_cmd->add_subcommand("info", "Show what the loaded instance contains")
-      ->callback([&session]() { print_instance_info(session); });
+      ->callback([&session] { print_instance_info(session); });
 
   // ----------------------------------------------------------------- check
   auto* check_cmd = instance_cmd->add_subcommand(
@@ -198,7 +198,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
       "-l,--allow-late-entry", *late_entry,
       "Allow trains to enter the network later than scheduled when judging "
       "whether the instance is obviously infeasible");
-  check_cmd->callback([&session, late_entry]() {
+  check_cmd->callback([&session, late_entry] {
     const auto& instance = session.const_instance();
     std::cout << "Consistent (every train routed): "
               << (instance.check_consistency(true) ? "yes" : "no") << '\n';
@@ -220,7 +220,7 @@ void cda_rail::cli::add_instance_commands(CLI::App& app, Session& session) {
   auto  weight     = std::make_shared<double>(0);
   auto* weight_opt = weight_cmd->add_option(
       "weight", *weight, "New weight. If omitted, the current one is printed.");
-  weight_cmd->callback([&session, weight, weight_opt]() {
+  weight_cmd->callback([&session, weight, weight_opt] {
     if (weight_opt->count() > 0) {
       session.instance().set_station_delay_weight(*weight);
       session.mark_instance_modified();

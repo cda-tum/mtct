@@ -197,7 +197,8 @@ Obviously infeasible:            no
 status                                  network vertex add / change / list
 help                                    network edge add / add-bidirectional / change / list
 exit                                    network successor add / list
-working-directory [<path>]
+working-directory [<path>]              network successor add-trivial / add-turnout
+                                        network successor add-crossing / add-double-slip
                                         station add / add-track / list
 instance new / load / list / info       train add / change / schedule / weight / list
 instance save / reload / close          train stop add / remove

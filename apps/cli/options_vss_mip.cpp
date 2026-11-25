@@ -30,7 +30,7 @@
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 namespace {
 using cda_rail::cli::SeparationFunctionType;
@@ -41,14 +41,17 @@ const std::map<std::string, cda_rail::vss::ModelType>& vss_model_type_map() {
           {"Discrete", cda_rail::vss::ModelType::Discrete},
           {"Continuous", cda_rail::vss::ModelType::Continuous},
           {"Inferred", cda_rail::vss::ModelType::Inferred},
-          {"InferredAlt", cda_rail::vss::ModelType::InferredAlt}};
+          {"InferredAlt", cda_rail::vss::ModelType::InferredAlt},
+  };
   return VSS_MODEL_TYPE_MAP;
 }
 
 const std::map<std::string, SeparationFunctionType>& separation_function_map() {
   static const std::map<std::string, SeparationFunctionType>
-      SEPARATION_FUNCTION_MAP{{"Uniform", SeparationFunctionType::Uniform},
-                              {"Chebyshev", SeparationFunctionType::Chebyshev}};
+      SEPARATION_FUNCTION_MAP{
+          {"Uniform", SeparationFunctionType::Uniform},
+          {"Chebyshev", SeparationFunctionType::Chebyshev},
+  };
   return SEPARATION_FUNCTION_MAP;
 }
 
@@ -58,7 +61,8 @@ optimality_strategy_map() {
       OPTIMALITY_STRATEGY_MAP{
           {"Optimal", cda_rail::OptimalityStrategy::Optimal},
           {"TradeOff", cda_rail::OptimalityStrategy::TradeOff},
-          {"Feasible", cda_rail::OptimalityStrategy::Feasible}};
+          {"Feasible", cda_rail::OptimalityStrategy::Feasible},
+  };
   return OPTIMALITY_STRATEGY_MAP;
 }
 
@@ -68,8 +72,11 @@ update_strategy_map() {
                         cda_rail::solver::mip_based::UpdateStrategyVSSGen>
       UPDATE_STRATEGY_MAP{
           {"Fixed", cda_rail::solver::mip_based::UpdateStrategyVSSGen::Fixed},
-          {"Relative",
-           cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative}};
+          {
+              "Relative",
+              cda_rail::solver::mip_based::UpdateStrategyVSSGen::Relative,
+          },
+  };
   return UPDATE_STRATEGY_MAP;
 }
 } // namespace
@@ -236,7 +243,7 @@ void cda_rail::cli::add_vss_mip_options(CLI::App&       app,
       ->group("Model Parameters");
   // Whether braking curves are included is only known once everything is
   // parsed, since it is a flag that can be negated.
-  app.parse_complete_callback([&settings]() {
+  app.parse_complete_callback([&settings] {
     if (settings.convexify_braking_distance &&
         (!settings.braking_curves || settings.only_stop_at_vss)) {
       throw CLI::ValidationError(
@@ -298,9 +305,11 @@ void cda_rail::cli::add_vss_mip_options(CLI::App&       app,
 
   add_solving_options(app, settings.solving);
   add_export_options(app, settings.exporting,
-                     {.lp_model                    = true,
-                      .postprocess                 = true,
-                      .lp_model_solution_extension = ".sol"});
+                     {
+                         .lp_model                    = true,
+                         .postprocess                 = true,
+                         .lp_model_solution_extension = ".sol",
+                     });
 }
 
 void cda_rail::cli::finalize_vss_mip_settings(VssMipSettings& settings) {
@@ -315,52 +324,63 @@ void cda_rail::cli::finalize_vss_mip_settings(VssMipSettings& settings) {
 
 std::string
 cda_rail::cli::generate_vss_mip_identifier(const VssMipSettings& settings) {
-  std::string identifier = concatenate_string_views(
-      {format_double(settings.delta_t), "_",
-       bool_to_str(settings.train_dynamics), "_",
-       bool_to_str(settings.braking_curves), "_",
-       key_by_value(vss_model_type_map(), settings.vss_model_type)});
+  std::string identifier = concatenate_string_views({
+      format_double(settings.delta_t),
+      "_",
+      bool_to_str(settings.train_dynamics),
+      "_",
+      bool_to_str(settings.braking_curves),
+      "_",
+      key_by_value(vss_model_type_map(), settings.vss_model_type),
+  });
   for (const auto& separation_function : settings.separation_functions()) {
     identifier = concatenate_string_views(
         {identifier, "_", separation_function.get_name()});
   }
-  identifier = concatenate_string_views(
-      {identifier,
-       "_",
-       bool_to_str(settings.only_stop_at_vss),
-       "_",
-       bool_to_str(settings.use_pwl),
-       "_",
-       bool_to_str(settings.use_schedule_cuts),
-       "_",
-       bool_to_str(settings.iterative_approach),
-       "_",
-       key_by_value(optimality_strategy_map(), settings.optimality_strategy),
-       "_",
-       key_by_value(update_strategy_map(), settings.iterative_update_strategy),
-       "_",
-       format_double(settings.iterative_initial_value),
-       "_",
-       format_double(settings.iterative_update_value),
-       "_",
-       bool_to_str(settings.iterative_include_cuts),
-       "_",
-       bool_to_str(settings.exporting.postprocess),
-       "_",
-       std::to_string(settings.solving.time_limit)});
+  identifier = concatenate_string_views({
+      identifier,
+      "_",
+      bool_to_str(settings.only_stop_at_vss),
+      "_",
+      bool_to_str(settings.use_pwl),
+      "_",
+      bool_to_str(settings.use_schedule_cuts),
+      "_",
+      bool_to_str(settings.iterative_approach),
+      "_",
+      key_by_value(optimality_strategy_map(), settings.optimality_strategy),
+      "_",
+      key_by_value(update_strategy_map(), settings.iterative_update_strategy),
+      "_",
+      format_double(settings.iterative_initial_value),
+      "_",
+      format_double(settings.iterative_update_value),
+      "_",
+      bool_to_str(settings.iterative_include_cuts),
+      "_",
+      bool_to_str(settings.exporting.postprocess),
+      "_",
+      std::to_string(settings.solving.time_limit),
+  });
   // The settings that only exist for one of the two solvers are appended
   // last, so that the identifiers of the settings both of them share keep the
   // very same structure.
-  identifier =
-      settings.use_moving_block_information()
-          ? concatenate_string_views(
-                {identifier, "_", bool_to_str(settings.fix_stop_positions), "_",
-                 bool_to_str(settings.fix_exact_positions), "_",
-                 bool_to_str(settings.fix_exact_velocities), "_",
-                 bool_to_str(settings.hint_approximate_positions), "_",
-                 bool_to_str(settings.fix_order_on_edges)})
-          : concatenate_string_views(
-                {identifier, "_", bool_to_str(settings.fix_routes)});
+  identifier = settings.use_moving_block_information()
+                   ? concatenate_string_views({
+                         identifier,
+                         "_",
+                         bool_to_str(settings.fix_stop_positions),
+                         "_",
+                         bool_to_str(settings.fix_exact_positions),
+                         "_",
+                         bool_to_str(settings.fix_exact_velocities),
+                         "_",
+                         bool_to_str(settings.hint_approximate_positions),
+                         "_",
+                         bool_to_str(settings.fix_order_on_edges),
+                     })
+                   : concatenate_string_views(
+                         {identifier, "_", bool_to_str(settings.fix_routes)});
   // The convexified braking distance came later. It is only appended if set,
   // so that the identifiers of all settings without it stay as they were.
   if (settings.convexify_braking_distance) {
@@ -427,42 +447,50 @@ void cda_rail::cli::log_vss_mip_settings(const VssMipSettings& settings,
 
 cda_rail::solver::mip_based::ModelDetailVSSGen
 cda_rail::cli::vss_mip_model_detail(const VssMipSettings& settings) {
-  return {.delta_t        = settings.delta_t,
-          .fix_routes     = settings.fix_routes,
-          .train_dynamics = settings.train_dynamics,
-          .braking_curves = settings.braking_curves};
+  return {
+      .delta_t        = settings.delta_t,
+      .fix_routes     = settings.fix_routes,
+      .train_dynamics = settings.train_dynamics,
+      .braking_curves = settings.braking_curves,
+  };
 }
 
 cda_rail::solver::mip_based::ModelDetailMBInformation
 cda_rail::cli::vss_mip_model_detail_mb(const VssMipSettings& settings) {
-  return {.delta_t                    = settings.delta_t,
-          .train_dynamics             = settings.train_dynamics,
-          .braking_curves             = settings.braking_curves,
-          .fix_stop_positions         = settings.fix_stop_positions,
-          .fix_exact_positions        = settings.fix_exact_positions,
-          .fix_exact_velocities       = settings.fix_exact_velocities,
-          .hint_approximate_positions = settings.hint_approximate_positions,
-          .fix_order_on_edges         = settings.fix_order_on_edges};
+  return {
+      .delta_t                    = settings.delta_t,
+      .train_dynamics             = settings.train_dynamics,
+      .braking_curves             = settings.braking_curves,
+      .fix_stop_positions         = settings.fix_stop_positions,
+      .fix_exact_positions        = settings.fix_exact_positions,
+      .fix_exact_velocities       = settings.fix_exact_velocities,
+      .hint_approximate_positions = settings.hint_approximate_positions,
+      .fix_order_on_edges         = settings.fix_order_on_edges,
+  };
 }
 
 cda_rail::solver::mip_based::ModelSettingsVSSGen
 cda_rail::cli::vss_mip_model_settings(const VssMipSettings& settings) {
-  return {.model_type        = vss::Model(settings.vss_model_type,
-                                          settings.separation_functions(),
-                                          settings.only_stop_at_vss),
-          .use_pwl           = settings.use_pwl,
-          .use_schedule_cuts = settings.use_schedule_cuts,
-          .convexify_braking_distance = settings.convexify_braking_distance};
+  return {
+      .model_type =
+          vss::Model(settings.vss_model_type, settings.separation_functions(),
+                     settings.only_stop_at_vss),
+      .use_pwl                    = settings.use_pwl,
+      .use_schedule_cuts          = settings.use_schedule_cuts,
+      .convexify_braking_distance = settings.convexify_braking_distance,
+  };
 }
 
 cda_rail::solver::mip_based::SolverStrategyVSSGen
 cda_rail::cli::vss_mip_solver_strategy(const VssMipSettings& settings) {
-  return {.iterative_approach  = settings.iterative_approach,
-          .optimality_strategy = settings.optimality_strategy,
-          .update_strategy     = settings.iterative_update_strategy,
-          .initial_value       = settings.iterative_initial_value,
-          .update_value        = settings.iterative_update_value,
-          .include_cuts        = settings.iterative_include_cuts};
+  return {
+      .iterative_approach  = settings.iterative_approach,
+      .optimality_strategy = settings.optimality_strategy,
+      .update_strategy     = settings.iterative_update_strategy,
+      .initial_value       = settings.iterative_initial_value,
+      .update_value        = settings.iterative_update_value,
+      .include_cuts        = settings.iterative_include_cuts,
+  };
 }
 
 cda_rail::solver::mip_based::SolutionSettingsVSSGen
@@ -477,4 +505,4 @@ cda_rail::cli::vss_mip_solution_settings(const VssMipSettings& settings,
   return solution_settings;
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)

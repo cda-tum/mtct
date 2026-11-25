@@ -72,7 +72,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
   auto station_name = std::make_shared<std::string>();
   station_add_cmd->add_option("name", *station_name, "Name of the station")
       ->required();
-  station_add_cmd->callback([&session, station_name]() {
+  station_add_cmd->callback([&session, station_name] {
     session.instance().add_empty_station(*station_name);
     session.mark_instance_modified();
     std::cout << "Added station " << *station_name << '\n';
@@ -97,7 +97,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
       ->add_option("target", track_options->target,
                    "Name of the target vertex of the track")
       ->required();
-  station_track_cmd->callback([&session, track_options]() {
+  station_track_cmd->callback([&session, track_options] {
     session.instance().add_track_to_station(
         track_options->station,
         edge_input(track_options->source, track_options->target));
@@ -108,7 +108,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
   });
 
   station_cmd->add_subcommand("list", "List all stations and their tracks")
-      ->callback([&session]() { list_stations(session); });
+      ->callback([&session] { list_stations(session); });
 
   // ----------------------------------------------------------------- trains
 
@@ -194,7 +194,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
                    "Weight of the train in the objective function")
       ->check(CLI::NonNegativeNumber)
       ->capture_default_str();
-  train_add_cmd->callback([&session, train_add]() {
+  train_add_cmd->callback([&session, train_add] {
     const auto index = session.instance().add_train(
         train_add->name, train_add->length, train_add->max_speed,
         train_add->acceleration, train_add->deceleration, train_add->tim,
@@ -245,7 +245,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
       "is negated (-p or --no-tim)");
   train_change_cmd->callback([&session, train_change, change_length_opt,
                               change_speed_opt, change_acceleration_opt,
-                              change_deceleration_opt, change_tim_opt]() {
+                              change_deceleration_opt, change_tim_opt] {
     auto& train = session.instance().editable_train(train_change->name);
     if (change_length_opt->count() > 0) {
       train.set_length(train_change->length);
@@ -305,7 +305,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
           ->check(CLI::NonNegativeNumber);
   schedule_cmd->callback([&session, schedule, entry_vertex_opt, entry_time_opt,
                           initial_velocity_opt, exit_vertex_opt, exit_time_opt,
-                          exit_velocity_opt]() {
+                          exit_velocity_opt] {
     auto&       instance = session.instance();
     const auto& network  = instance.get_const_network();
     // The vertices are resolved before the schedule is touched, so that an
@@ -379,7 +379,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
                    "Minimal duration of the service in s")
       ->check(CLI::NonNegativeNumber)
       ->required();
-  stop_add_cmd->callback([&session, stop_add]() {
+  stop_add_cmd->callback([&session, stop_add] {
     session.instance().insert_stop(stop_add->train, stop_add->station,
                                    stop_add->service_time, stop_add->duration);
     session.mark_instance_modified();
@@ -395,7 +395,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
   stop_remove_cmd
       ->add_option("station", stop_remove->station, "Name of the station")
       ->required();
-  stop_remove_cmd->callback([&session, stop_remove]() {
+  stop_remove_cmd->callback([&session, stop_remove] {
     session.instance()
         .editable_schedule(stop_remove->train)
         .remove_stop(stop_remove->station);
@@ -420,7 +420,7 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
           ->add_option("weight", weight_options->weight,
                        "New weight. If omitted, the current one is printed.")
           ->check(CLI::NonNegativeNumber);
-  weight_cmd->callback([&session, weight_options, weight_opt]() {
+  weight_cmd->callback([&session, weight_options, weight_opt] {
     if (weight_opt->count() > 0) {
       session.instance().set_train_weight(weight_options->name,
                                           weight_options->weight);
@@ -432,5 +432,5 @@ void cda_rail::cli::add_timetable_commands(CLI::App& app, Session& session) {
   });
 
   train_cmd->add_subcommand("list", "List all trains with their schedules")
-      ->callback([&session]() { list_trains(session); });
+      ->callback([&session] { list_trains(session); });
 }

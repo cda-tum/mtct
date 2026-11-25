@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_CLI_COMMANDINTERPRETER_HPP
+#define CDA_RAIL_CLI_COMMANDINTERPRETER_HPP
 
 #include "CLI/CLI.hpp"
 #include "Session.hpp"
@@ -43,7 +44,7 @@ public:
    *
    * @return `true` if the session should continue, `false` after `exit`.
    */
-  bool run_line(const std::string& line);
+  bool run_line(const std::string& input);
 
   /** @brief Whether the last executed line asked the session to end. */
   [[nodiscard]] bool exit_requested() const { return m_exit_requested; }
@@ -78,3 +79,5 @@ void add_solve_commands(CLI::App& app, Session& session);
 void add_solution_commands(CLI::App& app, Session& session);
 
 } // namespace cda_rail::cli
+
+#endif // CDA_RAIL_CLI_COMMANDINTERPRETER_HPP

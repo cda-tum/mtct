@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SIMULATOR_EVENTSIMULATOR_HPP
+#define CDA_RAIL_SIMULATOR_EVENTSIMULATOR_HPP
 
 #include "Definitions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
@@ -256,3 +257,5 @@ private:
 };
 
 } // namespace cda_rail::simulator
+
+#endif // CDA_RAIL_SIMULATOR_EVENTSIMULATOR_HPP

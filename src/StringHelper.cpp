@@ -23,11 +23,11 @@ std::string cda_rail::concatenate_string_views(
   return result;
 }
 
-void cda_rail::to_bool_optional_inplace(std::string_view const sView,
-                                        std::optional<bool>&   b) {
-  if (case_insensitive_str_equal(sView, "true")) {
+void cda_rail::to_bool_optional_inplace(std::string_view     s_view,
+                                        std::optional<bool>& b) {
+  if (case_insensitive_str_equal(s_view, "true")) {
     b = true;
-  } else if (case_insensitive_str_equal(sView, "false")) {
+  } else if (case_insensitive_str_equal(s_view, "false")) {
     b = false;
   }
 }

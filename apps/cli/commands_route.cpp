@@ -55,7 +55,7 @@ void cda_rail::cli::add_route_commands(CLI::App& app, Session& session) {
       ->required()
       ->expected(2, -1)
       ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll);
-  route_add_cmd->callback([&session, route_add]() {
+  route_add_cmd->callback([&session, route_add] {
     auto& instance = session.instance();
     if (!instance.get_const_routes().has_route(route_add->train)) {
       instance.add_empty_route(route_add->train);
@@ -76,7 +76,7 @@ void cda_rail::cli::add_route_commands(CLI::App& app, Session& session) {
   auto clear_train = std::make_shared<std::string>();
   route_clear_cmd->add_option("train", *clear_train, "Name of the train")
       ->required();
-  route_clear_cmd->callback([&session, clear_train]() {
+  route_clear_cmd->callback([&session, clear_train] {
     auto& instance = session.instance();
     if (!instance.get_const_routes().has_route(*clear_train)) {
       instance.add_empty_route(*clear_train);
@@ -89,5 +89,5 @@ void cda_rail::cli::add_route_commands(CLI::App& app, Session& session) {
   });
 
   route_cmd->add_subcommand("list", "List the route of every train")
-      ->callback([&session]() { list_routes(session); });
+      ->callback([&session] { list_routes(session); });
 }

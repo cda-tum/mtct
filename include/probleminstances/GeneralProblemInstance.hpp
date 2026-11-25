@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_PROBLEMINSTANCES_GENERALPROBLEMINSTANCE_HPP
+#define CDA_RAIL_PROBLEMINSTANCES_GENERALPROBLEMINSTANCE_HPP
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
@@ -1026,13 +1027,17 @@ public:
     if (parameter_identifier.has_value()) {
       exceptions::throw_if_invalid_folder_name(parameter_identifier.value());
     }
-    auto const adjusted_name =
-        parameter_identifier.has_value()
-            ? concatenate_string_views({get_instance()->get_instance_name(),
-                                        "-", parameter_identifier.value()})
-            : get_instance()->get_instance_name();
-    return {working_directory / "solutions" / solutionSubdirectory /
-            get_instance()->get_instance_subdirectory() / adjusted_name};
+    auto const adjusted_name = parameter_identifier.has_value()
+                                   ? concatenate_string_views({
+                                         get_instance()->get_instance_name(),
+                                         "-",
+                                         parameter_identifier.value(),
+                                     })
+                                   : get_instance()->get_instance_name();
+    return {
+        working_directory / "solutions" / solutionSubdirectory /
+            get_instance()->get_instance_subdirectory() / adjusted_name,
+    };
   }
 
   /**
@@ -1447,3 +1452,5 @@ public:
   [[nodiscard]] bool check_consistency() const override;
 };
 } // namespace cda_rail::instances
+
+#endif // CDA_RAIL_PROBLEMINSTANCES_GENERALPROBLEMINSTANCE_HPP

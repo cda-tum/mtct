@@ -15,7 +15,7 @@
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 namespace {
 using cda_rail::simulator::RemainingTimeHeuristicType;
@@ -25,7 +25,8 @@ using cda_rail::solver::astar_based::NextStateStrategy;
 const std::map<std::string, SimulatorType>& simulator_type_map() {
   static const std::map<std::string, SimulatorType> SIMULATOR_TYPE_MAP{
       {"Greedy", SimulatorType::Greedy},
-      {"EventBased", SimulatorType::EventBased}};
+      {"EventBased", SimulatorType::EventBased},
+  };
   return SIMULATOR_TYPE_MAP;
 }
 
@@ -33,7 +34,8 @@ const std::map<std::string, NextStateStrategy>& next_state_strategy_map() {
   static const std::map<std::string, NextStateStrategy> NEXT_STATE_STRATEGY_MAP{
       {"SingleEdge", NextStateStrategy::SingleEdge},
       {"NextTTD", NextStateStrategy::NextTTD},
-      {"NextRelevantTTD", NextStateStrategy::NextRelevantTTD}};
+      {"NextRelevantTTD", NextStateStrategy::NextRelevantTTD},
+  };
   return NEXT_STATE_STRATEGY_MAP;
 }
 
@@ -42,7 +44,8 @@ remaining_time_heuristic_type_map() {
   static const std::map<std::string, RemainingTimeHeuristicType>
       REMAINING_TIME_HEURISTIC_TYPE_MAP{
           {"Zero", RemainingTimeHeuristicType::Zero},
-          {"Simple", RemainingTimeHeuristicType::Simple}};
+          {"Simple", RemainingTimeHeuristicType::Simple},
+  };
   return REMAINING_TIME_HEURISTIC_TYPE_MAP;
 }
 } // namespace
@@ -135,31 +138,32 @@ std::string
 cda_rail::cli::generate_mb_astar_identifier(const MbAStarSettings& settings) {
   // The completion interval is only appended if completions are used, so
   // that the identifiers of all other settings stay as they were
-  return concatenate_string_views(
-      {format_double(settings.dt),
-       "_",
-       simulator::simulator_type_to_string(settings.simulator_type),
-       "_",
-       bool_to_str(settings.late_entry_possible),
-       "_",
-       bool_to_str(settings.limit_speed_by_leaving_edges),
-       "_",
-       bool_to_str(settings.consider_earliest_exit),
-       "_",
-       bool_to_str(settings.time_aware_state_transitions),
-       "_",
-       format_double(settings.a_star_weight),
-       "_",
-       solver::astar_based::next_state_strategy_to_string(
-           settings.next_state_strategy),
-       "_",
-       simulator::remaining_time_heuristic_type_to_string(
-           settings.remaining_time_heuristic_type),
-       "_",
-       std::to_string(settings.solving.time_limit),
-       settings.completion_interval > 0
-           ? "_" + std::to_string(settings.completion_interval)
-           : ""});
+  return concatenate_string_views({
+      format_double(settings.dt),
+      "_",
+      simulator::simulator_type_to_string(settings.simulator_type),
+      "_",
+      bool_to_str(settings.late_entry_possible),
+      "_",
+      bool_to_str(settings.limit_speed_by_leaving_edges),
+      "_",
+      bool_to_str(settings.consider_earliest_exit),
+      "_",
+      bool_to_str(settings.time_aware_state_transitions),
+      "_",
+      format_double(settings.a_star_weight),
+      "_",
+      solver::astar_based::next_state_strategy_to_string(
+          settings.next_state_strategy),
+      "_",
+      simulator::remaining_time_heuristic_type_to_string(
+          settings.remaining_time_heuristic_type),
+      "_",
+      std::to_string(settings.solving.time_limit),
+      settings.completion_interval > 0
+          ? "_" + std::to_string(settings.completion_interval)
+          : "",
+  });
 }
 
 void cda_rail::cli::log_mb_astar_settings(
@@ -189,22 +193,24 @@ void cda_rail::cli::log_mb_astar_settings(
 
 cda_rail::solver::astar_based::ModelDetailMBAStar
 cda_rail::cli::mb_astar_model_detail(const MbAStarSettings& settings) {
-  return {.dt                  = settings.dt,
-          .simulator_type      = settings.simulator_type,
-          .late_entry_possible = settings.late_entry_possible,
-          .limit_speed_by_leaving_edges =
-              settings.limit_speed_by_leaving_edges};
+  return {
+      .dt                           = settings.dt,
+      .simulator_type               = settings.simulator_type,
+      .late_entry_possible          = settings.late_entry_possible,
+      .limit_speed_by_leaving_edges = settings.limit_speed_by_leaving_edges,
+  };
 }
 
 cda_rail::solver::astar_based::SolverStrategyMBAStar
 cda_rail::cli::mb_astar_solver_strategy(const MbAStarSettings& settings) {
-  return {.remaining_time_heuristic_type =
-              settings.remaining_time_heuristic_type,
-          .next_state_strategy          = settings.next_state_strategy,
-          .consider_earliest_exit       = settings.consider_earliest_exit,
-          .time_aware_state_transitions = settings.time_aware_state_transitions,
-          .a_star_weight                = settings.a_star_weight,
-          .completion_interval          = settings.completion_interval};
+  return {
+      .remaining_time_heuristic_type = settings.remaining_time_heuristic_type,
+      .next_state_strategy           = settings.next_state_strategy,
+      .consider_earliest_exit        = settings.consider_earliest_exit,
+      .time_aware_state_transitions  = settings.time_aware_state_transitions,
+      .a_star_weight                 = settings.a_star_weight,
+      .completion_interval           = settings.completion_interval,
+  };
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)

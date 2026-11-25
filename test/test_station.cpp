@@ -223,10 +223,12 @@ TEST(StationFunctionality, ReadStation) {
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  cda_rail::index_set const track_ids{network.get_edge_index({"g00"}, {"g01"}),
-                                      network.get_edge_index({"g10"}, {"g11"}),
-                                      network.get_edge_index({"g01"}, {"g00"}),
-                                      network.get_edge_index({"g11"}, {"g10"})};
+  cda_rail::index_set const track_ids{
+      network.get_edge_index({"g00"}, {"g01"}),
+      network.get_edge_index({"g10"}, {"g11"}),
+      network.get_edge_index({"g01"}, {"g00"}),
+      network.get_edge_index({"g11"}, {"g10"}),
+  };
   EXPECT_EQ(station.tracks, track_ids);
 }
 
@@ -251,11 +253,11 @@ TEST(StationFunctionality, WriteStations) {
   EXPECT_THROW((void)stations.add_track_to_station("S1", 100, network),
                cda_rail::exceptions::EdgeNotExistentException);
 
-  stations.export_stations("./tmp/write_stations_test", network);
+  stations.export_stations("./tmp-WriteStations/write_stations_test", network);
   auto stations_read = cda_rail::StationList::import_stations(
-      "./tmp/write_stations_test", network);
+      "./tmp-WriteStations/write_stations_test", network);
 
-  std::filesystem::remove_all("./tmp");
+  std::filesystem::remove_all("./tmp-WriteStations");
 
   EXPECT_EQ(stations_read.size(), 2);
   EXPECT_TRUE(stations_read.has_station("S1"));
@@ -272,7 +274,8 @@ TEST(StationFunctionality, WriteStations) {
   EXPECT_EQ(s2.tracks.size(), 2);
   cda_rail::index_set const s2_tracks_target{
       network.get_edge_index({"l0"}, {"l1"}),
-      network.get_edge_index({"l1"}, {"l2"})};
+      network.get_edge_index({"l1"}, {"l2"}),
+  };
   EXPECT_EQ(s2.tracks, s2_tracks_target);
 }
 

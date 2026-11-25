@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_CLI_FORMATTING_HPP
+#define CDA_RAIL_CLI_FORMATTING_HPP
 
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
@@ -78,3 +79,5 @@ template <typename Map, typename Value>
 }
 
 } // namespace cda_rail::cli
+
+#endif // CDA_RAIL_CLI_FORMATTING_HPP

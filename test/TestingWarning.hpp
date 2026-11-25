@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_TEST_TESTINGWARNING_HPP
+#define CDA_RAIL_TEST_TESTINGWARNING_HPP
 
 #include <string>
 
@@ -20,3 +21,5 @@ private:
 };
 
 } // namespace cda_rail::test
+
+#endif // CDA_RAIL_TEST_TESTINGWARNING_HPP

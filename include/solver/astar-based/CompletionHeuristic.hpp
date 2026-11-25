@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SOLVER_ASTAR_BASED_COMPLETIONHEURISTIC_HPP
+#define CDA_RAIL_SOLVER_ASTAR_BASED_COMPLETIONHEURISTIC_HPP
 
 #include "probleminstances/GeneralProblemInstance.hpp"
 #include "simulator/GeneralSimulator.hpp"
@@ -76,3 +77,5 @@ complete_state(simulator::GeneralSimulator& simulator,
                simulator::SimulatorState state, double dt,
                bool late_entry_possible, bool limit_speed_by_leaving_edges);
 } // namespace cda_rail::solver::astar_based
+
+#endif // CDA_RAIL_SOLVER_ASTAR_BASED_COMPLETIONHEURISTIC_HPP

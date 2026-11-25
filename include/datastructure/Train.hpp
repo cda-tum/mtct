@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_DATASTRUCTURE_TRAIN_HPP
+#define CDA_RAIL_DATASTRUCTURE_TRAIN_HPP
+
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 
@@ -517,3 +519,5 @@ public:
   }
 };
 } // namespace cda_rail
+
+#endif // CDA_RAIL_DATASTRUCTURE_TRAIN_HPP

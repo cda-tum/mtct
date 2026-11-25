@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_DEFINITIONS_HPP
+#define CDA_RAIL_DEFINITIONS_HPP
+
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -47,7 +49,7 @@ enum class VertexType : std::uint8_t {
   NoBorder    = 0,
   VSS         = 1,
   TTD         = 2,
-  NoBorderVSS = 3
+  NoBorderVSS = 3,
 };
 /** @brief What a solver was able to say about the instance it was given. */
 enum class SolutionStatus : std::uint8_t {
@@ -55,7 +57,7 @@ enum class SolutionStatus : std::uint8_t {
   Feasible   = 1,
   Infeasible = 2,
   Timeout    = 3,
-  Unknown    = 4
+  Unknown    = 4,
 };
 /** @brief The name of @p status, as it is reported, exported and imported. */
 [[nodiscard]] constexpr std::string
@@ -85,7 +87,7 @@ solution_status_to_string(SolutionStatus const status) {
 enum class OptimalityStrategy : std::uint8_t {
   Optimal  = 0,
   TradeOff = 1,
-  Feasible = 2
+  Feasible = 2,
 };
 /**
  * @brief How the discrete velocities of a vertex are chosen.
@@ -96,7 +98,9 @@ enum class OptimalityStrategy : std::uint8_t {
  */
 enum class VelocityRefinementStrategy : std::uint8_t {
   None       = 0,
-  MinOneStep = 1
+  MinOneStep = 1,
 };
 
 } // namespace cda_rail
+
+#endif // CDA_RAIL_DEFINITIONS_HPP

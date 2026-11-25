@@ -103,6 +103,8 @@ cda_rail::solver::astar_based::complete_routes(
   const auto& network = instance.get_const_network();
 
   cda_rail::index_vector trains(instance.get_const_train_list().size());
+  // Do not use std::ranges::iota due to macOS incompatibility
+  // NOLINTNEXTLINE(modernize-use-ranges,boost-use-ranges)
   std::iota(trains.begin(), trains.end(), 0);
   std::ranges::stable_sort(trains, {}, [&instance](size_t tr) {
     return instance.get_const_schedule(tr).get_entry_time();

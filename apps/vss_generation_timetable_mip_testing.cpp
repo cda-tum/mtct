@@ -22,7 +22,7 @@
 // the 'solve vss-mip' subcommand of rail_cli offers the very same settings and
 // the two cannot drift apart.
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
 
 int main(int argc, char** argv) {
   // Only log to console using std::cerr and std::cout respectively unless
@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
 
   PLOGI << "Solving...";
 
-  auto const solution = [&]()
-      -> cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance {
+  auto const solution =
+      [&] -> cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance {
     if (settings.use_moving_block_information()) {
       const cda_rail::instances::GeneralPerformanceOptimizationInstance
           instance(instance_settings.instance_name,
@@ -105,4 +105,4 @@ int main(int argc, char** argv) {
   cda_rail::cli::log_solution_evaluation(solution);
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
