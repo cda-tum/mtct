@@ -149,6 +149,35 @@ void add_edge_options(CLI::App& cmd, EdgeAddOptions& options) {
       ->check(CLI::PositiveNumber)
       ->capture_default_str();
 }
+
+// The arguments shared by `successor add-crossing` and `successor
+// add-double-slip`.
+struct CrossingOptions {
+  std::string vertex;
+  std::string track_1_a;
+  std::string track_1_b;
+  std::string track_2_a;
+  std::string track_2_b;
+};
+
+void add_crossing_options(CLI::App& cmd, CrossingOptions& options,
+                          const std::string& kind) {
+  cmd.add_option("vertex", options.vertex, "Name of the " + kind + " vertex")
+      ->required();
+  cmd.add_option("track-1-a", options.track_1_a,
+                 "Neighbor on one side of the first track")
+      ->required();
+  cmd.add_option("track-1-b", options.track_1_b,
+                 "Neighbor on the other side of the first track")
+      ->required();
+  cmd.add_option("track-2-a", options.track_2_a,
+                 "Neighbor on one side of the second track, the same side as "
+                 "track-1-a")
+      ->required();
+  cmd.add_option("track-2-b", options.track_2_b,
+                 "Neighbor on the other side of the second track")
+      ->required();
+}
 } // namespace
 
 void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
@@ -473,6 +502,78 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
     std::cout << "Added successor " << successor_add->out_source << "-"
               << successor_add->out_target << " of " << successor_add->in_source
               << "-" << successor_add->in_target << '\n';
+  });
+
+  successor_cmd
+      ->add_subcommand("add-trivial",
+                       "Let trains pass straight through every vertex with "
+                       "exactly two neighbors")
+      ->callback([&session]() {
+        session.current_network().add_trivial_successors();
+        session.mark_network_modified();
+        std::cout << "Added the trivial successors\n";
+      });
+
+  auto* successor_turnout_cmd = successor_cmd->add_subcommand(
+      "add-turnout", "Add the successors of a simple turnout");
+  struct TurnoutOptions {
+    std::string turnout;
+    std::string toe;
+    std::string branch_1;
+    std::string branch_2;
+  };
+  auto turnout = std::make_shared<TurnoutOptions>();
+  successor_turnout_cmd
+      ->add_option("turnout", turnout->turnout, "Name of the turnout vertex")
+      ->required();
+  successor_turnout_cmd
+      ->add_option("toe", turnout->toe,
+                   "Neighbor from which both branches can be reached")
+      ->required();
+  successor_turnout_cmd
+      ->add_option("branch-1", turnout->branch_1,
+                   "Neighbor on the first branch")
+      ->required();
+  successor_turnout_cmd
+      ->add_option("branch-2", turnout->branch_2,
+                   "Neighbor on the second branch")
+      ->required();
+  successor_turnout_cmd->callback([&session, turnout]() {
+    session.current_network().add_turnout_successors(
+        vertex_input(turnout->turnout), vertex_input(turnout->toe),
+        vertex_input(turnout->branch_1), vertex_input(turnout->branch_2));
+    session.mark_network_modified();
+    std::cout << "Added the successors of turnout " << turnout->turnout << '\n';
+  });
+
+  auto* successor_crossing_cmd = successor_cmd->add_subcommand(
+      "add-crossing", "Add the successors of a diamond crossing");
+  auto crossing = std::make_shared<CrossingOptions>();
+  add_crossing_options(*successor_crossing_cmd, *crossing, "crossing");
+  successor_crossing_cmd->callback([&session, crossing]() {
+    session.current_network().add_crossing_successors(
+        vertex_input(crossing->vertex), vertex_input(crossing->track_1_a),
+        vertex_input(crossing->track_1_b), vertex_input(crossing->track_2_a),
+        vertex_input(crossing->track_2_b));
+    session.mark_network_modified();
+    std::cout << "Added the successors of crossing " << crossing->vertex
+              << '\n';
+  });
+
+  auto* successor_double_slip_cmd = successor_cmd->add_subcommand(
+      "add-double-slip", "Add the successors of a double slip switch");
+  auto double_slip = std::make_shared<CrossingOptions>();
+  add_crossing_options(*successor_double_slip_cmd, *double_slip,
+                       "double slip switch");
+  successor_double_slip_cmd->callback([&session, double_slip]() {
+    session.current_network().add_double_slip_successors(
+        vertex_input(double_slip->vertex), vertex_input(double_slip->track_1_a),
+        vertex_input(double_slip->track_1_b),
+        vertex_input(double_slip->track_2_a),
+        vertex_input(double_slip->track_2_b));
+    session.mark_network_modified();
+    std::cout << "Added the successors of double slip switch "
+              << double_slip->vertex << '\n';
   });
 
   successor_cmd->add_subcommand("list", "List the successors of every edge")

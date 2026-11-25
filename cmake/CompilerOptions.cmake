@@ -17,6 +17,13 @@ function(enable_project_options target_name)
     # always include debug symbols (avoids common problems with LTO)
     target_compile_options(${target_name} INTERFACE -g)
 
+    # Large test files exceed the default number of sections of a MinGW object file. Moreover, MinGW does not keep the
+    # stack 32-byte aligned, yet GCC stores 32-byte stack objects with aligned AVX moves, which crash at random (GCC bug
+    # 54412); the assembler hence replaces aligned vector moves by unaligned ones.
+    if(MINGW)
+      target_compile_options(${target_name} INTERFACE -Wa,-mbig-obj -Wa,-muse-unaligned-vector-move)
+    endif()
+
     # enable coverage collection options
     option(ENABLE_COVERAGE "Enable coverage reporting for gcc/clang" FALSE)
     if(ENABLE_COVERAGE)

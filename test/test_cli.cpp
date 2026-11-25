@@ -141,12 +141,48 @@ TEST_F(CliTest, BidirectionalEdge) {
   run(session, "network new TestNetwork");
   run(session, "network vertex add v0 -t TTD");
   run(session, "network vertex add v1 -t TTD");
-  run(session, "network edge add-bidirectional v0 v1 -l 100 -v 20");
+  run(session,
+      "network edge add-bidirectional v0 v1 -l 100 -v 20 -u -m 10 -o 50");
 
   const auto& network = session.const_current_network();
   EXPECT_EQ(network.number_of_edges(), 2);
-  EXPECT_TRUE(network.has_edge({"v0"}, {"v1"}));
-  EXPECT_TRUE(network.has_edge({"v1"}, {"v0"}));
+  for (const auto& edge :
+       {network.get_edge({"v0", "v1"}), network.get_edge({"v1", "v0"})}) {
+    EXPECT_DOUBLE_EQ(edge.length, 100);
+    EXPECT_DOUBLE_EQ(edge.max_speed, 20);
+    EXPECT_FALSE(edge.breakable);
+    EXPECT_DOUBLE_EQ(edge.min_block_length, 10);
+    EXPECT_DOUBLE_EQ(edge.min_stop_block_length, 50);
+  }
+}
+
+TEST_F(CliTest, SuccessorsOfTracksTurnoutsAndCrossings) {
+  // The track x-t leads to the turnout v, whose branch a leads to the diamond
+  // crossing c of a-q and r-s and whose branch b leads to the double slip
+  // switch d of b-e and f-g.
+  cda_rail::cli::Session session{directory};
+  run(session, "network new TestNetwork");
+  for (const std::string vertex :
+       {"x", "t", "v", "a", "b", "c", "q", "r", "s", "d", "e", "f", "g"}) {
+    run(session, "network vertex add " + vertex + " -t TTD");
+  }
+  for (const std::string edge : {"x t", "t v", "v a", "v b", "a c", "c q",
+                                 "r c", "c s", "b d", "d e", "f d", "d g"}) {
+    run(session, "network edge add-bidirectional " + edge + " -l 100 -v 20");
+  }
+  run_all(session, {"network successor add-trivial",
+                    "network successor add-turnout v t a b",
+                    "network successor add-crossing c a q r s",
+                    "network successor add-double-slip d b e f g"});
+
+  const auto& network = session.const_current_network();
+  EXPECT_TRUE(network.is_valid_successor({"x", "t"}, {"t", "v"}));
+  EXPECT_TRUE(network.is_valid_successor({"t", "v"}, {"v", "b"}));
+  EXPECT_TRUE(network.is_valid_successor({"a", "c"}, {"c", "q"}));
+  EXPECT_FALSE(network.is_valid_successor({"a", "c"}, {"c", "s"}));
+  EXPECT_TRUE(network.is_valid_successor({"b", "d"}, {"d", "g"}));
+  EXPECT_TRUE(network.has_reversal_free_successors());
+  EXPECT_TRUE(session.network_modified());
 }
 
 TEST_F(CliTest, BuildInstance) {

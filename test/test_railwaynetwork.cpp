@@ -28,6 +28,31 @@ struct EdgeTarget {
   double      min_block_length;
   double      min_stop_block_length = 100;
 };
+
+// A network of TTD vertices connected by the given bidirectional edges
+cda_rail::Network bidirectional_network(
+    const std::vector<std::pair<std::string, std::string>>& edges) {
+  cda_rail::Network network;
+  for (const auto& [u, w] : edges) {
+    for (const auto& name : {u, w}) {
+      if (!network.has_vertex(name)) {
+        network.add_vertex(name, cda_rail::VertexType::TTD);
+      }
+    }
+    network.add_bidirectional_edge({u}, {w}, 100, 10);
+  }
+  return network;
+}
+
+cda_rail::index_set
+edge_set(const cda_rail::Network&                                network,
+         const std::vector<std::pair<std::string, std::string>>& edges) {
+  cda_rail::index_set result;
+  for (const auto& [u, w] : edges) {
+    result.insert(network.get_edge_index({u}, {w}));
+  }
+  return result;
+}
 } // namespace
 
 #define EXPECT_APPROX_EQ_3(a, b) EXPECT_APPROX_EQ(a, b, 1e-3)
@@ -1837,6 +1862,84 @@ TEST(RailwayNetwork, ReversalFreeSuccessors) {
   auto zig_zag = network_with_switch();
   zig_zag.add_successor({"a", "v"}, {"v", "b"});
   EXPECT_FALSE(zig_zag.has_reversal_free_successors());
+}
+
+TEST(RailwayNetwork, TrivialSuccessors) {
+  // The track a-b-c, continued by the one-way edge c->d
+  auto network = bidirectional_network({{"a", "b"}, {"b", "c"}});
+  network.add_vertex("d", cda_rail::VertexType::TTD);
+  network.add_edge({"c"}, {"d"}, 100, 10);
+  network.add_trivial_successors();
+
+  EXPECT_EQ(network.get_successors({"a", "b"}),
+            edge_set(network, {{"b", "c"}}));
+  EXPECT_EQ(network.get_successors({"c", "b"}),
+            edge_set(network, {{"b", "a"}}));
+  EXPECT_EQ(network.get_successors({"b", "c"}),
+            edge_set(network, {{"c", "d"}}));
+  EXPECT_TRUE(network.get_successors({"b", "a"}).empty());
+  EXPECT_TRUE(network.get_successors({"c", "d"}).empty());
+  EXPECT_TRUE(network.has_reversal_free_successors());
+}
+
+TEST(RailwayNetwork, TurnoutSuccessors) {
+  // Turnout v with toe t and branches a and b
+  auto network = bidirectional_network({{"t", "v"}, {"v", "a"}, {"v", "b"}});
+  network.add_vertex("x", cda_rail::VertexType::TTD);
+  network.add_turnout_successors({"v"}, {"t"}, {"a"}, {"b"});
+
+  EXPECT_EQ(network.get_successors({"t", "v"}),
+            edge_set(network, {{"v", "a"}, {"v", "b"}}));
+  EXPECT_EQ(network.get_successors({"a", "v"}),
+            edge_set(network, {{"v", "t"}}));
+  EXPECT_EQ(network.get_successors({"b", "v"}),
+            edge_set(network, {{"v", "t"}}));
+  EXPECT_TRUE(network.has_reversal_free_successors());
+
+  EXPECT_THROW(network.add_turnout_successors({"v"}, {"t"}, {"a"}, {"a"}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.add_turnout_successors({"v"}, {"t"}, {"a"}, {"x"}),
+               cda_rail::exceptions::InvalidInputException);
+  EXPECT_THROW(network.add_turnout_successors({"t"}, {"v"}, {"a"}, {"b"}),
+               cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(RailwayNetwork, CrossingSuccessors) {
+  // Diamond crossing c of the tracks p-q and r-s
+  auto network =
+      bidirectional_network({{"p", "c"}, {"c", "q"}, {"r", "c"}, {"c", "s"}});
+  network.add_crossing_successors({"c"}, {"p"}, {"q"}, {"r"}, {"s"});
+
+  EXPECT_EQ(network.get_successors({"p", "c"}),
+            edge_set(network, {{"c", "q"}}));
+  EXPECT_EQ(network.get_successors({"q", "c"}),
+            edge_set(network, {{"c", "p"}}));
+  EXPECT_EQ(network.get_successors({"r", "c"}),
+            edge_set(network, {{"c", "s"}}));
+  EXPECT_EQ(network.get_successors({"s", "c"}),
+            edge_set(network, {{"c", "r"}}));
+  EXPECT_TRUE(network.has_reversal_free_successors());
+
+  EXPECT_THROW(
+      network.add_crossing_successors({"c"}, {"p"}, {"q"}, {"r"}, {"r"}),
+      cda_rail::exceptions::InvalidInputException);
+}
+
+TEST(RailwayNetwork, DoubleSlipSuccessors) {
+  // Double slip switch c of the tracks p-q and r-s, with p and r on one side
+  auto network =
+      bidirectional_network({{"p", "c"}, {"c", "q"}, {"r", "c"}, {"c", "s"}});
+  network.add_double_slip_successors({"c"}, {"p"}, {"q"}, {"r"}, {"s"});
+
+  EXPECT_EQ(network.get_successors({"p", "c"}),
+            edge_set(network, {{"c", "q"}, {"c", "s"}}));
+  EXPECT_EQ(network.get_successors({"r", "c"}),
+            edge_set(network, {{"c", "q"}, {"c", "s"}}));
+  EXPECT_EQ(network.get_successors({"q", "c"}),
+            edge_set(network, {{"c", "p"}, {"c", "r"}}));
+  EXPECT_EQ(network.get_successors({"s", "c"}),
+            edge_set(network, {{"c", "p"}, {"c", "r"}}));
+  EXPECT_TRUE(network.has_reversal_free_successors());
 }
 
 TEST(RailwayNetwork, ReadNetwork) {
