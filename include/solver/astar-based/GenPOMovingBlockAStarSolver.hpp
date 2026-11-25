@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SOLVER_ASTAR_BASED_GENPOMOVINGBLOCKASTARSOLVER_HPP
+#define CDA_RAIL_SOLVER_ASTAR_BASED_GENPOMOVINGBLOCKASTARSOLVER_HPP
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
@@ -28,7 +29,6 @@
 #define TEST_FRIENDS false
 #endif
 #if TEST_FRIENDS
-class GenPOMovingBlockAStarSolver;
 class GenPOMovingBlockAStarSolver_NextTrains_Test;
 class GenPOMovingBlockAStarSolver_PathExtensions_Test;
 class GenPOMovingBlockAStarSolver_PathExtensionsCloseToEnd_Test;
@@ -472,3 +472,5 @@ private:
                           CompareByObjective>;
 };
 } // namespace cda_rail::solver::astar_based
+
+#endif // CDA_RAIL_SOLVER_ASTAR_BASED_GENPOMOVINGBLOCKASTARSOLVER_HPP

@@ -88,19 +88,22 @@ bool run_script(cda_rail::cli::Session& session, const std::string& script) {
 }
 
 // The commands building a tiny two-vertex network.
-const std::vector<std::string> SIMPLE_NETWORK{
-    "network new TestNetwork",
-    "network vertex add v0 -t TTD",
-    "network vertex add v1 -t NoBorder -w 5",
-    "network vertex add v2 -t TTD",
-    "network edge add v0 v1 -l 500 -v 27.8",
-    "network edge add v1 v2 -l 500 -v 27.8 -u",
-    "network successor add v0 v1 v1 v2"};
+std::vector<std::string> simple_network() {
+  return {
+      "network new TestNetwork",
+      "network vertex add v0 -t TTD",
+      "network vertex add v1 -t NoBorder -w 5",
+      "network vertex add v2 -t TTD",
+      "network edge add v0 v1 -l 500 -v 27.8",
+      "network edge add v1 v2 -l 500 -v 27.8 -u",
+      "network successor add v0 v1 v1 v2",
+  };
+}
 } // namespace
 
 TEST_F(CliTest, BuildNetwork) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
 
   ASSERT_TRUE(session.has_network());
   const auto& network = session.const_current_network();
@@ -120,7 +123,7 @@ TEST_F(CliTest, BuildNetwork) {
 
 TEST_F(CliTest, ChangeNetwork) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network vertex change v1 -t VSS -w 12 --name middle");
   run(session, "network edge change v0 middle -l 700 -v 30 -m 20 -o 120 -u");
 
@@ -166,14 +169,28 @@ TEST_F(CliTest, SuccessorsOfTracksTurnoutsAndCrossings) {
        {"x", "t", "v", "a", "b", "c", "q", "r", "s", "d", "e", "f", "g"}) {
     run(session, "network vertex add " + vertex + " -t TTD");
   }
-  for (const std::string edge : {"x t", "t v", "v a", "v b", "a c", "c q",
-                                 "r c", "c s", "b d", "d e", "f d", "d g"}) {
+  for (const std::string edge : {
+           "x t",
+           "t v",
+           "v a",
+           "v b",
+           "a c",
+           "c q",
+           "r c",
+           "c s",
+           "b d",
+           "d e",
+           "f d",
+           "d g",
+       }) {
     run(session, "network edge add-bidirectional " + edge + " -l 100 -v 20");
   }
-  run_all(session, {"network successor add-trivial",
-                    "network successor add-turnout v t a b",
-                    "network successor add-crossing c a q r s",
-                    "network successor add-double-slip d b e f g"});
+  run_all(session, {
+                       "network successor add-trivial",
+                       "network successor add-turnout v t a b",
+                       "network successor add-crossing c a q r s",
+                       "network successor add-double-slip d b e f g",
+                   });
 
   const auto& network = session.const_current_network();
   EXPECT_TRUE(network.is_valid_successor({"x", "t"}, {"t", "v"}));
@@ -187,7 +204,7 @@ TEST_F(CliTest, SuccessorsOfTracksTurnoutsAndCrossings) {
 
 TEST_F(CliTest, BuildInstance) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   // The network of this session is adopted without being saved first.
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "station add Central");
@@ -226,7 +243,7 @@ TEST_F(CliTest, BuildInstance) {
 
 TEST_F(CliTest, ChangeTrainAndSchedule) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "train add ICE1 -l 200 -v 83.33 -a 0.5 -d 0.5 -e v0 -x v2 "
                "-y 600");
@@ -259,7 +276,7 @@ TEST_F(CliTest, ChangeTrainAndSchedule) {
 
 TEST_F(CliTest, RemoveStopAndClearRoute) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "station add Central");
   run(session, "station add-track Central v0 v1");
@@ -282,7 +299,7 @@ TEST_F(CliTest, RemoveStopAndClearRoute) {
 TEST_F(CliTest, RoundTrip) {
   {
     cda_rail::cli::Session session{directory};
-    run_all(session, SIMPLE_NETWORK);
+    run_all(session, simple_network());
     run(session, "network save");
     run(session, "instance new TestInstance -s cli-test -n TestNetwork");
     run(session, "station add Central");
@@ -315,7 +332,7 @@ TEST_F(CliTest, RoundTrip) {
 
 TEST_F(CliTest, InstanceSaveDoesNotRewriteNetwork) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network save");
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "instance save");
@@ -336,7 +353,7 @@ TEST_F(CliTest, InstanceSaveDoesNotRewriteNetwork) {
 
 TEST_F(CliTest, NetworkSaveIsSeenByOtherInstance) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network save");
   run(session, "instance new First -s cli-test -n TestNetwork");
   run(session, "instance save");
@@ -357,7 +374,7 @@ TEST_F(CliTest, NetworkSaveIsSeenByOtherInstance) {
 
 TEST_F(CliTest, NetworkRenameWritesNewFolder) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network save");
   run(session, "network rename OtherNetwork");
   run(session, "network save");
@@ -369,7 +386,7 @@ TEST_F(CliTest, NetworkRenameWritesNewFolder) {
 
 TEST_F(CliTest, ReloadDiscardsUnsavedChanges) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network save");
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "train add ICE1 -l 200 -v 83.33 -a 0.5 -d 0.5 -e v0 -x v2 "
@@ -396,7 +413,7 @@ TEST_F(CliTest, ReloadDiscardsUnsavedChanges) {
 
 TEST_F(CliTest, ErrorsLeaveTheSessionUsable) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "train add ICE1 -l 200 -v 83.33 -a 0.5 -d 0.5 -e v0 -x v2 "
                "-y 600");
@@ -429,7 +446,7 @@ TEST_F(CliTest, ErrorsLeaveTheSessionUsable) {
 
 TEST_F(CliTest, OptionsOfOneLineDoNotLeakIntoTheNext) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "train add ICE1 -l 200 -v 83.33 -a 0.5 -d 0.5 -e v0 -x v2 "
                "-y 600 --no-tim -w 4");
@@ -480,7 +497,7 @@ TEST_F(CliTest, ScriptBuildsInstance) {
 
 TEST_F(CliTest, StatusIsBriefAndTheDetailsAreInInfo) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "station add Central");
   run(session, "train add ICE1 -l 200 -v 83.33 -a 0.5 -d 0.5 -e v0 -x v2 "
@@ -569,7 +586,7 @@ TEST_F(CliTest, PromptAndAccessorsFollowWhatIsLoaded) {
   EXPECT_THROW(std::ignore = session.const_current_network(),
                cda_rail::exceptions::InvalidInputException);
 
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   EXPECT_EQ(session.prompt(), "rail [TestNetwork]> ");
 
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
@@ -578,7 +595,7 @@ TEST_F(CliTest, PromptAndAccessorsFollowWhatIsLoaded) {
 
 TEST_F(CliTest, NetworkObjectCommands) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
 
   // Saving under another name renames the network on the way out.
   run(session, "network save --as OtherNetwork");
@@ -616,7 +633,7 @@ TEST_F(CliTest, WorkingDirectoryCommand) {
 
 TEST_F(CliTest, ListCommandsDescribeTheSession) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network save");
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "station add Central");
@@ -689,7 +706,7 @@ TEST_F(CliTest, ListCommandsCopeWithEmptyObjects) {
 
 TEST_F(CliTest, ClearingARouteThatDoesNotExistYet) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "train add ICE1 -l 200 -v 83.33 -a 0.5 -d 0.5 -e v0 -x v2 "
                "-y 600");
@@ -705,7 +722,7 @@ TEST_F(CliTest, ClearingARouteThatDoesNotExistYet) {
 
 TEST_F(CliTest, EntryTimeMovedBeyondTheCurrentExitTime) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "train add ICE1 -l 200 -v 83.33 -a 0.5 -d 0.5 -e v0 -x v2 "
                "-y 600");
@@ -732,9 +749,9 @@ TEST_F(CliTest, ThePromptIsPrintedWhileCommandsAreTyped) {
 }
 
 namespace {
-// Builds the smallest instance the three solvers accept. Unlike SIMPLE_NETWORK
-// it has no NoBorder vertex, which a solver rejects as a breakable edge inside
-// an unbreakable section.
+// Builds the smallest instance the three solvers accept. Unlike
+// simple_network() it has no NoBorder vertex, which a solver rejects as a
+// breakable edge inside an unbreakable section.
 void build_solvable_instance(cda_rail::cli::Session& session) {
   run(session, "network new SolveNetwork");
   run(session, "network vertex add v0 -t TTD");
@@ -945,7 +962,11 @@ TEST_F(CliTest, LogAnEvaluationWithATrainViolatingItsDynamics) {
       session.const_instance(), cda_rail::SolutionStatus::Feasible, 0, true);
   for (const auto& [t, pos, vel] :
        std::vector<std::tuple<double, double, double>>{
-           {0, 0, 0}, {20, 200, 20}, {30, 250, 0}, {195, 1050, 0}}) {
+           {0, 0, 0},
+           {20, 200, 20},
+           {30, 250, 0},
+           {195, 1050, 0},
+       }) {
     solution.add_train_pos("ICE1", t, pos);
     solution.add_train_speed("ICE1", t, vel);
   }
@@ -973,7 +994,7 @@ TEST_F(CliTest, HelpListsTheWholeCommandTree) {
 
 TEST_F(CliTest, SavingAnInstanceUnderAnotherName) {
   cda_rail::cli::Session session{directory};
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network save");
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   run(session, "instance save");
@@ -1002,7 +1023,7 @@ TEST_F(CliTest, InstanceCommandsWithoutAnInstance) {
   EXPECT_FALSE(session.has_instance());
 
   // Loading a network while an instance is loaded would silently replace it.
-  run_all(session, SIMPLE_NETWORK);
+  run_all(session, simple_network());
   run(session, "network save");
   run(session, "instance new TestInstance -s cli-test -n TestNetwork");
   EXPECT_THROW(session.load_network("TestNetwork"),
@@ -1496,9 +1517,10 @@ TEST(CliVssOptions, ConvexifiedBrakingDistance) {
 
 TEST(CliVssOptions, ConvexifiedBrakingDistanceNeedsBrakingCurvesAndFreeStops) {
   // Checked once parsing is complete, both for an app and a subcommand
-  for (const auto* const options :
-       {"--convexify-braking-distance -k",
-        "--only-stop-at-vss --convexify-braking-distance"}) {
+  for (const auto* const options : {
+           "--convexify-braking-distance -k",
+           "--only-stop-at-vss --convexify-braking-distance",
+       }) {
     cda_rail::cli::VssMipSettings settings;
     CLI::App                      app;
     cda_rail::cli::add_vss_mip_options(app, settings);
@@ -1650,7 +1672,7 @@ TEST(CliOptions, MbMipSettingsReachTheSolver) {
   EXPECT_EQ(settings.solving.time_limit, 30);
   EXPECT_TRUE(settings.solving.debug_output);
 
-  with_debug_logging([&settings]() {
+  with_debug_logging([&settings] {
     cda_rail::cli::log_mb_mip_settings(settings, "the-directory");
   });
 }
@@ -1679,7 +1701,7 @@ TEST(CliOptions, MbAStarSettingsReachTheSolver) {
   EXPECT_TRUE(strategy.time_aware_state_transitions);
   EXPECT_DOUBLE_EQ(strategy.a_star_weight, 1.5);
 
-  with_debug_logging([&settings]() {
+  with_debug_logging([&settings] {
     cda_rail::cli::log_mb_astar_settings(settings, "the-directory");
   });
 }
@@ -1696,16 +1718,18 @@ TEST(CliOptions, InstanceExportAndSolutionAreLogged) {
   EXPECT_EQ(instance_settings.instance_subdirectory, "atmos2023");
   EXPECT_EQ(instance_settings.working_directory, "data");
 
-  with_debug_logging([&instance_settings, &settings]() {
+  with_debug_logging([&instance_settings, &settings] {
     cda_rail::cli::log_instance_settings(instance_settings);
     cda_rail::cli::log_solving_settings(settings.solving);
     cda_rail::cli::log_export_settings(settings.exporting, "data");
     // Every status the solvers can report has its own line.
-    for (const auto status :
-         {cda_rail::SolutionStatus::Optimal, cda_rail::SolutionStatus::Feasible,
-          cda_rail::SolutionStatus::Infeasible,
-          cda_rail::SolutionStatus::Timeout,
-          cda_rail::SolutionStatus::Unknown}) {
+    for (const auto status : {
+             cda_rail::SolutionStatus::Optimal,
+             cda_rail::SolutionStatus::Feasible,
+             cda_rail::SolutionStatus::Infeasible,
+             cda_rail::SolutionStatus::Timeout,
+             cda_rail::SolutionStatus::Unknown,
+         }) {
       cda_rail::cli::log_solution_status(status, 42);
     }
   });
@@ -1771,7 +1795,7 @@ TEST(CliVssOptions, SettingsReachTheSolver) {
   EXPECT_DOUBLE_EQ(strategy.update_value, 0.25);
   EXPECT_FALSE(strategy.include_cuts);
 
-  with_debug_logging([&settings]() {
+  with_debug_logging([&settings] {
     cda_rail::cli::log_vss_mip_settings(settings, "the-directory");
   });
 }
@@ -1792,7 +1816,7 @@ TEST(CliVssOptions, SettingsReachTheSolverUsingMovingBlockInformation) {
   EXPECT_TRUE(detail.fix_order_on_edges);
 
   // The moving block branch of the logging prints the extra settings.
-  with_debug_logging([&settings]() {
+  with_debug_logging([&settings] {
     cda_rail::cli::log_vss_mip_settings(settings, "the-directory");
   });
 }

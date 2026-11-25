@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SOLVER_GENERALSOLVER_HPP
+#define CDA_RAIL_SOLVER_GENERALSOLVER_HPP
 
 #include "CustomExceptions.hpp"
 #include "GeneralHelper.hpp"
@@ -31,7 +32,6 @@
 #define TEST_FRIENDS false
 #endif
 #if TEST_FRIENDS
-class GenPOMovingBlockAStarSolver;
 class GenPOMovingBlockAStarSolver_SolverDataExport_Test;
 #endif
 
@@ -46,7 +46,7 @@ namespace cda_rail::solver {
 enum class GeneralExportOption : std::uint8_t {
   NoExport                   = 0,
   ExportSolution             = 1,
-  ExportSolutionWithInstance = 2
+  ExportSolutionWithInstance = 2,
 };
 
 /**
@@ -129,7 +129,7 @@ protected:
    *
    * @param instance The problem instance to store.
    */
-  explicit GeneralSolver(const T& instance) : m_instance(instance) {}
+  explicit GeneralSolver(T instance) : m_instance(std::move(instance)) {}
   /**
    * @brief Constructs a GeneralSolver with arguments for the problem instance
    * constructor.
@@ -195,7 +195,8 @@ protected:
       throw exceptions::ExportException(
           "Could not open solver_data.json for writing");
     }
-    if (!(data_file << data << '\n')) {
+    data_file << data << '\n';
+    if (!data_file) {
       throw exceptions::ExportException("Failed to write solver_data.json");
     }
   }
@@ -228,7 +229,7 @@ protected:
       if (solution_settings.evaluation_time_step.has_value() &&
           solution.has_solution()) {
         // A failing evaluation must not cost the solution itself
-        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
         try {
           solution.evaluate(solution_settings.evaluation_time_step.value());
         } catch (const std::exception& e) {
@@ -236,7 +237,7 @@ protected:
                    "failed: "
                 << e.what();
         }
-        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
       }
     }
 
@@ -244,14 +245,14 @@ protected:
         (solution_settings.export_option ==
          GeneralExportOption::ExportSolutionWithInstance);
 
-    auto const export_path =
+    auto export_path =
         solution.get_export_path(solution_settings.working_directory,
                                  solution_settings.solution_subdirectory,
                                  solution_settings.parameter_identifier);
     // The reinterpret_cast is a false positive stemming from the plog macro
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
     PLOGI << "Saving solution to " << export_path.string();
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
     solution.export_solution(solution_settings.working_directory,
                              solution_settings.solution_subdirectory,
                              export_instance,
@@ -307,3 +308,5 @@ public:
   virtual ~GeneralSolver() = default;
 };
 } // namespace cda_rail::solver
+
+#endif // CDA_RAIL_SOLVER_GENERALSOLVER_HPP

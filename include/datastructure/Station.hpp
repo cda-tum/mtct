@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_DATASTRUCTURE_STATION_HPP
+#define CDA_RAIL_DATASTRUCTURE_STATION_HPP
+
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
@@ -421,3 +423,5 @@ public:
   }
 };
 } // namespace cda_rail
+
+#endif // CDA_RAIL_DATASTRUCTURE_STATION_HPP

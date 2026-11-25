@@ -11,7 +11,7 @@
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 cda_rail::cli::CommandInterpreter::CommandInterpreter(Session& session)
     : m_session(session) {
@@ -78,4 +78,4 @@ bool cda_rail::cli::run_stream(std::istream& input, Session& session,
   }
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)

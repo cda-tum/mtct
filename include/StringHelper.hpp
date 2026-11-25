@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_STRINGHELPER_HPP
+#define CDA_RAIL_STRINGHELPER_HPP
 
 #include <algorithm>
 #include <cctype>
@@ -57,3 +58,5 @@ void to_bool_optional_inplace(std::string_view s_view, std::optional<bool>& b);
 std::string sanitize(std::string s);
 
 } // namespace cda_rail
+
+#endif // CDA_RAIL_STRINGHELPER_HPP

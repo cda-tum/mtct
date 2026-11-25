@@ -25,7 +25,7 @@
 #define CDA_RAIL_STDIN_FILENO STDIN_FILENO
 #endif
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
 
 int main(int argc, char** argv) {
   // Only log to console using std::cerr and std::cout respectively unless
@@ -93,4 +93,4 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-exception-escape)

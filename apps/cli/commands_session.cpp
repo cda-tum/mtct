@@ -43,10 +43,10 @@ void cda_rail::cli::add_session_commands(CLI::App& app, Session& session,
                                          bool& exit_requested) {
   app.add_subcommand("status",
                      "Show which instance and network the session holds")
-      ->callback([&session]() { print_status(session); });
+      ->callback([&session] { print_status(session); });
 
   app.add_subcommand("help", "Print the list of all commands")
-      ->callback([&app]() {
+      ->callback([&app] {
         // App::help() delegates to the selected subcommand, which here is
         // 'help' itself; the formatter is asked for the whole tree instead.
         std::cout << app.get_formatter()->make_help(&app, "",
@@ -60,7 +60,7 @@ void cda_rail::cli::add_session_commands(CLI::App& app, Session& session,
   auto exit_forced = std::make_shared<bool>(false);
   exit_cmd->add_flag("-f,--force", *exit_forced,
                      "End the session even if there are unsaved changes");
-  exit_cmd->callback([&session, &exit_requested, exit_forced]() {
+  exit_cmd->callback([&session, &exit_requested, exit_forced] {
     if (session.has_unsaved_changes() && !*exit_forced) {
       std::cout << "There are unsaved changes. Save them, or use 'exit "
                    "--force' to discard them.\n";
@@ -75,7 +75,7 @@ void cda_rail::cli::add_session_commands(CLI::App& app, Session& session,
   workdir_cmd->add_option(
       "path", *new_workdir,
       "New working directory. If omitted, the current one is printed.");
-  workdir_cmd->callback([&session, new_workdir]() {
+  workdir_cmd->callback([&session, new_workdir] {
     if (!new_workdir->empty()) {
       session.set_working_directory(std::filesystem::path(*new_workdir));
     }

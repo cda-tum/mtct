@@ -22,7 +22,7 @@
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 namespace {
 using cda_rail::cli::Session;
@@ -36,7 +36,7 @@ void add_mb_mip_command(CLI::App& solve_cmd, Session& session) {
   auto settings = std::make_shared<cda_rail::cli::MbMipSettings>();
   cda_rail::cli::add_mb_mip_options(*mb_mip_cmd, *settings);
 
-  mb_mip_cmd->callback([&session, mb_mip_cmd, settings]() {
+  mb_mip_cmd->callback([&session, mb_mip_cmd, settings] {
     using namespace cda_rail::cli;
     const auto working_directory = session.working_directory().string();
     finalize_mb_mip_settings(*mb_mip_cmd, *settings);
@@ -71,7 +71,7 @@ void add_mb_astar_command(CLI::App& solve_cmd, Session& session) {
   auto settings = std::make_shared<cda_rail::cli::MbAStarSettings>();
   cda_rail::cli::add_mb_astar_options(*mb_astar_cmd, *settings);
 
-  mb_astar_cmd->callback([&session, settings]() {
+  mb_astar_cmd->callback([&session, settings] {
     using namespace cda_rail::cli;
     const auto working_directory = session.working_directory().string();
     finalize_mb_astar_settings(*settings);
@@ -102,7 +102,7 @@ void add_vss_mip_command(CLI::App& solve_cmd, Session& session) {
   auto settings = std::make_shared<cda_rail::cli::VssMipSettings>();
   cda_rail::cli::add_vss_mip_options(*vss_mip_cmd, *settings);
 
-  vss_mip_cmd->callback([&session, settings]() {
+  vss_mip_cmd->callback([&session, settings] {
     using namespace cda_rail::cli;
     namespace instances = cda_rail::instances;
     namespace mip_based = cda_rail::solver::mip_based;
@@ -118,7 +118,7 @@ void add_vss_mip_command(CLI::App& solve_cmd, Session& session) {
 
     PLOGI << "Solving...";
     const auto solution =
-        [&]() -> instances::SolVSSGeneralPerformanceOptimizationInstance {
+        [&] -> instances::SolVSSGeneralPerformanceOptimizationInstance {
       if (settings->use_moving_block_information()) {
         instances::SolGeneralPerformanceOptimizationInstance
             moving_block_solution(session.const_instance());
@@ -179,7 +179,7 @@ void cda_rail::cli::add_solution_commands(CLI::App& app, Session& session) {
                    "Time step (dt) of the evaluation in seconds. If unset, the "
                    "time step of the solver is used.")
       ->check(CLI::PositiveNumber);
-  evaluate_cmd->callback([&session, time_step]() {
+  evaluate_cmd->callback([&session, time_step] {
     const auto path = session.evaluate_solution(*time_step);
     log_solution_evaluation(session.solution());
     if (path.has_value()) {
@@ -188,4 +188,4 @@ void cda_rail::cli::add_solution_commands(CLI::App& app, Session& session) {
   });
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)

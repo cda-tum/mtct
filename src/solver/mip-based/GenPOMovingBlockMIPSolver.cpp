@@ -31,7 +31,7 @@
 
 using std::size_t;
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
@@ -44,8 +44,7 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   if (solver_strategy_input.use_lazy_constraints ||
       solver_strategy_input.completion_interval > 0) {
     cb = LazyCallback(this);
-    this->solve_init_general_mip(debug_input, overwrite_severity,
-                                 &(cb.value()));
+    this->solve_init_general_mip(debug_input, overwrite_severity, &cb.value());
   } else {
     this->solve_init_general_mip(debug_input, overwrite_severity);
   }
@@ -627,7 +626,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     for (size_t v = 0; v < m_num_vertices; v++) {
       if (m_instance.get_const_schedule(tr).get_entry_vertex() == v) {
         tr_velocity_extensions.emplace_back(std::vector<double>{
-            m_instance.get_const_schedule(tr).get_initial_velocity()});
+            m_instance.get_const_schedule(tr).get_initial_velocity(),
+        });
         continue;
       }
 
@@ -663,7 +663,8 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
     for (size_t v = 0; v < m_num_vertices; v++) {
       if (m_instance.get_const_schedule(tr).get_entry_vertex() == v) {
         tr_velocity_extensions.emplace_back(std::vector<double>{
-            m_instance.get_const_schedule(tr).get_initial_velocity()});
+            m_instance.get_const_schedule(tr).get_initial_velocity(),
+        });
         continue;
       }
 
@@ -689,8 +690,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             std::sqrt((speed * speed) + (2 * tr_speed_change * min_n_length)) -
                 V_MIN,
             speed + V_MIN);
-        speed = std::min({speed + m_model_detail.max_velocity_delta, sqrt_tmp,
-                          max_vertex_speed});
+        speed = std::min({
+            speed + m_model_detail.max_velocity_delta,
+            sqrt_tmp,
+            max_vertex_speed,
+        });
         v_velocity_extensions.emplace_back(speed);
       }
       tr_velocity_extensions.emplace_back(v_velocity_extensions);
@@ -751,51 +755,91 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::get_further_data(
     const SolutionSettingsMovingBlock& solution_settings, int time_limit,
     const SolveStatistics& statistics) {
   return {
-      .bool_data    = {{"fix_routes", model_detail.fix_routes},
-                       {"simplify_headway_constraints",
-                        model_detail.simplify_headway_constraints},
-                       {"strengthen_vertex_headway_constraints",
-                        model_detail.strengthen_vertex_headway_constraints},
-                       {"allow_late_entry", model_detail.allow_late_entry},
-                       {"use_minimum_time_bounds",
-                        model_detail.use_minimum_time_bounds},
-                       {"use_indicator_constraints",
-                        solver_strategy.use_indicator_constraints},
-                       {"use_lazy_constraints",
-                        solver_strategy.use_lazy_constraints},
-                       {"include_reverse_headways",
-                        solver_strategy.include_reverse_headways},
-                       {"simulated_solution", statistics.simulated_solution}},
-      .integer_data = {{"time_limit", time_limit},
-                       {"num_lazy_constraints_added",
-                        statistics.num_lazy_constraints_added},
-                       {"model_num_rows", statistics.model_num_rows},
-                       {"model_num_columns", statistics.model_num_columns},
-                       {"completion_interval",
-                        static_cast<int>(solver_strategy.completion_interval)},
-                       {"completions_attempted",
-                        statistics.completions_attempted},
-                       {"completions_found", statistics.completions_found}},
-      .double_data  = {{"max_velocity_delta", model_detail.max_velocity_delta},
-                       {"node_count", statistics.node_count},
-                       {"max_exit_delay", model_detail.max_exit_delay},
-                       {"max_station_delay", model_detail.max_station_delay},
-                       {"abs_mip_gap", solver_strategy.abs_mip_gap},
-                       {"completion_dt", solver_strategy.completion_dt}},
-      .string_data = {{"velocity_refinement_strategy",
-                       velocity_refinement_strategy_to_string(
-                           model_detail.velocity_refinement_strategy)},
-                      {"lazy_velocity_selection_strategy",
-                       lazy_velocity_selection_strategy_to_string(
-                           solver_strategy.lazy_velocity_selection_strategy)},
-                      {"lazy_constraint_selection_strategy",
-                       lazy_constraint_selection_strategy_to_string(
-                           solver_strategy.lazy_constraint_selection_strategy)},
-                      {"lazy_train_selection_strategy",
-                       lazy_train_selection_strategy_to_string(
-                           solver_strategy.lazy_train_selection_strategy)},
-                      {"parameter_identifier",
-                       solution_settings.parameter_identifier.value_or("")}},
+      .bool_data =
+          {
+              {"fix_routes", model_detail.fix_routes},
+              {
+                  "simplify_headway_constraints",
+                  model_detail.simplify_headway_constraints,
+              },
+              {
+                  "strengthen_vertex_headway_constraints",
+                  model_detail.strengthen_vertex_headway_constraints,
+              },
+              {"allow_late_entry", model_detail.allow_late_entry},
+              {
+                  "use_minimum_time_bounds",
+                  model_detail.use_minimum_time_bounds,
+              },
+              {
+                  "use_indicator_constraints",
+                  solver_strategy.use_indicator_constraints,
+              },
+              {
+                  "use_lazy_constraints",
+                  solver_strategy.use_lazy_constraints,
+              },
+              {
+                  "include_reverse_headways",
+                  solver_strategy.include_reverse_headways,
+              },
+              {"simulated_solution", statistics.simulated_solution},
+          },
+      .integer_data =
+          {
+              {"time_limit", time_limit},
+              {
+                  "num_lazy_constraints_added",
+                  statistics.num_lazy_constraints_added,
+              },
+              {"model_num_rows", statistics.model_num_rows},
+              {"model_num_columns", statistics.model_num_columns},
+              {
+                  "completion_interval",
+                  static_cast<int>(solver_strategy.completion_interval),
+              },
+              {
+                  "completions_attempted",
+                  statistics.completions_attempted,
+              },
+              {"completions_found", statistics.completions_found},
+          },
+      .double_data =
+          {
+              {"max_velocity_delta", model_detail.max_velocity_delta},
+              {"node_count", statistics.node_count},
+              {"max_exit_delay", model_detail.max_exit_delay},
+              {"max_station_delay", model_detail.max_station_delay},
+              {"abs_mip_gap", solver_strategy.abs_mip_gap},
+              {"completion_dt", solver_strategy.completion_dt},
+          },
+      .string_data =
+          {
+              {
+                  "velocity_refinement_strategy",
+                  velocity_refinement_strategy_to_string(
+                      model_detail.velocity_refinement_strategy),
+              },
+              {
+                  "lazy_velocity_selection_strategy",
+                  lazy_velocity_selection_strategy_to_string(
+                      solver_strategy.lazy_velocity_selection_strategy),
+              },
+              {
+                  "lazy_constraint_selection_strategy",
+                  lazy_constraint_selection_strategy_to_string(
+                      solver_strategy.lazy_constraint_selection_strategy),
+              },
+              {
+                  "lazy_train_selection_strategy",
+                  lazy_train_selection_strategy_to_string(
+                      solver_strategy.lazy_train_selection_strategy),
+              },
+              {
+                  "parameter_identifier",
+                  solution_settings.parameter_identifier.value_or(""),
+              },
+          },
   };
 }
 
@@ -1670,11 +1714,12 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
             const auto& v_exit_velocities =
                 m_velocity_extensions.at(tr).at(exit);
 
-            const auto tr_max_speed_tmp =
-                std::min({tr_object.get_max_speed(),
-                          m_instance.get_const_network().maximal_vertex_speed(
-                              exit, edges_used_by_train),
-                          last_edge_obj.max_speed});
+            const auto tr_max_speed_tmp = std::min({
+                tr_object.get_max_speed(),
+                m_instance.get_const_network().maximal_vertex_speed(
+                    exit, edges_used_by_train),
+                last_edge_obj.max_speed,
+            });
 
             GRBLinExpr min_travel_time_expr = 0;
             GRBLinExpr max_travel_time_expr = 0;
@@ -2054,14 +2099,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
                     v, std::max(EPS, bd), tr_schedule_object.get_exit_vertex(),
                     tr_used_edges);
         for (size_t p_index = 0; p_index < brake_paths.size(); p_index++) {
-          const auto& p = brake_paths.at(p_index);
-          const auto  p_len =
-              std::accumulate(p.begin(), p.end(), 0.0,
-                              [this](double sum, const auto& edge_index) {
-                                return sum + m_instance.get_const_network()
-                                                 .get_edge(edge_index)
-                                                 .length;
-                              });
+          const auto& p     = brake_paths.at(p_index);
+          double      p_len = 0;
+          for (const auto edge_index : p) {
+            p_len += m_instance.get_const_network().get_edge(edge_index).length;
+          }
 
           // Variables to decide if path was used. First edge must leave from
           // desired velocity extension.
@@ -2270,13 +2312,11 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
           for (const auto& [ttd_index, e_index] : intersecting_ttd) {
             const auto& p_tmp = cda_rail::index_vector(
                 p.begin(), p.begin() + static_cast<std::ptrdiff_t>(e_index));
-            const auto p_tmp_len =
-                std::accumulate(p_tmp.begin(), p_tmp.end(), 0.0,
-                                [this](double sum, const auto& edge_index) {
-                                  return sum + m_instance.get_const_network()
-                                                   .get_edge(edge_index)
-                                                   .length;
-                                });
+            double p_tmp_len = 0;
+            for (const auto edge_index : p_tmp) {
+              p_tmp_len +=
+                  m_instance.get_const_network().get_edge(edge_index).length;
+            }
             // Only if the train leaves v with velocity vel and follows p into
             // the section, its moving authority reaches into it
             const auto p_to_ttd = cda_rail::index_vector(
@@ -3241,4 +3281,4 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::cleanup() {
   m_incumbent_constraint.reset();
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)

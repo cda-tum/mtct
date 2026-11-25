@@ -121,7 +121,8 @@ void cda_rail::Network::get_keys_inplace(
       {"length", &length},
       {"type", &type},
       {"min_stop_block_length", &min_stop_block_length},
-      {"headway", &headway}};
+      {"headway", &headway},
+  };
 
   for (auto* key = graphml_body->FirstChildElement("key"); key != nullptr;
        key       = key->NextSiblingElement("key")) {
@@ -377,7 +378,8 @@ void cda_rail::Network::export_successors_cpp(
     throw exceptions::ExportException("Could not open file " +
                                       (p / "successors_cpp.json").string());
   }
-  if (!(file << j << '\n')) {
+  file << j << '\n';
+  if (!file) {
     throw exceptions::ExportException("Failed to write file " +
                                       (p / "successors_cpp.json").string());
   }
@@ -449,11 +451,14 @@ cda_rail::Network::separate_edge_at(
   cda_rail::index_vector new_vertices;
   new_vertices.reserve(distances_from_source.size());
   for (size_t i = 0; i < distances_from_source.size(); ++i) {
-    new_vertices.emplace_back(
-        add_vertex({concatenate_string_views({get_vertex(edge.source).name, "-",
-                                              get_vertex(edge.target).name, "_",
-                                              std::to_string(i)}),
-                    VertexType::NoBorderVSS}));
+    new_vertices.emplace_back(add_vertex({concatenate_string_views({
+                                              get_vertex(edge.source).name,
+                                              "-",
+                                              get_vertex(edge.target).name,
+                                              "_",
+                                              std::to_string(i),
+                                          }),
+                                          VertexType::NoBorderVSS}));
   }
 
   std::pair<cda_rail::index_vector, cda_rail::index_vector> return_edges;
@@ -500,7 +505,7 @@ cda_rail::Network::separate_edge_at(
 
   // Handle reverse edge if it exists
   auto& new_reverse_edges = return_edges.second;
-  if (reverse_edge_index.has_value()) {
+  if (reverse_edge_index.has_value() && reverse_edge.has_value()) {
     const auto rev_idx  = reverse_edge_index.value();
     const auto rev_edge = reverse_edge.value();
 

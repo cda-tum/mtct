@@ -1,14 +1,15 @@
-#pragma once
+#ifndef CDA_RAIL_VSSMODEL_HPP
+#define CDA_RAIL_VSSMODEL_HPP
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <limits>
 #include <numbers>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -17,7 +18,7 @@ namespace cda_rail::vss {
  * @brief Relative position of the `i`-th border if an edge is separated into
  *        `n` blocks.
  */
-using SeparationFunctionCallable = std::function<double(size_t, size_t)>;
+using SeparationFunctionCallable = double (*)(size_t, size_t);
 
 /**
  * @brief A separation function together with the name it is known by.
@@ -30,24 +31,26 @@ using SeparationFunctionCallable = std::function<double(size_t, size_t)>;
  */
 class SeparationFunction {
 private:
-  std::string                m_name;
+  std::string_view           m_name;
   SeparationFunctionCallable m_function;
 
 public:
   /**
    * @brief Names a separation function.
    *
-   * @param name Name identifying the function, must not be empty.
+   * @param name Name identifying the function, must not be empty and must
+   *        outlive the object, e.g., a string literal.
    * @param function The separation function itself, must not be empty.
    *
    * @throws std::invalid_argument if the name or the function is empty.
    */
-  SeparationFunction(std::string name, SeparationFunctionCallable function)
-      : m_name(std::move(name)), m_function(std::move(function)) {
+  constexpr SeparationFunction(std::string_view           name,
+                               SeparationFunctionCallable function)
+      : m_name(name), m_function(function) {
     if (m_name.empty()) {
       throw std::invalid_argument("A separation function needs a name.");
     }
-    if (!m_function) {
+    if (m_function == nullptr) {
       throw std::invalid_argument("A separation function must not be empty.");
     }
   }
@@ -55,9 +58,9 @@ public:
   /**
    * @brief Retrieves the name of the separation function.
    *
-   * @return const std::string& A constant reference to the name.
+   * @return The name.
    */
-  [[nodiscard]] const std::string& get_name() const { return m_name; }
+  [[nodiscard]] constexpr std::string_view get_name() const { return m_name; }
 
   /**
    * @brief Computes the normalized position of a node.
@@ -89,7 +92,7 @@ enum class ModelType : std::uint8_t {
   Discrete    = 0,
   Continuous  = 1,
   Inferred    = 2,
-  InferredAlt = 3
+  InferredAlt = 3,
 };
 
 /** @brief The name of @p model_type, as it is reported and parsed. */
@@ -188,8 +191,9 @@ namespace functions {
  * only a named function can be reported back, e.g. in the exported solver
  * data.
  */
-inline const SeparationFunction UNIFORM{"Uniform", &functions::uniform};
-inline const SeparationFunction CHEBYSHEV{"Chebyshev", &functions::chebyshev};
+inline constexpr SeparationFunction UNIFORM{"Uniform", &functions::uniform};
+inline constexpr SeparationFunction CHEBYSHEV{"Chebyshev",
+                                              &functions::chebyshev};
 
 /**
  * @brief How a VSS generation solver models the VSS borders.
@@ -262,7 +266,7 @@ public:
     std::string names;
     for (const auto& separation_function : separation_functions) {
       if (!names.empty()) {
-        names += ",";
+        names += ',';
       }
       names += separation_function.get_name();
     }
@@ -305,3 +309,5 @@ public:
   }
 };
 } // namespace cda_rail::vss
+
+#endif // CDA_RAIL_VSSMODEL_HPP

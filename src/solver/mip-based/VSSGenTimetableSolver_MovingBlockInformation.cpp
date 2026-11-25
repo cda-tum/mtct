@@ -17,7 +17,7 @@
 
 using std::size_t;
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
 
 // NOLINTBEGIN(performance-inefficient-string-concatenation)
 
@@ -37,12 +37,15 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance cda_rail::
         "Discrete model type is not supported.");
   }
 
-  auto old_instance =
-      initialize_variables({model_detail_mb_information.delta_t, true,
-                            model_detail_mb_information.train_dynamics,
-                            model_detail_mb_information.braking_curves},
-                           model_settings, solver_strategy, solution_settings,
-                           time_limit, debug_input, overwrite_severity);
+  auto old_instance = initialize_variables(
+      {
+          .delta_t        = model_detail_mb_information.delta_t,
+          .fix_routes     = true,
+          .train_dynamics = model_detail_mb_information.train_dynamics,
+          .braking_curves = model_detail_mb_information.braking_curves,
+      },
+      model_settings, solver_strategy, solution_settings, time_limit,
+      debug_input, overwrite_severity);
 
   assert(!old_instance.has_value());
 
@@ -65,12 +68,13 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance cda_rail::
   export_lp_model_if_applicable(sol_object.value(), solution_settings);
 
   auto further_data = get_further_data(solution_settings, time_limit);
-  further_data.bool_data.insert(
-      {{"fix_stop_positions", m_fix_stop_positions},
-       {"fix_exact_positions", m_fix_exact_positions},
-       {"fix_exact_velocities", m_fix_exact_velocities},
-       {"hint_approximate_positions", m_hint_approximate_positions},
-       {"fix_order_on_edges", m_fix_orders_on_edges}});
+  further_data.bool_data.insert({
+      {"fix_stop_positions", m_fix_stop_positions},
+      {"fix_exact_positions", m_fix_exact_positions},
+      {"fix_exact_velocities", m_fix_exact_velocities},
+      {"hint_approximate_positions", m_hint_approximate_positions},
+      {"fix_order_on_edges", m_fix_orders_on_edges},
+  });
   export_general_solution(sol_object.value(), solution_settings, further_data);
 
   cleanup();
@@ -108,8 +112,8 @@ void cda_rail::solver::mip_based::
     const auto& tr_obj  = train_list.get_train(tr);
     const auto& tr_name = tr_obj.get_name();
     const auto& tr_len  = tr_obj.get_length();
-    for (size_t t_steps = train_interval[tr].first + 1;
-         t_steps < train_interval[tr].second; ++t_steps) {
+    for (size_t t_steps = train_interval.at(tr).first + 1;
+         t_steps < train_interval.at(tr).second; ++t_steps) {
       const auto t = static_cast<double>(t_steps) * dt;
       const auto approx_info =
           m_moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
@@ -161,8 +165,8 @@ void cda_rail::solver::mip_based::
         std::max(tr_obj.get_acceleration(), tr_obj.get_deceleration()) * dt;
     const double delta_pos = tr_obj.get_max_speed() * dt;
 
-    for (size_t t_steps = train_interval[tr].first + 1;
-         t_steps <= train_interval[tr].second; t_steps++) {
+    for (size_t t_steps = train_interval.at(tr).first + 1;
+         t_steps <= train_interval.at(tr).second; t_steps++) {
       const auto t = static_cast<double>(t_steps) * dt;
       const auto bounds =
           m_moving_block_solution.get_exact_pos_and_vel_bounds(tr_name, t);
@@ -223,8 +227,8 @@ void cda_rail::solver::mip_based::
     const auto& tr_obj  = train_list.get_train(tr);
     const auto& tr_name = tr_obj.get_name();
     const auto& tr_len  = tr_obj.get_length();
-    for (size_t t_steps = train_interval[tr].first;
-         t_steps <= train_interval[tr].second + 1; ++t_steps) {
+    for (size_t t_steps = train_interval.at(tr).first;
+         t_steps <= train_interval.at(tr).second + 1; ++t_steps) {
       const auto t = static_cast<double>(t_steps) * dt;
       const auto approx_info =
           m_moving_block_solution.get_approximate_train_pos_and_vel(tr_name, t);
@@ -235,7 +239,7 @@ void cda_rail::solver::mip_based::
                 ? vel_approx * vel_approx / (2 * tr_obj.get_deceleration())
                 : 0;
         m_vars["v"](tr, t_steps).set(GRB_DoubleAttr_VarHintVal, vel_approx);
-        if (t_steps >= train_interval[tr].first + 1) {
+        if (t_steps >= train_interval.at(tr).first + 1) {
           m_vars["mu"](tr, t_steps - 1)
               .set(GRB_DoubleAttr_VarHintVal, pos_approx + bl);
           if (include_braking_curves) {
@@ -243,7 +247,7 @@ void cda_rail::solver::mip_based::
                 .set(GRB_DoubleAttr_VarHintVal, bl);
           }
         }
-        if (t_steps <= train_interval[tr].second) {
+        if (t_steps <= train_interval.at(tr).second) {
           m_vars["lda"](tr, t_steps)
               .set(GRB_DoubleAttr_VarHintVal, pos_approx - tr_len);
         }
@@ -257,7 +261,7 @@ void cda_rail::solver::mip_based::
   // Fixes train order on every breakable edge
   // For this b_front and b_rear are set equal where applicable
   for (size_t i = 0; i < breakable_edges.size(); ++i) {
-    const auto& e            = breakable_edges[i];
+    const auto& e            = breakable_edges.at(i);
     const auto& network      = m_instance.get_const_network();
     const auto  vss_number_e = max_vss_per_edge.at(e);
     const auto& edge         = network.get_edge(e);
@@ -274,10 +278,10 @@ void cda_rail::solver::mip_based::
       }
       for (size_t vss = 0; vss < vss_number_e; ++vss) {
         for (size_t t =
-                 std::max(train_interval[tr_order_on_e.at(tr_i)].first,
-                          train_interval[tr_order_on_e.at(tr_i - 1)].first);
-             t <= train_interval[tr_order_on_e.at(tr_i)].second &&
-             t <= train_interval[tr_order_on_e.at(tr_i - 1)].second;
+                 std::max(train_interval.at(tr_order_on_e.at(tr_i)).first,
+                          train_interval.at(tr_order_on_e.at(tr_i - 1)).first);
+             t <= train_interval.at(tr_order_on_e.at(tr_i)).second &&
+             t <= train_interval.at(tr_order_on_e.at(tr_i - 1)).second;
              ++t) {
           m_model->addConstr(
               m_vars["b_front"](tr_order_on_e.at(tr_i), t, i, vss) ==
@@ -321,8 +325,8 @@ void cda_rail::solver::mip_based::
       const auto& tr_prev_obj =
           m_instance.get_const_train_list().get_train(tr_prev);
 
-      const auto& tr_following_interval = train_interval[tr_following];
-      const auto& tr_prev_interval      = train_interval[tr_prev];
+      const auto& tr_following_interval = train_interval.at(tr_following);
+      const auto& tr_prev_interval      = train_interval.at(tr_prev);
 
       const auto& prev_edges = m_instance.get_const_routes()
                                    .get_route(tr_prev_obj.get_name())
@@ -381,4 +385,4 @@ void cda_rail::solver::mip_based::
 
 // NOLINTEND(performance-inefficient-string-concatenation)
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,bugprone-unchecked-optional-access)

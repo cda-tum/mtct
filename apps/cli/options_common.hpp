@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_CLI_OPTIONS_COMMON_HPP
+#define CDA_RAIL_CLI_OPTIONS_COMMON_HPP
 
 #include "CLI/CLI.hpp"
 #include "Definitions.hpp"
@@ -38,7 +39,8 @@ void log_instance_settings(const InstanceSettings& settings);
  */
 struct ExportSettings {
   solver::GeneralExportOption export_option{
-      solver::GeneralExportOption::NoExport};
+      solver::GeneralExportOption::NoExport,
+  };
   bool                       export_lp_model{false};
   bool                       postprocess{false};
   std::string                model_name{"model"};
@@ -115,3 +117,5 @@ void log_solution_evaluation(
     const instances::SolGeneralPerformanceOptimizationInstance& solution);
 
 } // namespace cda_rail::cli
+
+#endif // CDA_RAIL_CLI_OPTIONS_COMMON_HPP

@@ -459,14 +459,14 @@ TEST(TrainList, WriteTrains) {
   EXPECT_EQ(trains.get_train_index("tr3"), tr3_index);
 
   // Write the train list to a file
-  trains.export_trains("./tmp/write_trains_test");
+  trains.export_trains("./tmp-WriteTrains/write_trains_test");
 
   // Read the train list from the file
   auto trains_read =
-      cda_rail::TrainList::import_trains("./tmp/write_trains_test");
+      cda_rail::TrainList::import_trains("./tmp-WriteTrains/write_trains_test");
 
   // Delete created directory and everything in it
-  std::filesystem::remove_all("./tmp");
+  std::filesystem::remove_all("./tmp-WriteTrains");
 
   // Check if the all trains are imported
   EXPECT_EQ(trains_read.size(), 3);

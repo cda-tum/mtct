@@ -16,7 +16,8 @@ cda_rail::cli::vertex_type_map() {
       {"NoBorder", VertexType::NoBorder},
       {"VSS", VertexType::VSS},
       {"TTD", VertexType::TTD},
-      {"NoBorderVSS", VertexType::NoBorderVSS}};
+      {"NoBorderVSS", VertexType::NoBorderVSS},
+  };
   return VERTEX_TYPE_MAP;
 }
 

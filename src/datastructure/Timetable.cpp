@@ -22,14 +22,13 @@
 #include <utility>
 #include <vector>
 
-cda_rail::Schedule::Schedule(double const entryTime,
-                             double const initialVelocity,
-                             size_t const entryVertex, double const exitTime,
-                             double const exitVelocity, size_t const exitVertex,
+cda_rail::Schedule::Schedule(double entry_time, double initial_velocity,
+                             size_t entry_vertex, double exit_time,
+                             double exit_velocity, size_t exit_vertex,
                              std::vector<ScheduledStop> stops)
-    : m_entry_time(entryTime), m_exit_time(exitTime),
-      m_initial_velocity(initialVelocity), m_exit_velocity(exitVelocity),
-      m_entry_vertex(entryVertex), m_exit_vertex(exitVertex),
+    : m_entry_time(entry_time), m_exit_time(exit_time),
+      m_initial_velocity(initial_velocity), m_exit_velocity(exit_velocity),
+      m_entry_vertex(entry_vertex), m_exit_vertex(exit_vertex),
       m_stops(std::move(stops)) {
   cda_rail::exceptions::throw_if_negative(m_entry_time, "Entry time");
   cda_rail::exceptions::throw_if_less_than(m_exit_time, m_entry_time,
@@ -96,22 +95,19 @@ void cda_rail::Schedule::insert_stop(ScheduledStop new_stop) {
 
   // Insert in stops while maintaining order by service time
   // If multiple stops with the same service time exist, append
-  auto const insert_pos =
-      std::upper_bound(m_stops.begin(), m_stops.end(), stop_time,
-                       [](double time, ScheduledStop const& stop) {
-                         return time < stop.get_service_time();
-                       });
+  auto const insert_pos = std::ranges::upper_bound(
+      m_stops, stop_time, {}, &ScheduledStop::get_service_time);
   m_stops.insert(insert_pos, std::move(new_stop));
 }
 
 void cda_rail::Schedule::remove_stop(std::string const& station_name,
-                                     bool const throwExceptionIfNotExistent) {
+                                     bool throw_exception_if_not_existent) {
   auto const stop_it =
       std::ranges::find(m_stops, station_name, [](auto const& stop) {
         return stop.get_station().name;
       });
   if (stop_it == m_stops.end()) {
-    if (throwExceptionIfNotExistent) {
+    if (throw_exception_if_not_existent) {
       throw cda_rail::exceptions::InvalidInputException(
           station_name + " does not appear in the scheduled stops.");
     }
@@ -196,9 +192,11 @@ void cda_rail::Timetable::add_json_data(nlohmann::json& j, const size_t i,
   nlohmann::json stops;
 
   for (const auto& stop : schedule.get_stops()) {
-    stops.push_back({{"begin", stop.get_service_time()},
-                     {"duration", stop.get_service_duration()},
-                     {"station", stop.get_station().name}});
+    stops.push_back({
+        {"begin", stop.get_service_time()},
+        {"duration", stop.get_service_duration()},
+        {"station", stop.get_station().name},
+    });
   }
   // NOLINTNEXTLINE(*-pro-bounds-avoid-unchecked-container-access)
   j[m_train_list.get_train(i).get_name()] = {
@@ -208,7 +206,8 @@ void cda_rail::Timetable::add_json_data(nlohmann::json& j, const size_t i,
       {"t_n", schedule.get_exit_time()},
       {"v_n", schedule.get_exit_velocity()},
       {"exit", network.get_vertex(schedule.get_exit_vertex()).name},
-      {"stops", stops}};
+      {"stops", stops},
+  };
 }
 
 void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
@@ -231,7 +230,8 @@ void cda_rail::Timetable::export_timetable(const std::filesystem::path& p,
     throw exceptions::ExportException(
         "Could not open schedules.json for writing");
   }
-  if (!(file << j << '\n')) {
+  file << j << '\n';
+  if (!file) {
     throw exceptions::ExportException("Failed to write schedules.json");
   }
 }
@@ -244,14 +244,15 @@ double cda_rail::Timetable::latest_exit_time() const {
                           std::views::transform(&Schedule::get_exit_time));
 }
 
-std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
-    size_t const trainIndex, double const dt, bool const tnInclusive) const {
-  if (!m_train_list.has_train(trainIndex)) {
-    throw exceptions::TrainNotExistentException(trainIndex);
+std::pair<size_t, size_t>
+cda_rail::Timetable::time_index_interval(size_t train_index, double const dt,
+                                         bool tn_inclusive) const {
+  if (!m_train_list.has_train(train_index)) {
+    throw exceptions::TrainNotExistentException(train_index);
   }
   cda_rail::exceptions::throw_if_non_positive(dt, "Time step length");
 
-  const auto& schedule = m_schedules.at(trainIndex);
+  const auto& schedule = m_schedules.at(train_index);
   const auto& t_0      = schedule.get_entry_time();
   const auto& t_n      = schedule.get_exit_time();
 
@@ -260,7 +261,7 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
 
   auto const t_0_index = cda_rail::get_last_time_index_before(t_0, dt, true);
 
-  if (!tnInclusive &&
+  if (!tn_inclusive &&
       cda_rail::get_first_time_index_after(t_n, dt, true) == 0) {
     throw exceptions::InvalidInputException(
         "Cannot compute non-inclusive end index when exit time is 0");
@@ -268,27 +269,26 @@ std::pair<size_t, size_t> cda_rail::Timetable::time_index_interval(
   // If tn_inclusive, the time step at t_n belongs to the interval, otherwise it
   // is the last time step strictly before t_n.
   auto const t_n_index =
-      tnInclusive ? cda_rail::get_first_time_index_after(t_n, dt, true)
-                  : cda_rail::get_last_time_index_before(t_n, dt, false);
+      tn_inclusive ? cda_rail::get_first_time_index_after(t_n, dt, true)
+                   : cda_rail::get_last_time_index_before(t_n, dt, false);
 
   return {t_0_index, t_n_index};
 }
 
 size_t cda_rail::Timetable::add_train_private_helper(
-    std::string const& train_name, double const length, double const maxSpeed,
+    std::string const& train_name, double const length, double max_speed,
     double const acceleration, double const deceleration, bool const tim,
-    double const entryTime, double const initialVelocity,
-    size_t const entryVertex, double const exitTime, double const exitVelocity,
-    size_t const exitVertex) {
+    double entry_time, double initial_velocity, size_t entry_vertex,
+    double exit_time, double exit_velocity, size_t exit_vertex) {
   if (m_train_list.has_train(train_name)) {
     throw exceptions::ConsistencyException("Train " + train_name +
                                            " already exists.");
   }
   // Construct the schedule first, so that a failing validation does not leave
   // behind a train without a schedule.
-  Schedule   schedule(entryTime, initialVelocity, entryVertex, exitTime,
-                      exitVelocity, exitVertex);
-  auto const index = m_train_list.add_train(train_name, length, maxSpeed,
+  Schedule   schedule(entry_time, initial_velocity, entry_vertex, exit_time,
+                      exit_velocity, exit_vertex);
+  auto const index = m_train_list.add_train(train_name, length, max_speed,
                                             acceleration, deceleration, tim);
   m_schedules.emplace_back(std::move(schedule));
   if (m_schedules.size() != m_train_list.size()) {
@@ -300,19 +300,19 @@ size_t cda_rail::Timetable::add_train_private_helper(
   return index;
 }
 
-void cda_rail::Timetable::insert_stop(size_t const       trainIndex,
+void cda_rail::Timetable::insert_stop(size_t             train_index,
                                       std::string const& station_name,
-                                      double const       serviceTime,
-                                      double const       serviceDuration) {
-  if (!m_train_list.has_train(trainIndex)) {
-    throw exceptions::TrainNotExistentException(trainIndex);
+                                      double             service_time,
+                                      double             service_duration) {
+  if (!m_train_list.has_train(train_index)) {
+    throw exceptions::TrainNotExistentException(train_index);
   }
   if (!m_station_list.has_station(station_name)) {
     throw exceptions::StationNotExistentException(station_name);
   }
 
-  m_schedules.at(trainIndex)
-      .insert_stop({serviceTime, serviceDuration,
+  m_schedules.at(train_index)
+      .insert_stop({service_time, service_duration,
                     m_station_list.get_station_ptr(station_name)});
 }
 

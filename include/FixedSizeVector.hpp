@@ -1,8 +1,11 @@
-#pragma once
+#ifndef CDA_RAIL_FIXEDSIZEVECTOR_HPP
+#define CDA_RAIL_FIXEDSIZEVECTOR_HPP
+
 #include <algorithm>
 #include <cstddef>
 #include <initializer_list>
 #include <memory>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -213,8 +216,7 @@ public:
    * @return Pointer to one past the last element.
    */
   [[nodiscard]] T* end() {
-    // Avoid pointer arithmetic on the null storage of a moved-from vector.
-    return m_len == 0 ? m_data.get() : m_data.get() + m_len;
+    return std::to_address(std::span<T>(m_data.get(), m_len).end());
   }
 
   /**
@@ -231,8 +233,7 @@ public:
    * @return A const pointer one past the last element.
    */
   [[nodiscard]] const T* end() const {
-    // Avoid pointer arithmetic on the null storage of a moved-from vector.
-    return m_len == 0 ? m_data.get() : m_data.get() + m_len;
+    return std::to_address(std::span<const T>(m_data.get(), m_len).end());
   }
 
   /**
@@ -312,3 +313,5 @@ void swap(FixedSizeVector<T>& lhs, FixedSizeVector<T>& rhs) noexcept {
 
 // NOLINTEND(cppcoreguidelines-avoid-c-arrays)
 } // namespace cda_rail
+
+#endif // CDA_RAIL_FIXEDSIZEVECTOR_HPP

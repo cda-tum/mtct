@@ -36,9 +36,11 @@ cda_rail::simulator::simple_remaining_time_heuristic(
     if (tr_schedule.get_exit_vertex() == last_edge.target &&
         tr_stops.size() == tr_stop_positions.size()) {
       // Train has reached the exit vertex, no further time needed
-      return {.feasible                     = true,
-              .remaining_exit_time          = 0.0,
-              .average_remaining_stop_delay = 0.0};
+      return {
+          .feasible                     = true,
+          .remaining_exit_time          = 0.0,
+          .average_remaining_stop_delay = 0.0,
+      };
     }
   }
 
@@ -54,18 +56,22 @@ cda_rail::simulator::simple_remaining_time_heuristic(
 
   if (start_edges.empty()) {
     // dead-end which is not exit vertex
-    return {.feasible                     = false,
-            .remaining_exit_time          = cda_rail::INF,
-            .average_remaining_stop_delay = cda_rail::INF};
+    return {
+        .feasible                     = false,
+        .remaining_exit_time          = cda_rail::INF,
+        .average_remaining_stop_delay = cda_rail::INF,
+    };
   }
 
   const auto running_times = instance.minimum_running_times(
       tr, start_edges, include_first_edge, heuristic_exit_time, first_next_stop,
       consider_earliest_exit);
   if (!running_times.feasible) {
-    return {.feasible                     = false,
-            .remaining_exit_time          = cda_rail::INF,
-            .average_remaining_stop_delay = cda_rail::INF};
+    return {
+        .feasible                     = false,
+        .remaining_exit_time          = cda_rail::INF,
+        .average_remaining_stop_delay = cda_rail::INF,
+    };
   }
 
   for (size_t i = 0; i < running_times.stop_arrivals.size(); ++i) {
@@ -89,9 +95,11 @@ cda_rail::simulator::simple_remaining_time_heuristic(
         std::max(heuristic_exit_time, tr_schedule.get_exit_time());
   }
 
-  return {.feasible            = true,
-          .remaining_exit_time = heuristic_exit_time - relevant_tr_time,
-          .average_remaining_stop_delay = average_stop_delay};
+  return {
+      .feasible                     = true,
+      .remaining_exit_time          = heuristic_exit_time - relevant_tr_time,
+      .average_remaining_stop_delay = average_stop_delay,
+  };
 }
 
 cda_rail::simulator::HeuristicResult cda_rail::simulator::greedy_heuristic(
@@ -102,10 +110,12 @@ cda_rail::simulator::HeuristicResult cda_rail::simulator::greedy_heuristic(
   const auto [feasible, remaining_exit_time, average_remaining_stop_delay] =
       remaining_time_heuristic(remaining_time_heuristic_type, tr, instance,
                                state, tr_exit_time, consider_earliest_exit);
-  return {.feasible = feasible,
-          .objective_value_difference =
-              remaining_exit_time + (instance.get_station_delay_weight() *
-                                     average_remaining_stop_delay)};
+  return {
+      .feasible = feasible,
+      .objective_value_difference =
+          remaining_exit_time +
+          (instance.get_station_delay_weight() * average_remaining_stop_delay),
+  };
 }
 
 cda_rail::simulator::HeuristicResult cda_rail::simulator::full_greedy_heuristic(

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_GENERALHELPER_HPP
+#define CDA_RAIL_GENERALHELPER_HPP
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
@@ -205,3 +206,5 @@ template <typename Clock, typename Duration1, typename Duration2>
                                                 bool t_inclusive);
 
 } // namespace cda_rail
+
+#endif // CDA_RAIL_GENERALHELPER_HPP

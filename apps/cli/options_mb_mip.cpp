@@ -23,7 +23,7 @@
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 namespace {
 using cda_rail::solver::mip_based::LazyConstraintSelectionStrategy;
@@ -35,7 +35,8 @@ velocity_refinement_strategy_map() {
   static const std::map<std::string, cda_rail::VelocityRefinementStrategy>
       VELOCITY_REFINEMENT_STRATEGY_MAP{
           {"None", cda_rail::VelocityRefinementStrategy::None},
-          {"MinOneStep", cda_rail::VelocityRefinementStrategy::MinOneStep}};
+          {"MinOneStep", cda_rail::VelocityRefinementStrategy::MinOneStep},
+  };
   return VELOCITY_REFINEMENT_STRATEGY_MAP;
 }
 
@@ -45,7 +46,8 @@ lazy_velocity_selection_strategy_map() {
       LAZY_VELOCITY_SELECTION_STRATEGY_MAP{
           {"OnlyCurrent", LazyVelocitySelectionStrategy::OnlyCurrent},
           {"ExtendToHigher", LazyVelocitySelectionStrategy::ExtendToHigher},
-          {"All", LazyVelocitySelectionStrategy::All}};
+          {"All", LazyVelocitySelectionStrategy::All},
+  };
   return LAZY_VELOCITY_SELECTION_STRATEGY_MAP;
 }
 
@@ -55,7 +57,8 @@ lazy_constraint_selection_strategy_map() {
       LAZY_CONSTRAINT_SELECTION_STRATEGY_MAP{
           {"OnlyFirstFound", LazyConstraintSelectionStrategy::OnlyFirstFound},
           {"OnlyViolated", LazyConstraintSelectionStrategy::OnlyViolated},
-          {"AllChecked", LazyConstraintSelectionStrategy::AllChecked}};
+          {"AllChecked", LazyConstraintSelectionStrategy::AllChecked},
+  };
   return LAZY_CONSTRAINT_SELECTION_STRATEGY_MAP;
 }
 
@@ -64,7 +67,8 @@ lazy_train_selection_strategy_map() {
   static const std::map<std::string, LazyTrainSelectionStrategy>
       LAZY_TRAIN_SELECTION_STRATEGY_MAP{
           {"OnlyAdjacent", LazyTrainSelectionStrategy::OnlyAdjacent},
-          {"All", LazyTrainSelectionStrategy::All}};
+          {"All", LazyTrainSelectionStrategy::All},
+  };
   return LAZY_TRAIN_SELECTION_STRATEGY_MAP;
 }
 } // namespace
@@ -215,8 +219,8 @@ void cda_rail::cli::add_mb_mip_options(CLI::App& app, MbMipSettings& settings) {
   app.get_option("--evaluate")->needs("--evaluation-dt");
 }
 
-void cda_rail::cli::finalize_mb_mip_settings(CLI::App&      app,
-                                             MbMipSettings& settings) {
+void cda_rail::cli::finalize_mb_mip_settings(const CLI::App& app,
+                                             MbMipSettings&  settings) {
   if (app.count("--max-delay") > 0) {
     settings.max_exit_delay    = settings.max_delay;
     settings.max_station_delay = settings.max_delay;
@@ -235,49 +239,50 @@ cda_rail::cli::generate_mb_mip_identifier(const MbMipSettings& settings) {
   const bool completion_dt_in_identifier =
       settings.completion_interval > 0 &&
       settings.completion_dt != solver::mip_based::DEFAULT_COMPLETION_DT;
-  return concatenate_string_views(
-      {bool_to_str(settings.fix_routes),
-       "_",
-       format_double(settings.max_velocity_delta),
-       "_",
-       solver::mip_based::velocity_refinement_strategy_to_string(
-           settings.velocity_refinement_strategy),
-       "_",
-       bool_to_str(settings.simplify_headway_constraints),
-       "_",
-       bool_to_str(settings.strengthen_vertex_headway_constraints),
-       "_",
-       bool_to_str(settings.late_entry_possible),
-       "_",
-       bool_to_str(settings.use_minimum_time_bounds),
-       "_",
-       format_double(settings.max_exit_delay),
-       "_",
-       format_double(settings.max_station_delay),
-       "_",
-       bool_to_str(settings.use_indicator_constraints),
-       "_",
-       bool_to_str(settings.use_lazy_constraints),
-       "_",
-       bool_to_str(settings.include_reverse_headways),
-       "_",
-       solver::mip_based::lazy_velocity_selection_strategy_to_string(
-           settings.lazy_velocity_selection_strategy),
-       "_",
-       solver::mip_based::lazy_constraint_selection_strategy_to_string(
-           settings.lazy_constraint_selection_strategy),
-       "_",
-       solver::mip_based::lazy_train_selection_strategy_to_string(
-           settings.lazy_train_selection_strategy),
-       "_",
-       format_double(settings.abs_mip_gap),
-       "_",
-       std::to_string(settings.solving.time_limit),
-       settings.completion_interval > 0
-           ? "_" + std::to_string(settings.completion_interval)
-           : "",
-       completion_dt_in_identifier ? "_" + format_double(settings.completion_dt)
-                                   : ""});
+  return concatenate_string_views({
+      bool_to_str(settings.fix_routes),
+      "_",
+      format_double(settings.max_velocity_delta),
+      "_",
+      solver::mip_based::velocity_refinement_strategy_to_string(
+          settings.velocity_refinement_strategy),
+      "_",
+      bool_to_str(settings.simplify_headway_constraints),
+      "_",
+      bool_to_str(settings.strengthen_vertex_headway_constraints),
+      "_",
+      bool_to_str(settings.late_entry_possible),
+      "_",
+      bool_to_str(settings.use_minimum_time_bounds),
+      "_",
+      format_double(settings.max_exit_delay),
+      "_",
+      format_double(settings.max_station_delay),
+      "_",
+      bool_to_str(settings.use_indicator_constraints),
+      "_",
+      bool_to_str(settings.use_lazy_constraints),
+      "_",
+      bool_to_str(settings.include_reverse_headways),
+      "_",
+      solver::mip_based::lazy_velocity_selection_strategy_to_string(
+          settings.lazy_velocity_selection_strategy),
+      "_",
+      solver::mip_based::lazy_constraint_selection_strategy_to_string(
+          settings.lazy_constraint_selection_strategy),
+      "_",
+      solver::mip_based::lazy_train_selection_strategy_to_string(
+          settings.lazy_train_selection_strategy),
+      "_",
+      format_double(settings.abs_mip_gap),
+      "_",
+      std::to_string(settings.solving.time_limit),
+      settings.completion_interval > 0
+          ? "_" + std::to_string(settings.completion_interval)
+          : "",
+      completion_dt_in_identifier ? "_" + format_double(settings.completion_dt)
+                                  : "",
+  });
 }
 
 void cda_rail::cli::log_mb_mip_settings(const MbMipSettings& settings,
@@ -321,32 +326,35 @@ void cda_rail::cli::log_mb_mip_settings(const MbMipSettings& settings,
 
 cda_rail::solver::mip_based::ModelDetailMovingBlock
 cda_rail::cli::mb_mip_model_detail(const MbMipSettings& settings) {
-  return {.fix_routes                   = settings.fix_routes,
-          .max_velocity_delta           = settings.max_velocity_delta,
-          .velocity_refinement_strategy = settings.velocity_refinement_strategy,
-          .simplify_headway_constraints = settings.simplify_headway_constraints,
-          .strengthen_vertex_headway_constraints =
-              settings.strengthen_vertex_headway_constraints,
-          .allow_late_entry        = settings.late_entry_possible,
-          .use_minimum_time_bounds = settings.use_minimum_time_bounds,
-          .max_exit_delay          = settings.max_exit_delay,
-          .max_station_delay       = settings.max_station_delay};
+  return {
+      .fix_routes                   = settings.fix_routes,
+      .max_velocity_delta           = settings.max_velocity_delta,
+      .velocity_refinement_strategy = settings.velocity_refinement_strategy,
+      .simplify_headway_constraints = settings.simplify_headway_constraints,
+      .strengthen_vertex_headway_constraints =
+          settings.strengthen_vertex_headway_constraints,
+      .allow_late_entry        = settings.late_entry_possible,
+      .use_minimum_time_bounds = settings.use_minimum_time_bounds,
+      .max_exit_delay          = settings.max_exit_delay,
+      .max_station_delay       = settings.max_station_delay,
+  };
 }
 
 cda_rail::solver::mip_based::SolverStrategyMovingBlock
 cda_rail::cli::mb_mip_solver_strategy(const MbMipSettings& settings) {
-  return {.use_indicator_constraints = settings.use_indicator_constraints,
-          .use_lazy_constraints      = settings.use_lazy_constraints,
-          .include_reverse_headways  = settings.include_reverse_headways,
-          .lazy_velocity_selection_strategy =
-              settings.lazy_velocity_selection_strategy,
-          .lazy_constraint_selection_strategy =
-              settings.lazy_constraint_selection_strategy,
-          .lazy_train_selection_strategy =
-              settings.lazy_train_selection_strategy,
-          .abs_mip_gap         = settings.abs_mip_gap,
-          .completion_interval = settings.completion_interval,
-          .completion_dt       = settings.completion_dt};
+  return {
+      .use_indicator_constraints = settings.use_indicator_constraints,
+      .use_lazy_constraints      = settings.use_lazy_constraints,
+      .include_reverse_headways  = settings.include_reverse_headways,
+      .lazy_velocity_selection_strategy =
+          settings.lazy_velocity_selection_strategy,
+      .lazy_constraint_selection_strategy =
+          settings.lazy_constraint_selection_strategy,
+      .lazy_train_selection_strategy = settings.lazy_train_selection_strategy,
+      .abs_mip_gap                   = settings.abs_mip_gap,
+      .completion_interval           = settings.completion_interval,
+      .completion_dt                 = settings.completion_dt,
+  };
 }
 
 cda_rail::solver::mip_based::SolutionSettingsMovingBlock
@@ -360,4 +368,4 @@ cda_rail::cli::mb_mip_solution_settings(const MbMipSettings& settings,
   return solution_settings;
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)

@@ -29,7 +29,7 @@ double snap_negative_zero(double value) {
 }
 } // namespace
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
 
 void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
     cda_rail::instances::SolGeneralPerformanceOptimizationInstance& sol) const {
@@ -120,7 +120,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
   for (size_t tr = 0; tr < m_num_tr; tr++) {
     const auto& tr_object   = m_instance.get_const_train_list().get_train(tr);
     const auto& tr_schedule = m_instance.get_const_schedule(tr);
-    for (const auto& [vertex_id, pos] : route_markers[tr]) {
+    for (const auto& [vertex_id, pos] : route_markers.at(tr)) {
       const auto time_1 = snap_negative_zero(
           m_vars.at("t_front_arrival").at(tr, vertex_id).get(GRB_DoubleAttr_X));
       const auto time_2 = snap_negative_zero(m_vars.at("t_front_departure")
@@ -273,4 +273,4 @@ double cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_speed(
                                          std::to_string(vertex_id));
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay,performance-inefficient-string-concatenation,bugprone-unchecked-optional-access)

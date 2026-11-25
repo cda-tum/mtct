@@ -15,7 +15,7 @@
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 void cda_rail::cli::add_instance_options(CLI::App&         app,
                                          InstanceSettings& settings) {
@@ -68,10 +68,11 @@ void cda_rail::cli::add_export_options(CLI::App& app, ExportSettings& settings,
           ->group("Export Options");
   CLI::Option* export_lp_flag = nullptr;
   if (support.lp_model) {
-    const auto lp_model_description = concatenate_string_views(
-        {"Export the MIP model itself (as .mps and, if a solution exists, as ",
-         support.lp_model_solution_extension,
-         ") into the solution directory."});
+    const auto lp_model_description = concatenate_string_views({
+        "Export the MIP model itself (as .mps and, if a solution exists, as ",
+        support.lp_model_solution_extension,
+        ") into the solution directory.",
+    });
     export_lp_flag = app.add_flag("--export-lp-model", settings.export_lp_model,
                                   lp_model_description)
                          ->group("Export Options");
@@ -221,13 +222,15 @@ void cda_rail::cli::log_export_settings(const ExportSettings& settings,
 cda_rail::solver::GeneralSolutionSettings
 cda_rail::cli::general_solution_settings(const ExportSettings& settings,
                                          const std::string& working_directory) {
-  return {.export_option = settings.export_option,
-          .working_directory =
-              settings.export_working_directory.value_or(working_directory),
-          .solution_subdirectory = settings.solution_subdirectory,
-          .parameter_identifier  = settings.parameter_identifier,
-          .evaluation_time_step =
-              settings.evaluate ? settings.evaluation_time_step : std::nullopt};
+  return {
+      .export_option = settings.export_option,
+      .working_directory =
+          settings.export_working_directory.value_or(working_directory),
+      .solution_subdirectory = settings.solution_subdirectory,
+      .parameter_identifier  = settings.parameter_identifier,
+      .evaluation_time_step =
+          settings.evaluate ? settings.evaluation_time_step : std::nullopt,
+  };
 }
 
 void cda_rail::cli::add_solving_options(CLI::App&        app,
@@ -268,9 +271,11 @@ void log_simulated_delays(const std::string&                          label,
   for (size_t tr = 0; tr < train_list.size(); ++tr) {
     std::string stop_delays;
     for (const auto delay : delays.stop_delays.at(tr)) {
-      stop_delays = cda_rail::concatenate_string_views(
-          {stop_delays, stop_delays.empty() ? "" : ", ",
-           cda_rail::cli::format_double(delay)});
+      stop_delays = cda_rail::concatenate_string_views({
+          stop_delays,
+          stop_delays.empty() ? "" : ", ",
+          cda_rail::cli::format_double(delay),
+      });
     }
     PLOGI << "    " << train_list.get_train(tr).get_name() << ": exit delay "
           << delays.exit_delays.at(tr) << ", station delays [" << stop_delays
@@ -290,8 +295,11 @@ void cda_rail::cli::log_solution_evaluation(
   if (!evaluation->trains_violating_dynamics.empty()) {
     std::string trains;
     for (const auto tr : evaluation->trains_violating_dynamics) {
-      trains = concatenate_string_views({trains, trains.empty() ? "" : ", ",
-                                         train_list.get_train(tr).get_name()});
+      trains = concatenate_string_views({
+          trains,
+          trains.empty() ? "" : ", ",
+          train_list.get_train(tr).get_name(),
+      });
     }
     PLOGI << "  Trajectories violating the train dynamics, whose exit times "
              "are hence enforced: "
@@ -302,4 +310,4 @@ void cda_rail::cli::log_solution_evaluation(
   log_simulated_delays("Greedy", evaluation->greedy, train_list);
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)

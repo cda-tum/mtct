@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_CLI_OPTIONS_MB_ASTAR_HPP
+#define CDA_RAIL_CLI_OPTIONS_MB_ASTAR_HPP
 
 #include "CLI/CLI.hpp"
 #include "options_common.hpp"
@@ -26,9 +27,11 @@ struct MbAStarSettings {
   bool                     time_aware_state_transitions{false};
   double                   a_star_weight{1.0};
   solver::astar_based::NextStateStrategy next_state_strategy{
-      solver::astar_based::NextStateStrategy::SingleEdge};
+      solver::astar_based::NextStateStrategy::SingleEdge,
+  };
   simulator::RemainingTimeHeuristicType remaining_time_heuristic_type{
-      simulator::RemainingTimeHeuristicType::Simple};
+      simulator::RemainingTimeHeuristicType::Simple,
+  };
   size_t completion_interval{0};
 
   SolvingSettings solving{};
@@ -57,3 +60,5 @@ mb_astar_model_detail(const MbAStarSettings& settings);
 mb_astar_solver_strategy(const MbAStarSettings& settings);
 
 } // namespace cda_rail::cli
+
+#endif // CDA_RAIL_CLI_OPTIONS_MB_ASTAR_HPP

@@ -9,10 +9,13 @@
 #include <plog/Logger.h>
 #include <plog/Severity.h>
 #include <string>
+#include <string_view>
+
+using namespace std::string_view_literals;
 
 TEST(Logging, VSSGenDefaultLogging) {
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve();
@@ -38,7 +41,7 @@ TEST(Logging, FileLogging) {
   g_logger->addAppender(g_appender.get());
 
   cda_rail::solver::mip_based::VSSGenTimetableSolver solver(
-      "SimpleStation", "atmos2023", "data");
+      "SimpleStation"sv, "atmos2023"sv, "data"sv);
 
   // NOLINTNEXTLINE(clang-diagnostic-unused-result)
   solver.solve();
@@ -55,7 +58,7 @@ TEST(Logging, FileLogging) {
   std::string   line;
   bool          found = false;
   while (std::getline(log_file, line)) {
-    if (line.find("Gurobi Optimizer version") != std::string::npos) {
+    if (line.contains("Gurobi Optimizer version")) {
       found = true;
       break;
     }

@@ -103,11 +103,13 @@ RouteTestNetwork make_route_test_network() {
   network.add_successor(e0, e1);
   network.add_successor(e1, e2);
 
-  return RouteTestNetwork{.network = std::move(network),
-                          .e0      = e0,
-                          .e1      = e1,
-                          .e2      = e2,
-                          .e_alt   = e_alt};
+  return RouteTestNetwork{
+      .network = std::move(network),
+      .e0      = e0,
+      .e1      = e1,
+      .e2      = e2,
+      .e_alt   = e_alt,
+  };
 }
 
 } // namespace
@@ -559,10 +561,10 @@ TEST(RouteMapFunctionality, ExportRouteMap) {
   route_map.push_back_edge("tr2", {"r1", "r2"}, network);
 
   // Export and import route map
-  route_map.export_routes("./tmp/write_route_map_test", network);
-  auto route_map_read =
-      cda_rail::RouteMap::import_routes("./tmp/write_route_map_test", network);
-  std::filesystem::remove_all("./tmp");
+  route_map.export_routes("./tmp-ExportRouteMap/write_route_map_test", network);
+  auto route_map_read = cda_rail::RouteMap::import_routes(
+      "./tmp-ExportRouteMap/write_route_map_test", network);
+  std::filesystem::remove_all("./tmp-ExportRouteMap");
 
   // Check if the route map is the same as the original one
   // Check if the route map contains two routes for tr1 and tr2

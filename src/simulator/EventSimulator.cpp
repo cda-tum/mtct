@@ -33,7 +33,7 @@
 
 // The reinterpret_cast warnings are false positives stemming from the plog
 // macros.
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 namespace {
 // How often a simulation may handle events at the same time per train before
@@ -188,10 +188,11 @@ cda_rail::simulator::EventSimulator::Movement::until(double position) const {
       if (position > x) {
         const auto tau =
             time_to_cover(phase.v_start, phase.acceleration(), position - x);
-        result.phases.push_back(
-            {.duration = tau,
-             .v_start  = phase.v_start,
-             .v_end    = phase.v_start + (phase.acceleration() * tau)});
+        result.phases.push_back({
+            .duration = tau,
+            .v_start  = phase.v_start,
+            .v_end    = phase.v_start + (phase.acceleration() * tau),
+        });
       }
       return result;
     }
@@ -216,9 +217,11 @@ cda_rail::simulator::EventSimulator::fastest_phases(
     if (start >= target) {
       break;
     }
-    sections.push_back({.start  = start,
-                        .end    = std::min(end, target),
-                        .v2_max = v_max * v_max});
+    sections.push_back({
+        .start  = start,
+        .end    = std::min(end, target),
+        .v2_max = v_max * v_max,
+    });
   }
 
   // The highest squared speed at the end of every section from which the
@@ -272,9 +275,13 @@ cda_rail::simulator::EventSimulator::fastest_phases(
 
     // The minimum of the three is linear in between the points at which two of
     // them are equal
-    std::vector<double> kinks{0, length, (v2_max - v2) / (2 * a),
-                              length - ((v2_max - v2_end.at(k)) / (2 * d)),
-                              (braking(0) - v2) / (2 * (a + d))};
+    std::vector<double> kinks{
+        0,
+        length,
+        (v2_max - v2) / (2 * a),
+        length - ((v2_max - v2_end.at(k)) / (2 * d)),
+        (braking(0) - v2) / (2 * (a + d)),
+    };
     for (auto& u : kinks) {
       u = std::clamp(u, 0.0, length);
     }
@@ -384,9 +391,11 @@ cda_rail::simulator::EventSimulator::exit_movement(
     const auto v_s      = movement.end_speed();
     const auto v_e      = std::sqrt(std::max(0.0, arrival_speed2(s)));
     if (v_s + v_e > 0) {
-      movement.phases.push_back({.duration = 2 * (exit_pos - s) / (v_s + v_e),
-                                 .v_start  = v_s,
-                                 .v_end    = v_e});
+      movement.phases.push_back({
+          .duration = 2 * (exit_pos - s) / (v_s + v_e),
+          .v_start  = v_s,
+          .v_end    = v_e,
+      });
     }
     return movement;
   };
@@ -638,11 +647,13 @@ cda_rail::simulator::EventSimulator::Run::simulate() {
   for (size_t tr = 0; tr < m_trajectories.size(); ++tr) {
     remove_uninformative_samples(tr);
   }
-  return {.success            = success,
-          .exit_times         = std::move(m_exit_times),
-          .stop_times         = std::move(m_stop_times),
-          .vertex_headways    = std::move(m_vertex_headways),
-          .train_trajectories = std::move(m_trajectories)};
+  return {
+      .success            = success,
+      .exit_times         = std::move(m_exit_times),
+      .stop_times         = std::move(m_stop_times),
+      .vertex_headways    = std::move(m_vertex_headways),
+      .train_trajectories = std::move(m_trajectories),
+  };
 }
 
 // Events
@@ -709,7 +720,11 @@ void cda_rail::simulator::EventSimulator::Run::enter(size_t tr, double t) {
   state.status   = Status::Driving;
   state.blocker  = std::nullopt;
   state.movement = {
-      .t = t, .pos = 0, .v = schedule.get_initial_velocity(), .phases = {}};
+      .t      = t,
+      .pos    = 0,
+      .v      = schedule.get_initial_velocity(),
+      .phases = {},
+  };
   if (!m_simulator.get_stop_positions_of_tr(tr).empty()) {
     state.next_stop = 0;
   }
@@ -763,8 +778,10 @@ void cda_rail::simulator::EventSimulator::Run::leave(size_t tr, double t) {
     m_vertex_headways.at(exit_vertex) =
         left_at + network().get_vertex(exit_vertex).headway;
     if (m_save_trajectories) {
-      m_trajectories.at(tr)[left_at] = {.pos = end_pos(tr),
-                                        .vel = front(tr, t).vel};
+      m_trajectories.at(tr)[left_at] = {
+          .pos = end_pos(tr),
+          .vel = front(tr, t).vel,
+      };
     }
   } else {
     m_exit_times.at(tr) = t;
@@ -801,7 +818,8 @@ void cda_rail::simulator::EventSimulator::Run::plan(size_t tr, double t) {
                     target.end == End::RouteEnd ? INF : 0.0,
                     m_simulator.speed_limits(tr, now.pos, target.pos,
                                              m_limit_speed_by_leaving_edges),
-                    train.get_acceleration(), train.get_deceleration())};
+                    train.get_acceleration(), train.get_deceleration()),
+            };
   state.blocker = std::nullopt;
 
   auto next = state.movement.end_time();
@@ -906,10 +924,12 @@ cda_rail::simulator::EventSimulator::Run::release_time(Blocker const& blocker,
     return INF;
   }
   // The margin makes sure that the rear has passed despite rounding
-  return std::max(
-      {t, blocker.not_before,
-       other.movement.time_at(blocker.rear_pos + length(*blocker.train) +
-                              (GRB_EPS / 2))});
+  return std::max({
+      t,
+      blocker.not_before,
+      other.movement.time_at(blocker.rear_pos + length(*blocker.train) +
+                             (GRB_EPS / 2)),
+  });
 }
 
 // Movement authority, as in GreedySimulator::get_ma_and_maxv
@@ -919,9 +939,11 @@ cda_rail::simulator::EventSimulator::Run::find_target(size_t tr, double t,
                                                       PosVel now) const {
   const auto& edges = route(tr);
   const auto& m     = m_milestones.at(tr);
-  Target      target{.pos = end_pos(tr),
-                     .end = leaves_network(tr) ? End::Exit : End::RouteEnd};
-  const auto  limit_to = [&target](Target const& other) {
+  Target      target{
+      .pos = end_pos(tr),
+      .end = leaves_network(tr) ? End::Exit : End::RouteEnd,
+  };
+  const auto limit_to = [&target](Target const& other) {
     if (other.pos < target.pos) {
       target = other;
     }
@@ -956,9 +978,11 @@ cda_rail::simulator::EventSimulator::Run::find_target(size_t tr, double t,
       if (m_block_vertices) {
         const auto reverse = reverse_edge_use(tr, edges.at(i), t);
         if (reverse.blocker.has_value()) {
-          limit_to({.pos     = m.at(i),
-                    .end     = End::Obstacle,
-                    .blocker = *reverse.blocker});
+          limit_to({
+              .pos     = m.at(i),
+              .end     = End::Obstacle,
+              .blocker = *reverse.blocker,
+          });
         } else if (reverse.used && m.at(i) > braking_point + GRB_EPS) {
           // Whether the edge is free is only decided once the train cannot
           // stop in front of it anymore
@@ -968,9 +992,11 @@ cda_rail::simulator::EventSimulator::Run::find_target(size_t tr, double t,
     }
     const auto vertex = network().get_edge(edges.at(i)).target;
     if (m_vertex_headways.at(vertex) > t) {
-      limit_to({.pos     = m.at(i + 1),
-                .end     = End::Obstacle,
-                .blocker = {.not_before = m_vertex_headways.at(vertex)}});
+      limit_to({
+          .pos     = m.at(i + 1),
+          .end     = End::Obstacle,
+          .blocker = {.not_before = m_vertex_headways.at(vertex)},
+      });
     }
     if (const auto ahead = train_ahead(tr, i, t, now.pos, first_edge);
         ahead.has_value()) {
@@ -1003,12 +1029,17 @@ cda_rail::simulator::EventSimulator::Run::train_ahead(size_t tr, size_t i,
     }
     const auto obstacle = m.at(i) + std::max(0.0, rear);
     if (!nearest.has_value() || obstacle < nearest->pos) {
-      nearest = Target{.pos     = obstacle,
-                       .end     = End::Obstacle,
-                       .blocker = {.train    = other,
-                                   .rear_pos = this->front(other, t).pos -
-                                               length(other) + GRB_EPS},
-                       .follows = true};
+      nearest = Target{
+          .pos = obstacle,
+          .end = End::Obstacle,
+          .blocker =
+              {
+                  .train = other,
+                  .rear_pos =
+                      this->front(other, t).pos - length(other) + GRB_EPS,
+              },
+          .follows = true,
+      };
     }
   }
   return nearest;
@@ -1041,9 +1072,11 @@ cda_rail::simulator::EventSimulator::Run::entry_blocker(size_t tr,
       const auto position = position_on_edge(other, edges.at(i), t);
       if (other != tr && position.has_value() &&
           std::max(0.0, position->first) + EPS <= free) {
-        return Blocker{.train    = other,
-                       .rear_pos = m_edge_starts.at(other).at(edges.at(i)) +
-                                   std::min(free, edge_length) + GRB_EPS};
+        return Blocker{
+            .train    = other,
+            .rear_pos = m_edge_starts.at(other).at(edges.at(i)) +
+                        std::min(free, edge_length) + GRB_EPS,
+        };
       }
     }
     if (const auto blocker = reverse_edge_use(tr, edges.at(i), t).blocker;
@@ -1284,4 +1317,4 @@ cda_rail::simulator::EventSimulator::simulate(
   return run.simulate();
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)

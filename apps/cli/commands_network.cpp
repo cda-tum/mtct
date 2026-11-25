@@ -191,7 +191,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       network_cmd->add_subcommand("new", "Create a new empty network");
   auto new_name = std::make_shared<std::string>();
   new_cmd->add_option("name", *new_name, "Name of the new network")->required();
-  new_cmd->callback([&session, new_name]() {
+  new_cmd->callback([&session, new_name] {
     session.new_network(*new_name);
     std::cout << "Created network " << *new_name << '\n';
   });
@@ -200,7 +200,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       network_cmd->add_subcommand("load", "Load a network from disk");
   auto load_name = std::make_shared<std::string>();
   load_cmd->add_option("name", *load_name, "Name of the network")->required();
-  load_cmd->callback([&session, load_name]() {
+  load_cmd->callback([&session, load_name] {
     session.load_network(*load_name);
     std::cout << "Loaded network " << *load_name << " with "
               << session.const_current_network().number_of_vertices()
@@ -211,12 +211,11 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
 
   network_cmd
       ->add_subcommand("list", "List the networks in the working directory")
-      ->callback([&session]() { list_networks(session); });
+      ->callback([&session] { list_networks(session); });
 
   network_cmd->add_subcommand("info", "Show what the current network contains")
-      ->callback([&session]() {
-        print_network_info(session.const_current_network());
-      });
+      ->callback(
+          [&session] { print_network_info(session.const_current_network()); });
 
   auto* save_cmd = network_cmd->add_subcommand(
       "save", "Write the current network to the working directory");
@@ -225,7 +224,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       save_cmd->add_option("-a,--as", *save_name,
                            "Rename the network before writing it. Instances "
                            "referencing the old name keep pointing there.");
-  save_cmd->callback([&session, save_name, save_as_opt]() {
+  save_cmd->callback([&session, save_name, save_as_opt] {
     const auto path = session.save_network(
         save_as_opt->count() > 0 ? std::optional<std::string>(*save_name)
                                  : std::nullopt);
@@ -241,14 +240,14 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       ->add_subcommand("reload",
                        "Reread the standalone network from disk, discarding "
                        "unsaved changes")
-      ->callback([&session]() {
+      ->callback([&session] {
         session.reload_network();
         std::cout << "Reloaded network "
                   << session.const_current_network().get_network_name() << '\n';
       });
 
   network_cmd->add_subcommand("close", "Unload the standalone network")
-      ->callback([&session]() {
+      ->callback([&session] {
         session.close_network();
         std::cout << "Closed the standalone network.\n";
       });
@@ -258,7 +257,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
   auto rename_to = std::make_shared<std::string>();
   rename_cmd->add_option("new-name", *rename_to, "New name of the network")
       ->required();
-  rename_cmd->callback([&session, rename_to]() {
+  rename_cmd->callback([&session, rename_to] {
     const auto old_name = session.const_current_network().get_network_name();
     session.current_network().set_network_name(*rename_to);
     session.mark_network_modified();
@@ -295,7 +294,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
                    "Additional minimal headway at this vertex in s")
       ->check(CLI::NonNegativeNumber)
       ->capture_default_str();
-  vertex_add_cmd->callback([&session, vertex_add]() {
+  vertex_add_cmd->callback([&session, vertex_add] {
     const auto index = session.current_network().add_vertex(
         vertex_add->name, vertex_add->type, vertex_add->headway);
     session.mark_network_modified();
@@ -329,7 +328,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
                        "New additional minimal headway in s")
           ->check(CLI::NonNegativeNumber);
   vertex_change_cmd->callback([&session, vertex_change, vertex_name_opt,
-                               vertex_type_opt, vertex_headway_opt]() {
+                               vertex_type_opt, vertex_headway_opt] {
     auto& network = session.current_network();
     if (vertex_type_opt->count() > 0) {
       network.change_vertex_type(vertex_input(vertex_change->vertex),
@@ -348,9 +347,9 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
     std::cout << "Changed vertex " << vertex_change->vertex << '\n';
   });
 
-  vertex_cmd->add_subcommand("list", "List all vertices")
-      ->callback(
-          [&session]() { list_vertices(session.const_current_network()); });
+  vertex_cmd->add_subcommand("list", "List all vertices")->callback([&session] {
+    list_vertices(session.const_current_network());
+  });
 
   // ------------------------------------------------------------------ edges
 
@@ -362,7 +361,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       edge_cmd->add_subcommand("add", "Add a directed edge to the network");
   auto edge_add = std::make_shared<EdgeAddOptions>();
   add_edge_options(*edge_add_cmd, *edge_add);
-  edge_add_cmd->callback([&session, edge_add]() {
+  edge_add_cmd->callback([&session, edge_add] {
     const auto index = session.current_network().add_edge(
         vertex_input(edge_add->source), vertex_input(edge_add->target),
         edge_add->length, edge_add->max_speed, edge_add->breakable,
@@ -376,7 +375,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       "add-bidirectional", "Add an edge in both directions");
   auto edge_add_bi = std::make_shared<EdgeAddOptions>();
   add_edge_options(*edge_add_bi_cmd, *edge_add_bi);
-  edge_add_bi_cmd->callback([&session, edge_add_bi]() {
+  edge_add_bi_cmd->callback([&session, edge_add_bi] {
     const auto [forward, reverse] =
         session.current_network().add_bidirectional_edge(
             vertex_input(edge_add_bi->source),
@@ -435,7 +434,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
           ->check(CLI::PositiveNumber);
   edge_change_cmd->callback([&session, edge_change, edge_length_opt,
                              edge_speed_opt, edge_breakable_opt,
-                             edge_min_block_opt, edge_min_stop_block_opt]() {
+                             edge_min_block_opt, edge_min_stop_block_opt] {
     auto&      network = session.current_network();
     const auto edge    = edge_input(edge_change->source, edge_change->target);
     if (edge_length_opt->count() > 0) {
@@ -459,7 +458,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
               << edge_change->target << '\n';
   });
 
-  edge_cmd->add_subcommand("list", "List all edges")->callback([&session]() {
+  edge_cmd->add_subcommand("list", "List all edges")->callback([&session] {
     list_edges(session.const_current_network());
   });
 
@@ -494,7 +493,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       ->add_option("out-target", successor_add->out_target,
                    "Target vertex of the outgoing edge")
       ->required();
-  successor_add_cmd->callback([&session, successor_add]() {
+  successor_add_cmd->callback([&session, successor_add] {
     session.current_network().add_successor(
         edge_input(successor_add->in_source, successor_add->in_target),
         edge_input(successor_add->out_source, successor_add->out_target));
@@ -508,7 +507,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       ->add_subcommand("add-trivial",
                        "Let trains pass straight through every vertex with "
                        "exactly two neighbors")
-      ->callback([&session]() {
+      ->callback([&session] {
         session.current_network().add_trivial_successors();
         session.mark_network_modified();
         std::cout << "Added the trivial successors\n";
@@ -538,7 +537,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       ->add_option("branch-2", turnout->branch_2,
                    "Neighbor on the second branch")
       ->required();
-  successor_turnout_cmd->callback([&session, turnout]() {
+  successor_turnout_cmd->callback([&session, turnout] {
     session.current_network().add_turnout_successors(
         vertex_input(turnout->turnout), vertex_input(turnout->toe),
         vertex_input(turnout->branch_1), vertex_input(turnout->branch_2));
@@ -550,7 +549,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
       "add-crossing", "Add the successors of a diamond crossing");
   auto crossing = std::make_shared<CrossingOptions>();
   add_crossing_options(*successor_crossing_cmd, *crossing, "crossing");
-  successor_crossing_cmd->callback([&session, crossing]() {
+  successor_crossing_cmd->callback([&session, crossing] {
     session.current_network().add_crossing_successors(
         vertex_input(crossing->vertex), vertex_input(crossing->track_1_a),
         vertex_input(crossing->track_1_b), vertex_input(crossing->track_2_a),
@@ -565,7 +564,7 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
   auto double_slip = std::make_shared<CrossingOptions>();
   add_crossing_options(*successor_double_slip_cmd, *double_slip,
                        "double slip switch");
-  successor_double_slip_cmd->callback([&session, double_slip]() {
+  successor_double_slip_cmd->callback([&session, double_slip] {
     session.current_network().add_double_slip_successors(
         vertex_input(double_slip->vertex), vertex_input(double_slip->track_1_a),
         vertex_input(double_slip->track_1_b),
@@ -578,5 +577,5 @@ void cda_rail::cli::add_network_commands(CLI::App& app, Session& session) {
 
   successor_cmd->add_subcommand("list", "List the successors of every edge")
       ->callback(
-          [&session]() { list_successors(session.const_current_network()); });
+          [&session] { list_successors(session.const_current_network()); });
 }

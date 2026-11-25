@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_PROBLEMINSTANCES_GENERALPERFORMANCEOPTIMIZATIONINSTANCE_HPP
+#define CDA_RAIL_PROBLEMINSTANCES_GENERALPERFORMANCEOPTIMIZATIONINSTANCE_HPP
 
 #include "Definitions.hpp"
 #include "GeneralProblemInstance.hpp"
@@ -1056,7 +1057,7 @@ public:
   void set_vss_pos(cda_rail::Network::EdgeInput const& edge_input,
                    std::vector<double>                 pos);
   void reset_vss_pos(cda_rail::Network::EdgeInput const& edge_input);
-  std::vector<double>
+  [[nodiscard]] std::vector<double>
   get_vss_pos(cda_rail::Network::EdgeInput const& edge_input) const;
 
   [[nodiscard]] std::vector<double>
@@ -1076,3 +1077,5 @@ public:
 };
 
 } // namespace cda_rail::instances
+
+#endif // CDA_RAIL_PROBLEMINSTANCES_GENERALPERFORMANCEOPTIMIZATIONINSTANCE_HPP

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_CLI_SESSION_HPP
+#define CDA_RAIL_CLI_SESSION_HPP
 
 #include "datastructure/RailwayNetwork.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
@@ -186,3 +187,5 @@ public:
 };
 
 } // namespace cda_rail::cli
+
+#endif // CDA_RAIL_CLI_SESSION_HPP

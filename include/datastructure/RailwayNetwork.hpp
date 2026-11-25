@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_DATASTRUCTURE_RAILWAYNETWORK_HPP
+#define CDA_RAIL_DATASTRUCTURE_RAILWAYNETWORK_HPP
+
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
 #include "StringHelper.hpp"
@@ -1578,16 +1580,33 @@ public:
   size_t add_vertex(Vertex vertex);
 
   /**
-   * @brief Constructs a vertex from @p args and adds it to the network.
-   * @tparam Args Argument types forwarded to the `Vertex` constructor.
-   * @param args Arguments forwarded to `Vertex(args...)`.
+   * @brief Constructs a vertex and adds it to the network.
+   * @param name    Name of the vertex.
+   * @param type    Type of the vertex.
+   * @param headway Additional minimal headway at the vertex in s.
    * @return Index of the newly added vertex.
    * @throws cda_rail::exceptions::InvalidInputException If a vertex with the
    *         same name already exists.
    */
-  template <typename... Args> size_t add_vertex(Args... args) {
-    return add_vertex(Vertex(std::forward<Args>(args)...));
-  };
+  size_t add_vertex(std::string_view name, VertexType type,
+                    double headway = Vertex::HEADWAY_DEFAULT) {
+    return add_vertex(Vertex(name, type, headway));
+  }
+
+  /**
+   * @brief Constructs a vertex and adds it to the network.
+   * @param name    Name of the vertex.
+   * @param type    Type of the vertex.
+   * @param headway Additional minimal headway at the vertex in s;
+   *                `std::nullopt` uses `Vertex::HEADWAY_DEFAULT`.
+   * @return Index of the newly added vertex.
+   * @throws cda_rail::exceptions::InvalidInputException If a vertex with the
+   *         same name already exists.
+   */
+  size_t add_vertex(std::string_view name, VertexType type,
+                    std::optional<double> const& headway) {
+    return add_vertex(Vertex(name, type, headway));
+  }
 
 private:
   /**
@@ -2906,10 +2925,15 @@ public:
                                     EdgeInput const& edge_out) const {
     if (!is_valid_successor(edge_in, edge_out)) {
       throw cda_rail::exceptions::InvalidInputException(
-          concatenate_string_views({get_edge_name(edge_out),
-                                    " is not a valid successor of ",
-                                    get_edge_name(edge_in), "."}));
+          concatenate_string_views({
+              get_edge_name(edge_out),
+              " is not a valid successor of ",
+              get_edge_name(edge_in),
+              ".",
+          }));
     }
   }
 };
 } // namespace cda_rail
+
+#endif // CDA_RAIL_DATASTRUCTURE_RAILWAYNETWORK_HPP

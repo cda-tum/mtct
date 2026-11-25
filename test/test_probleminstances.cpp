@@ -39,14 +39,16 @@ void check_instance_import(
 
   // Check vertices properties
   std::vector<std::string> vertex_names = {
-      "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11"};
+      "l0", "l1", "l2", "l3", "r0", "r1", "r2", "g00", "g01", "g10", "g11",
+  };
   std::vector<cda_rail::VertexType> type = {
       cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
       cda_rail::VertexType::TTD,      cda_rail::VertexType::NoBorder,
       cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
       cda_rail::VertexType::NoBorder, cda_rail::VertexType::TTD,
       cda_rail::VertexType::TTD,      cda_rail::VertexType::TTD,
-      cda_rail::VertexType::TTD};
+      cda_rail::VertexType::TTD,
+  };
 
   EXPECT_EQ(network.number_of_vertices(), vertex_names.size());
 
@@ -59,142 +61,186 @@ void check_instance_import(
 
   // Check edges properties
   std::vector<EdgeTarget> edge_targets;
-  edge_targets.push_back({.source           = "l0",
-                          .target           = "l1",
-                          .length           = 500,
-                          .max_speed        = 27.7778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "l1",
-                          .target           = "l2",
-                          .length           = 500,
-                          .max_speed        = 27.7778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "l2",
-                          .target           = "l3",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l3",
-                          .target           = "g00",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l3",
-                          .target           = "g10",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source                = "g00",
-                          .target                = "g01",
-                          .length                = 300,
-                          .max_speed             = 27.7778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source                = "g10",
-                          .target                = "g11",
-                          .length                = 300,
-                          .max_speed             = 27.7778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source           = "g01",
-                          .target           = "r2",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "g11",
-                          .target           = "r2",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r2",
-                          .target           = "r1",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r1",
-                          .target           = "r0",
-                          .length           = 500,
-                          .max_speed        = 27.7778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "r0",
-                          .target           = "r1",
-                          .length           = 500,
-                          .max_speed        = 27.7778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "r1",
-                          .target           = "r2",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r2",
-                          .target           = "g01",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "r2",
-                          .target           = "g11",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source                = "g01",
-                          .target                = "g00",
-                          .length                = 300,
-                          .max_speed             = 27.7778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source                = "g11",
-                          .target                = "g10",
-                          .length                = 300,
-                          .max_speed             = 27.7778,
-                          .breakable             = true,
-                          .min_block_length      = 10,
-                          .min_stop_block_length = 150});
-  edge_targets.push_back({.source           = "g00",
-                          .target           = "l3",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "g10",
-                          .target           = "l3",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l3",
-                          .target           = "l2",
-                          .length           = 5,
-                          .max_speed        = 27.7778,
-                          .breakable        = false,
-                          .min_block_length = 0});
-  edge_targets.push_back({.source           = "l2",
-                          .target           = "l1",
-                          .length           = 500,
-                          .max_speed        = 27.7778,
-                          .breakable        = true,
-                          .min_block_length = 10});
-  edge_targets.push_back({.source           = "l1",
-                          .target           = "l0",
-                          .length           = 500,
-                          .max_speed        = 27.7778,
-                          .breakable        = true,
-                          .min_block_length = 10});
+  edge_targets.push_back({
+      .source           = "l0",
+      .target           = "l1",
+      .length           = 500,
+      .max_speed        = 27.7778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "l1",
+      .target           = "l2",
+      .length           = 500,
+      .max_speed        = 27.7778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "l2",
+      .target           = "l3",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l3",
+      .target           = "g00",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l3",
+      .target           = "g10",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source                = "g00",
+      .target                = "g01",
+      .length                = 300,
+      .max_speed             = 27.7778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source                = "g10",
+      .target                = "g11",
+      .length                = 300,
+      .max_speed             = 27.7778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source           = "g01",
+      .target           = "r2",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "g11",
+      .target           = "r2",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r2",
+      .target           = "r1",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r1",
+      .target           = "r0",
+      .length           = 500,
+      .max_speed        = 27.7778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "r0",
+      .target           = "r1",
+      .length           = 500,
+      .max_speed        = 27.7778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "r1",
+      .target           = "r2",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r2",
+      .target           = "g01",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "r2",
+      .target           = "g11",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source                = "g01",
+      .target                = "g00",
+      .length                = 300,
+      .max_speed             = 27.7778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source                = "g11",
+      .target                = "g10",
+      .length                = 300,
+      .max_speed             = 27.7778,
+      .breakable             = true,
+      .min_block_length      = 10,
+      .min_stop_block_length = 150,
+  });
+  edge_targets.push_back({
+      .source           = "g00",
+      .target           = "l3",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "g10",
+      .target           = "l3",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l3",
+      .target           = "l2",
+      .length           = 5,
+      .max_speed        = 27.7778,
+      .breakable        = false,
+      .min_block_length = 0,
+  });
+  edge_targets.push_back({
+      .source           = "l2",
+      .target           = "l1",
+      .length           = 500,
+      .max_speed        = 27.7778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
+  edge_targets.push_back({
+      .source           = "l1",
+      .target           = "l0",
+      .length           = 500,
+      .max_speed        = 27.7778,
+      .breakable        = true,
+      .min_block_length = 10,
+  });
 
   EXPECT_EQ(network.number_of_edges(), edge_targets.size());
   for (const auto& edge : edge_targets) {
@@ -332,11 +378,13 @@ void check_instance_import(
   const auto& station = stations.get_station("Central");
   EXPECT_EQ(station.name, "Central");
   EXPECT_EQ(station.tracks.size(), 4);
-  cda_rail::index_set const track_ids{network.get_edge_index({"g00"}, {"g01"}),
-                                      network.get_edge_index({"g10"}, {"g11"}),
-                                      network.get_edge_index({"g01"}, {"g00"}),
-                                      network.get_edge_index({"g11"}, {"g10"})};
-  auto                      tracks_read = station.tracks;
+  cda_rail::index_set const track_ids{
+      network.get_edge_index({"g00"}, {"g01"}),
+      network.get_edge_index({"g10"}, {"g11"}),
+      network.get_edge_index({"g01"}, {"g00"}),
+      network.get_edge_index({"g11"}, {"g10"}),
+  };
+  auto tracks_read = station.tracks;
   EXPECT_EQ(tracks_read, track_ids);
 
   const auto& trains = instance.get_const_train_list();
@@ -565,12 +613,13 @@ TEST(GenPOInstance, GenPOTimetableExport) {
   EXPECT_TRUE(instance.check_consistency());
 
   // Export the instance
-  instance.export_instance("./tmp", true);
+  instance.export_instance("./tmp-GenPOTimetableExport", true);
 
   // Import the instance and delete tmp folder
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance_read(
-      "VSSGenerationTimetableExportTest", "tmp_subdirectory", "./tmp");
-  std::filesystem::remove_all("./tmp");
+      "VSSGenerationTimetableExportTest", "tmp_subdirectory",
+      "./tmp-GenPOTimetableExport");
+  std::filesystem::remove_all("./tmp-GenPOTimetableExport");
 
   // Check if the imported instance is still consistent
   EXPECT_TRUE(instance_read.check_consistency());
@@ -637,10 +686,11 @@ TEST(GenPOInstance, GenPOTimetableExport) {
   const auto& st2_read = stations_read.get_station("s1");
   EXPECT_EQ(st2_read.name, "s1");
   EXPECT_EQ(st2_read.tracks.size(), 2);
-  auto tracks_st2_read = st2_read.tracks;
-  auto tracks_st2_target =
-      cda_rail::index_set({network_read.get_edge_index({"v1", "v2"}),
-                           network_read.get_edge_index({"v2", "v1"})});
+  auto tracks_st2_read   = st2_read.tracks;
+  auto tracks_st2_target = cda_rail::index_set({
+      network_read.get_edge_index({"v1", "v2"}),
+      network_read.get_edge_index({"v2", "v1"}),
+  });
   EXPECT_EQ(tracks_st2_read, tracks_st2_target);
 
   // Check if the timetable has the correct trains
@@ -2133,70 +2183,49 @@ TEST(GenPOInstance, HelperFunctions) {
   // Trains at time t
   const auto trains_at_0 = instance.trains_at_t(0);
   EXPECT_EQ(trains_at_0.size(), 1);
-  EXPECT_TRUE(std::find(trains_at_0.begin(), trains_at_0.end(), tr1) !=
-              trains_at_0.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_0, tr1) != trains_at_0.end());
   const auto trains_at_59 = instance.trains_at_t(59);
   EXPECT_EQ(trains_at_59.size(), 1);
-  EXPECT_TRUE(std::find(trains_at_59.begin(), trains_at_59.end(), tr1) !=
-              trains_at_59.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_59, tr1) != trains_at_59.end());
   const auto trains_at_60 = instance.trains_at_t(60);
   EXPECT_EQ(trains_at_60.size(), 2);
-  EXPECT_TRUE(std::find(trains_at_60.begin(), trains_at_60.end(), tr1) !=
-              trains_at_60.end());
-  EXPECT_TRUE(std::find(trains_at_60.begin(), trains_at_60.end(), tr2) !=
-              trains_at_60.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_60, tr1) != trains_at_60.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_60, tr2) != trains_at_60.end());
   const auto trains_at_79 = instance.trains_at_t(79);
   EXPECT_EQ(trains_at_79.size(), 2);
-  EXPECT_TRUE(std::find(trains_at_79.begin(), trains_at_79.end(), tr1) !=
-              trains_at_79.end());
-  EXPECT_TRUE(std::find(trains_at_79.begin(), trains_at_79.end(), tr2) !=
-              trains_at_79.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_79, tr1) != trains_at_79.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_79, tr2) != trains_at_79.end());
   const auto trains_at_80 = instance.trains_at_t(80);
   EXPECT_EQ(trains_at_80.size(), 3);
-  EXPECT_TRUE(std::find(trains_at_80.begin(), trains_at_80.end(), tr1) !=
-              trains_at_80.end());
-  EXPECT_TRUE(std::find(trains_at_80.begin(), trains_at_80.end(), tr2) !=
-              trains_at_80.end());
-  EXPECT_TRUE(std::find(trains_at_80.begin(), trains_at_80.end(), tr3) !=
-              trains_at_80.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_80, tr1) != trains_at_80.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_80, tr2) != trains_at_80.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_80, tr3) != trains_at_80.end());
   const auto trains_at_119 = instance.trains_at_t(119);
   EXPECT_EQ(trains_at_119.size(), 3);
-  EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr1) !=
-              trains_at_119.end());
-  EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr2) !=
-              trains_at_119.end());
-  EXPECT_TRUE(std::find(trains_at_119.begin(), trains_at_119.end(), tr3) !=
-              trains_at_119.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_119, tr1) != trains_at_119.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_119, tr2) != trains_at_119.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_119, tr3) != trains_at_119.end());
   const auto trains_at_120 = instance.trains_at_t(120);
   EXPECT_EQ(trains_at_120.size(), 2);
-  EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr1) !=
-              trains_at_120.end());
-  EXPECT_TRUE(std::find(trains_at_120.begin(), trains_at_120.end(), tr3) !=
-              trains_at_120.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_120, tr1) != trains_at_120.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_120, tr3) != trains_at_120.end());
   const auto trains_at_121 = instance.trains_at_t(121);
   EXPECT_EQ(trains_at_121.size(), 2);
-  EXPECT_TRUE(std::find(trains_at_121.begin(), trains_at_121.end(), tr1) !=
-              trains_at_121.end());
-  EXPECT_TRUE(std::find(trains_at_121.begin(), trains_at_121.end(), tr3) !=
-              trains_at_121.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_121, tr1) != trains_at_121.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_121, tr3) != trains_at_121.end());
   const auto trains_at_149 = instance.trains_at_t(149);
   EXPECT_EQ(trains_at_149.size(), 2);
-  EXPECT_TRUE(std::find(trains_at_149.begin(), trains_at_149.end(), tr1) !=
-              trains_at_149.end());
-  EXPECT_TRUE(std::find(trains_at_149.begin(), trains_at_149.end(), tr3) !=
-              trains_at_149.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_149, tr1) != trains_at_149.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_149, tr3) != trains_at_149.end());
   const auto trains_at_150 = instance.trains_at_t(150);
   EXPECT_EQ(trains_at_150.size(), 1);
-  EXPECT_TRUE(std::find(trains_at_150.begin(), trains_at_150.end(), tr1) !=
-              trains_at_150.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_150, tr1) != trains_at_150.end());
   const auto trains_at_151 = instance.trains_at_t(151);
   EXPECT_EQ(trains_at_151.size(), 1);
-  EXPECT_TRUE(std::find(trains_at_151.begin(), trains_at_151.end(), tr1) !=
-              trains_at_151.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_151, tr1) != trains_at_151.end());
   const auto trains_at_199 = instance.trains_at_t(199);
   EXPECT_EQ(trains_at_199.size(), 1);
-  EXPECT_TRUE(std::find(trains_at_199.begin(), trains_at_199.end(), tr1) !=
-              trains_at_199.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_199, tr1) != trains_at_199.end());
   const auto trains_at_200 = instance.trains_at_t(200);
   EXPECT_EQ(trains_at_200.size(), 0);
   const auto trains_at_201 = instance.trains_at_t(201);
@@ -2204,17 +2233,14 @@ TEST(GenPOInstance, HelperFunctions) {
 
   const auto trains_at_100_only_2_3 = instance.trains_at_t(100, {tr2, tr3});
   EXPECT_EQ(trains_at_100_only_2_3.size(), 2);
-  EXPECT_TRUE(std::find(trains_at_100_only_2_3.begin(),
-                        trains_at_100_only_2_3.end(),
-                        tr2) != trains_at_100_only_2_3.end());
-  EXPECT_TRUE(std::find(trains_at_100_only_2_3.begin(),
-                        trains_at_100_only_2_3.end(),
-                        tr3) != trains_at_100_only_2_3.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_100_only_2_3, tr2) !=
+              trains_at_100_only_2_3.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_100_only_2_3, tr3) !=
+              trains_at_100_only_2_3.end());
   const auto trains_at_130_only_2_3 = instance.trains_at_t(130, {tr2, tr3});
   EXPECT_EQ(trains_at_130_only_2_3.size(), 1);
-  EXPECT_TRUE(std::find(trains_at_130_only_2_3.begin(),
-                        trains_at_130_only_2_3.end(),
-                        tr3) != trains_at_130_only_2_3.end());
+  EXPECT_TRUE(std::ranges::find(trains_at_130_only_2_3, tr3) !=
+              trains_at_130_only_2_3.end());
   const auto trains_at_190_only_2_3 = instance.trains_at_t(190, {tr2, tr3});
   EXPECT_EQ(trains_at_190_only_2_3.size(), 0);
 
@@ -2224,73 +2250,81 @@ TEST(GenPOInstance, HelperFunctions) {
 
   // Expect tr1 and tr3 to be on the section
   EXPECT_EQ(trains_on_section.size(), 2);
-  EXPECT_TRUE(std::find(trains_on_section.begin(), trains_on_section.end(),
-                        tr1) != trains_on_section.end());
-  EXPECT_TRUE(std::find(trains_on_section.begin(), trains_on_section.end(),
-                        tr3) != trains_on_section.end());
+  EXPECT_TRUE(std::ranges::find(trains_on_section, tr1) !=
+              trains_on_section.end());
+  EXPECT_TRUE(std::ranges::find(trains_on_section, tr3) !=
+              trains_on_section.end());
 
   // Check edges used by train
   const auto tr1_edges_fixed = instance.edges_used_by_train("tr1", true);
   // Expect four edges v0 - v1 - v2 - v3 - v4
   EXPECT_EQ(tr1_edges_fixed.size(), 4);
-  EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(),
-                        v0_v1) != tr1_edges_fixed.end());
-  EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(),
-                        v1_v2) != tr1_edges_fixed.end());
-  EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(),
-                        v2_v3) != tr1_edges_fixed.end());
-  EXPECT_TRUE(std::find(tr1_edges_fixed.begin(), tr1_edges_fixed.end(),
-                        v3_v4) != tr1_edges_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr1_edges_fixed, v0_v1) !=
+              tr1_edges_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr1_edges_fixed, v1_v2) !=
+              tr1_edges_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr1_edges_fixed, v2_v3) !=
+              tr1_edges_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr1_edges_fixed, v3_v4) !=
+              tr1_edges_fixed.end());
 
   const auto tr1_vertices_fixed = instance.vertices_used_by_train(tr1, true);
   // Expect five vertices v0 - v1 - v2 - v3 - v4
   EXPECT_EQ(tr1_vertices_fixed.size(), 5);
-  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v0")) != tr1_vertices_fixed.end());
-  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v1")) != tr1_vertices_fixed.end());
-  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v2")) != tr1_vertices_fixed.end());
-  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v3")) != tr1_vertices_fixed.end());
-  EXPECT_TRUE(std::find(tr1_vertices_fixed.begin(), tr1_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v4")) != tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr1_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v0")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr1_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v1")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr1_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v2")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr1_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v3")) !=
+              tr1_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr1_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v4")) !=
+              tr1_vertices_fixed.end());
 
   const auto tr2_vertices_fixed = instance.vertices_used_by_train(tr2, true);
   // Expect 3 vertices v0 - v1 - v4
   EXPECT_EQ(tr2_vertices_fixed.size(), 3);
-  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v0")) != tr2_vertices_fixed.end());
-  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v1")) != tr2_vertices_fixed.end());
-  EXPECT_TRUE(std::find(tr2_vertices_fixed.begin(), tr2_vertices_fixed.end(),
-                        instance.get_editable_network().get_vertex_index(
-                            "v4")) != tr2_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr2_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v0")) !=
+              tr2_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr2_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v1")) !=
+              tr2_vertices_fixed.end());
+  EXPECT_TRUE(std::ranges::find(
+                  tr2_vertices_fixed,
+                  instance.get_editable_network().get_vertex_index("v4")) !=
+              tr2_vertices_fixed.end());
 
   const auto tr2_sections_fixed = instance.sections_used_by_train(
       tr2, {{v0_v1}, {v1_v2, v3_v4}, {v1_v4, v1_v2}}, true);
   // Expect section 0 and 2
   EXPECT_EQ(tr2_sections_fixed.size(), 2);
-  EXPECT_TRUE(std::find(tr2_sections_fixed.begin(), tr2_sections_fixed.end(),
-                        0) != tr2_sections_fixed.end());
-  EXPECT_TRUE(std::find(tr2_sections_fixed.begin(), tr2_sections_fixed.end(),
-                        2) != tr2_sections_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr2_sections_fixed, 0) !=
+              tr2_sections_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr2_sections_fixed, 2) !=
+              tr2_sections_fixed.end());
 
   const auto tr_on_section_fixed =
       instance.trains_in_section({v1_v2, v2_v3, v2_v4}, true);
   // Expect tr1 and tr3
   EXPECT_EQ(tr_on_section_fixed.size(), 2);
-  EXPECT_TRUE(std::find(tr_on_section_fixed.begin(), tr_on_section_fixed.end(),
-                        tr1) != tr_on_section_fixed.end());
-  EXPECT_TRUE(std::find(tr_on_section_fixed.begin(), tr_on_section_fixed.end(),
-                        tr3) != tr_on_section_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr_on_section_fixed, tr1) !=
+              tr_on_section_fixed.end());
+  EXPECT_TRUE(std::ranges::find(tr_on_section_fixed, tr3) !=
+              tr_on_section_fixed.end());
 
   const auto tr1_edges_free = instance.edges_used_by_train("tr1", false);
   // Expect all 6 edges
@@ -2312,12 +2346,12 @@ TEST(GenPOInstance, HelperFunctions) {
   // Expect all 3 sections
   EXPECT_EQ(tr2_sections_free.size(), 3);
 
-  EXPECT_TRUE(std::find(tr2_sections_free.begin(), tr2_sections_free.end(),
-                        0) != tr2_sections_free.end());
-  EXPECT_TRUE(std::find(tr2_sections_free.begin(), tr2_sections_free.end(),
-                        1) != tr2_sections_free.end());
-  EXPECT_TRUE(std::find(tr2_sections_free.begin(), tr2_sections_free.end(),
-                        2) != tr2_sections_free.end());
+  EXPECT_TRUE(std::ranges::find(tr2_sections_free, 0) !=
+              tr2_sections_free.end());
+  EXPECT_TRUE(std::ranges::find(tr2_sections_free, 1) !=
+              tr2_sections_free.end());
+  EXPECT_TRUE(std::ranges::find(tr2_sections_free, 2) !=
+              tr2_sections_free.end());
 
   const auto tr_on_section_free =
       instance.trains_in_section({v1_v2, v2_v3, v2_v4}, false);
@@ -2328,12 +2362,10 @@ TEST(GenPOInstance, HelperFunctions) {
   const auto trains_on_v1_v2_fixed = instance.all_trains_on_edge(v1_v2, true);
   // Expect tr1 and tr3
   EXPECT_EQ(trains_on_v1_v2_fixed.size(), 2);
-  EXPECT_TRUE(std::find(trains_on_v1_v2_fixed.begin(),
-                        trains_on_v1_v2_fixed.end(),
-                        tr1) != trains_on_v1_v2_fixed.end());
-  EXPECT_TRUE(std::find(trains_on_v1_v2_fixed.begin(),
-                        trains_on_v1_v2_fixed.end(),
-                        tr3) != trains_on_v1_v2_fixed.end());
+  EXPECT_TRUE(std::ranges::find(trains_on_v1_v2_fixed, tr1) !=
+              trains_on_v1_v2_fixed.end());
+  EXPECT_TRUE(std::ranges::find(trains_on_v1_v2_fixed, tr3) !=
+              trains_on_v1_v2_fixed.end());
 
   // Check trains on edge
   const auto trains_on_v1_v2 = instance.all_trains_on_edge(v1_v2, false);
@@ -2345,21 +2377,18 @@ TEST(GenPOInstance, HelperFunctions) {
       instance.trains_on_edge(v1_v2, true, {tr1, tr2});
   // Expect tr1
   EXPECT_EQ(trains_on_v1_v2_fixed_partial.size(), 1);
-  EXPECT_TRUE(std::find(trains_on_v1_v2_fixed_partial.begin(),
-                        trains_on_v1_v2_fixed_partial.end(),
-                        tr1) != trains_on_v1_v2_fixed_partial.end());
+  EXPECT_TRUE(std::ranges::find(trains_on_v1_v2_fixed_partial, tr1) !=
+              trains_on_v1_v2_fixed_partial.end());
 
   // Check trains on edge
   const auto trains_on_v1_v2_partial =
       instance.trains_on_edge(v1_v2, false, {tr1, tr2});
   // Expect tr1 and tr2
   EXPECT_EQ(trains_on_v1_v2_partial.size(), 2);
-  EXPECT_TRUE(std::find(trains_on_v1_v2_partial.begin(),
-                        trains_on_v1_v2_partial.end(),
-                        tr1) != trains_on_v1_v2_partial.end());
-  EXPECT_TRUE(std::find(trains_on_v1_v2_partial.begin(),
-                        trains_on_v1_v2_partial.end(),
-                        tr2) != trains_on_v1_v2_partial.end());
+  EXPECT_TRUE(std::ranges::find(trains_on_v1_v2_partial, tr1) !=
+              trains_on_v1_v2_partial.end());
+  EXPECT_TRUE(std::ranges::find(trains_on_v1_v2_partial, tr2) !=
+              trains_on_v1_v2_partial.end());
 }
 
 TEST(GenPOInstance, Discretization) {
@@ -2411,7 +2440,8 @@ TEST(GenPOInstance, Discretization) {
   const auto& r1 = instance.get_const_routes().get_route("tr1");
   const std::vector<std::string> expected_route = {
       "v0",      "v0-v1_0", "v0-v1_1", "v0-v1_2", "v0-v1_3", "v0-v1_4",
-      "v0-v1_5", "v0-v1_6", "v0-v1_7", "v0-v1_8", "v1",      "v2"};
+      "v0-v1_5", "v0-v1_6", "v0-v1_7", "v0-v1_8", "v1",      "v2",
+  };
   EXPECT_EQ(r1.size(), expected_route.size() - 1);
   for (size_t i = 0; i < r1.size(); ++i) {
     EXPECT_EQ(r1.get_edges().at(i),
@@ -2423,13 +2453,13 @@ TEST(GenPOInstance, Discretization) {
   const auto& s0 = instance.get_const_station_list().get_station("s0");
   const std::vector<std::string> expected_s0 = {
       "v0",      "v0-v1_0", "v0-v1_1", "v0-v1_2", "v0-v1_3", "v0-v1_4",
-      "v0-v1_5", "v0-v1_6", "v0-v1_7", "v0-v1_8", "v1",      "v2"};
+      "v0-v1_5", "v0-v1_6", "v0-v1_7", "v0-v1_8", "v1",      "v2",
+  };
   EXPECT_EQ(s0.tracks.size(), expected_s0.size() - 1);
   for (size_t i = 0; i < s0.tracks.size(); ++i) {
     const auto edge_id = instance.get_editable_network().get_edge_index(
         {expected_s0.at(i)}, {expected_s0.at(i + 1)});
-    EXPECT_TRUE(std::find(s0.tracks.begin(), s0.tracks.end(), edge_id) !=
-                s0.tracks.end());
+    EXPECT_TRUE(std::ranges::find(s0.tracks, edge_id) != s0.tracks.end());
   }
 
   const auto& s1 = instance.get_const_station_list().get_station("s1");
@@ -2438,8 +2468,7 @@ TEST(GenPOInstance, Discretization) {
   for (size_t i = 0; i < s1.tracks.size(); ++i) {
     const auto edge_id = instance.get_editable_network().get_edge_index(
         {expected_s1.at(i)}, {expected_s1.at(i + 1)});
-    EXPECT_TRUE(std::find(s1.tracks.begin(), s1.tracks.end(), edge_id) !=
-                s1.tracks.end());
+    EXPECT_TRUE(std::ranges::find(s1.tracks, edge_id) != s1.tracks.end());
   }
 }
 

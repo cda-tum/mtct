@@ -26,33 +26,33 @@
 
 cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     GeneralProblemInstanceWithScheduleAndRoutes(
-        std::string_view const       instanceName,
-        std::string_view const       instanceSubdirectory,
+        std::string_view instance_name, std::string_view instance_subdirectory,
         std::filesystem::path const& working_directory)
-    : GeneralProblemInstance(instanceName, instanceSubdirectory) {
-  // read workingDirectory / instances / instanceSubdirectory / instanceName /
+    : GeneralProblemInstance(instance_name, instance_subdirectory) {
+  // read workingDirectory / instances / instance_subdirectory / instance_name /
   // network.json
   std::ifstream network_file(working_directory / "instances" /
-                             instanceSubdirectory / instanceName /
+                             instance_subdirectory / instance_name /
                              "network.json");
   if (!network_file.is_open()) {
-    throw exceptions::ImportException(
-        (working_directory / "instances" / instanceSubdirectory / instanceName /
-         "network.json")
-            .string());
+    throw exceptions::ImportException((working_directory / "instances" /
+                                       instance_subdirectory / instance_name /
+                                       "network.json")
+                                          .string());
   }
   nlohmann::json network_json = nlohmann::json::parse(network_file);
   network_file.close();
   m_network =
       Network(network_json.at("network").get<std::string>(), working_directory);
 
-  // read workingDirectory / instances / instanceSubdirectory / instanceName /
+  // read workingDirectory / instances / instance_subdirectory / instance_name /
   // timetable and / routes
-  m_timetable = Timetable(working_directory / "instances" /
-                              instanceSubdirectory / instanceName / "timetable",
-                          m_network);
-  m_routes = RouteMap(working_directory / "instances" / instanceSubdirectory /
-                          instanceName / "routes",
+  m_timetable =
+      Timetable(working_directory / "instances" / instance_subdirectory /
+                    instance_name / "timetable",
+                m_network);
+  m_routes = RouteMap(working_directory / "instances" / instance_subdirectory /
+                          instance_name / "routes",
                       m_network);
 }
 
@@ -73,7 +73,7 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
   const auto& next_station = tr_schedule.at(next_stop_id).get_station();
 
   double len = 0;
-  for (auto it = edges.rbegin(); (len < tr_length) && (it != edges.rend());
+  for (auto it = edges.rbegin(); (len < tr_length) && it != edges.rend();
        ++it) {
     if (!next_station.tracks.contains(*it)) {
       // Track does not belong to the next station
@@ -91,8 +91,8 @@ bool cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
 
 void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     export_instance(std::filesystem::path const& working_directory,
-                    bool const                   saveNetwork) const {
-  if (saveNetwork) {
+                    bool                         save_network) const {
+  if (save_network) {
     m_network.export_network(working_directory);
   }
   m_timetable.export_timetable(working_directory / "instances" /
@@ -115,7 +115,8 @@ void cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     throw exceptions::ExportException(
         "Could not open network.json for writing");
   }
-  if (!(network_file << network_json << '\n')) {
+  network_file << network_json << '\n';
+  if (!network_file) {
     throw exceptions::ExportException("Failed to write network.json");
   }
 }
@@ -330,16 +331,19 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
     auto        entry_edges =
         get_const_network().out_edges(tr_schedule.get_entry_vertex());
     if (entry_edges.size() != 1) {
-      return {.is_obviously_infeasible = true,
-              .reason =
-                  "Train " + tr_name + " has more or less than one entry edge"};
+      return {
+          .is_obviously_infeasible = true,
+          .reason =
+              "Train " + tr_name + " has more or less than one entry edge",
+      };
     }
     if (auto const& exit_edges =
             get_const_network().in_edges(tr_schedule.get_exit_vertex());
         exit_edges.size() != 1) {
-      return {.is_obviously_infeasible = true,
-              .reason =
-                  "Train " + tr_name + " has more or less than one exit edge"};
+      return {
+          .is_obviously_infeasible = true,
+          .reason = "Train " + tr_name + " has more or less than one exit edge",
+      };
     }
     for (auto const& stop : tr_schedule.get_stops()) {
       auto const& stop_tracks = stop.get_station().tracks;
@@ -347,9 +351,11 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
               get_const_network().shortest_path_length_between_edge_sets(
                   entry_edges, stop_tracks);
           !p_len.has_value()) {
-        return {.is_obviously_infeasible = true,
-                .reason = "Train " + tr_name + " cannot reach station " +
-                          stop.get_station().name};
+        return {
+            .is_obviously_infeasible = true,
+            .reason = "Train " + tr_name + " cannot reach station " +
+                      stop.get_station().name,
+        };
       }
       entry_edges = stop_tracks;
     }
@@ -358,8 +364,10 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
                 .shortest_path_length_between_edge_and_vertex_set(
                     entry_edges, {tr_schedule.get_exit_vertex()});
         !p_len.has_value()) {
-      return {.is_obviously_infeasible = true,
-              .reason = "Train " + tr_name + " cannot reach exit vertex"};
+      return {
+          .is_obviously_infeasible = true,
+          .reason = "Train " + tr_name + " cannot reach exit vertex",
+      };
     }
   }
 
@@ -405,11 +413,13 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
       auto const& prev_entry_obj = entry_information.at(v).at(entry_idx - 1);
       if (entry_obj.entry_time <
           prev_entry_obj.entry_time + vertex_obj.headway) {
-        return {.is_obviously_infeasible = true,
-                .reason = "Entry times at vertex " + vertex_obj.name +
-                          " are closer than the vertex headway for trains " +
-                          prev_entry_obj.tr_obj.get_name() + " and " +
-                          entry_obj.tr_obj.get_name()};
+        return {
+            .is_obviously_infeasible = true,
+            .reason = "Entry times at vertex " + vertex_obj.name +
+                      " are closer than the vertex headway for trains " +
+                      prev_entry_obj.tr_obj.get_name() + " and " +
+                      entry_obj.tr_obj.get_name(),
+        };
       }
       auto const bd = braking_distance(entry_obj.entry_velocity,
                                        entry_obj.tr_obj.get_deceleration());
@@ -430,7 +440,8 @@ cda_rail::instances::GeneralProblemInstanceWithScheduleAndRoutes::
                 "At vertex " + vertex_obj.name + ", train " +
                 prev_entry_obj.tr_obj.get_name() +
                 " cannot clear the braking distance of the following train " +
-                entry_obj.tr_obj.get_name()};
+                entry_obj.tr_obj.get_name(),
+        };
       }
     }
   }
@@ -463,10 +474,13 @@ void cda_rail::instances::SolGeneralProblemInstance::set_general_solution_data(
   const auto  status = status_json.is_string() ? status_json.get<std::string>()
                                                : status_json.dump();
   bool        known  = false;
-  for (const auto candidate :
-       {SolutionStatus::Optimal, SolutionStatus::Feasible,
-        SolutionStatus::Infeasible, SolutionStatus::Timeout,
-        SolutionStatus::Unknown}) {
+  for (const auto candidate : {
+           SolutionStatus::Optimal,
+           SolutionStatus::Feasible,
+           SolutionStatus::Infeasible,
+           SolutionStatus::Timeout,
+           SolutionStatus::Unknown,
+       }) {
     if (solution_status_to_string(candidate) == status) {
       this->m_status = candidate;
       known          = true;
@@ -494,10 +508,10 @@ bool cda_rail::instances::SolGeneralProblemInstance::check_consistency() const {
 
 void cda_rail::instances::SolGeneralProblemInstance::load_solution(
     const std::filesystem::path&      working_directory,
-    std::string_view const            solutionSubdirectory,
+    std::string_view                  solution_subdirectory,
     std::optional<std::string> const& parameter_identifier) {
   std::filesystem::path const p = get_export_path(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
 
   std::ifstream data_file(p / "solution_data.json");
   if (!data_file.is_open()) {
@@ -512,10 +526,10 @@ void cda_rail::instances::SolGeneralProblemInstance::load_solution(
 
 void cda_rail::instances::SolGeneralProblemInstance::export_solution(
     const std::filesystem::path&      working_directory,
-    std::string_view const            solutionSubdirectory,
+    std::string_view                  solution_subdirectory,
     std::optional<std::string> const& parameter_identifier) const {
   std::filesystem::path const p = get_export_path(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
 
   if (!is_directory_and_create(p)) {
     throw exceptions::ExportException("Could not create directory " +
@@ -528,7 +542,8 @@ void cda_rail::instances::SolGeneralProblemInstance::export_solution(
     throw exceptions::ExportException(
         "Could not open solution_data.json for writing");
   }
-  if (!(data_file << data << '\n')) {
+  data_file << data << '\n';
+  if (!data_file) {
     throw exceptions::ExportException("Failed to write solution_data.json");
   }
 }
@@ -550,26 +565,26 @@ void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     load_solution(const std::filesystem::path&      working_directory,
-                  std::string_view const            solutionSubdirectory,
+                  std::string_view                  solution_subdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralProblemInstance::load_solution(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
   m_solution_routes = RouteMap(p, get_instance()->get_const_network());
 }
 
 void cda_rail::instances::SolGeneralProblemInstanceWithScheduleAndRoutes::
     export_solution(
         const std::filesystem::path& working_directory,
-        std::string_view const solutionSubdirectory, bool save_instance,
+        std::string_view solution_subdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
   SolGeneralProblemInstance::export_solution(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
   m_solution_routes.export_routes(p, this->get_instance()->get_const_network());
 
   if (save_instance) {

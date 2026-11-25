@@ -100,19 +100,19 @@ cda_rail::simulator::GeneralSimulator::GeneralSimulator(
 
 const cda_rail::index_vector&
 cda_rail::simulator::GeneralSimulator::get_train_edges_of_tr(
-    size_t const trainId) const {
-  m_instance->get_const_train_list().throw_if_train_not_exist(trainId);
-  return m_train_edges.at(trainId);
+    size_t train_id) const {
+  m_instance->get_const_train_list().throw_if_train_not_exist(train_id);
+  return m_train_edges.at(train_id);
 }
 
 const cda_rail::index_vector&
 cda_rail::simulator::GeneralSimulator::get_ttd_orders_of_ttd(
-    size_t const ttdIndex) const {
-  if (ttdIndex >= m_ttd_orders.size()) {
+    size_t ttd_index) const {
+  if (ttd_index >= m_ttd_orders.size()) {
     throw cda_rail::exceptions::InvalidInputException(
         "TTD index out of bounds.");
   }
-  return m_ttd_orders.at(ttdIndex);
+  return m_ttd_orders.at(ttd_index);
 }
 
 std::optional<size_t> cda_rail::simulator::GeneralSimulator::get_ttd(
@@ -136,9 +136,9 @@ cda_rail::simulator::GeneralSimulator::get_vertex_orders_of_vertex(
 
 const std::vector<double>&
 cda_rail::simulator::GeneralSimulator::get_stop_positions_of_tr(
-    size_t const trainId) const {
-  m_instance->get_const_train_list().throw_if_train_not_exist(trainId);
-  return m_stop_positions.at(trainId);
+    size_t train_id) const {
+  m_instance->get_const_train_list().throw_if_train_not_exist(train_id);
+  return m_stop_positions.at(train_id);
 }
 
 double cda_rail::simulator::GeneralSimulator::train_edge_length(
@@ -273,20 +273,24 @@ void cda_rail::simulator::GeneralSimulator::append_stop_position_to_tr(
 
   if (m_stop_positions.at(train_id).size() >=
       m_instance->get_const_schedule(train_id).get_stops().size()) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"All scheduled stops for train ",
-         m_instance->get_const_train_list().get_train(train_id).get_name(),
-         " are already set."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "All scheduled stops for train ",
+        m_instance->get_const_train_list().get_train(train_id).get_name(),
+        " are already set.",
+    }));
   }
 
   if (!m_stop_positions.at(train_id).empty() &&
       position < m_stop_positions.at(train_id).back()) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"Stop positions must be non-decreasing for train ",
-         m_instance->get_const_train_list().get_train(train_id).get_name(),
-         ". Last position is ",
-         std::to_string(m_stop_positions.at(train_id).back()),
-         ", new position is ", std::to_string(position), "."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "Stop positions must be non-decreasing for train ",
+        m_instance->get_const_train_list().get_train(train_id).get_name(),
+        ". Last position is ",
+        std::to_string(m_stop_positions.at(train_id).back()),
+        ", new position is ",
+        std::to_string(position),
+        ".",
+    }));
   }
 
   m_stop_positions.at(train_id).push_back(position);
@@ -297,20 +301,25 @@ void cda_rail::simulator::GeneralSimulator::append_stop_edge_to_tr(
   const auto& stop_positions_of_tr = get_stop_positions_of_tr(train_id);
   const auto& tr_stops = m_instance->get_const_schedule(train_id).get_stops();
   if (stop_positions_of_tr.size() >= tr_stops.size()) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"All scheduled stops for train ",
-         m_instance->get_const_train_list().get_train(train_id).get_name(),
-         " are already set."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "All scheduled stops for train ",
+        m_instance->get_const_train_list().get_train(train_id).get_name(),
+        " are already set.",
+    }));
   }
 
   const auto& next_stop =
       tr_stops.at(stop_positions_of_tr.size()).get_station();
   if (!std::ranges::contains(next_stop.tracks, edge)) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"Edge ", m_instance->get_const_network().get_edge_name(edge),
-         " is not a valid stop edge for train ",
-         m_instance->get_const_train_list().get_train(train_id).get_name(),
-         ". Next stop is ", next_stop.name, "."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "Edge ",
+        m_instance->get_const_network().get_edge_name(edge),
+        " is not a valid stop edge for train ",
+        m_instance->get_const_train_list().get_train(train_id).get_name(),
+        ". Next stop is ",
+        next_stop.name,
+        ".",
+    }));
   }
   append_stop_position_to_tr(train_id, get_edge_position(train_id, edge));
 }
@@ -319,10 +328,11 @@ void cda_rail::simulator::GeneralSimulator::append_current_stop_position_of_tr(
     size_t train_id) {
   const auto& tr_edges = get_train_edges_of_tr(train_id);
   if (tr_edges.empty()) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"Train ",
-         m_instance->get_const_train_list().get_train(train_id).get_name(),
-         " has no edges in its route. Cannot append current stop position."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "Train ",
+        m_instance->get_const_train_list().get_train(train_id).get_name(),
+        " has no edges in its route. Cannot append current stop position.",
+    }));
   }
   append_stop_edge_to_tr(train_id, tr_edges.back());
 }
@@ -469,14 +479,15 @@ void cda_rail::simulator::GeneralSimulator::check_train_edges_for_tr(
   auto const& first_edge = edges.front();
   auto const& entry = m_instance->get_const_schedule(tr).get_entry_vertex();
   if (entry != m_instance->get_const_network().get_edge(first_edge).source) {
-    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views(
-        {"The first edge (",
-         m_instance->get_const_network().get_edge_name(first_edge),
-         ") for train ",
-         m_instance->get_const_train_list().get_train(tr).get_name(),
-         " does not start at the entry vertex (",
-         m_instance->get_const_network().get_vertex(entry).name,
-         ") specified in the schedule."}));
+    throw cda_rail::exceptions::ConsistencyException(concatenate_string_views({
+        "The first edge (",
+        m_instance->get_const_network().get_edge_name(first_edge),
+        ") for train ",
+        m_instance->get_const_train_list().get_train(tr).get_name(),
+        " does not start at the entry vertex (",
+        m_instance->get_const_network().get_vertex(entry).name,
+        ") specified in the schedule.",
+    }));
   }
 
   for (size_t i = 1; i < edges.size(); ++i) {
@@ -552,29 +563,34 @@ void cda_rail::simulator::GeneralSimulator::check_stop_positions_for_tr(
   auto const& scheduled_stops_tr =
       m_instance->get_const_schedule(tr).get_stops();
   if (positions.size() > scheduled_stops_tr.size()) {
-    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views(
-        {"Number of stop positions for train ",
-         m_instance->get_const_train_list().get_train(tr).get_name(),
-         " exceeds the number of scheduled stops for this train."}));
+    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views({
+        "Number of stop positions for train ",
+        m_instance->get_const_train_list().get_train(tr).get_name(),
+        " exceeds the number of scheduled stops for this train.",
+    }));
   }
   if (!std::ranges::is_sorted(positions)) {
-    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views(
-        {"Stop positions for train ",
-         m_instance->get_const_train_list().get_train(tr).get_name(),
-         " are not sorted in non-decreasing order."}));
+    throw cda_rail::exceptions::InvalidInputException(concatenate_string_views({
+        "Stop positions for train ",
+        m_instance->get_const_train_list().get_train(tr).get_name(),
+        " are not sorted in non-decreasing order.",
+    }));
   }
   for (size_t stop_idx = 0; stop_idx < positions.size(); ++stop_idx) {
     auto const& station = scheduled_stops_tr.at(stop_idx).get_station();
     auto const  tr_edge = get_edge_at_position(tr, positions.at(stop_idx));
     if (!std::ranges::contains(station.tracks, tr_edge)) {
       throw cda_rail::exceptions::InvalidInputException(
-          concatenate_string_views(
-              {"Stop position for train ",
-               m_instance->get_const_train_list().get_train(tr).get_name(),
-               " at stop index ", std::to_string(stop_idx),
-               " is located on edge ",
-               m_instance->get_const_network().get_edge_name(tr_edge),
-               " which is not part of ", station.name}));
+          concatenate_string_views({
+              "Stop position for train ",
+              m_instance->get_const_train_list().get_train(tr).get_name(),
+              " at stop index ",
+              std::to_string(stop_idx),
+              " is located on edge ",
+              m_instance->get_const_network().get_edge_name(tr_edge),
+              " which is not part of ",
+              station.name,
+          }));
     }
   }
 }
@@ -598,7 +614,7 @@ std::size_t std::hash<cda_rail::simulator::SimulatorState>::operator()(
 
   size_t seed         = 0;
   auto   hash_combine = [&seed](size_t h) {
-    seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= h + 0x9e3779b9 + (seed << 6U) + (seed >> 2U);
   };
 
   hash_combine(std::hash<size_t>{}(state.train_edges.size()));

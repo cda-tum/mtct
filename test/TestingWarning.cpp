@@ -144,7 +144,7 @@ void TestingWarning::add_warning(const std::string& message) {
 }
 
 void TestingWarning::register_listener_once() {
-  std::call_once(listener_registration_flag(), []() {
+  std::call_once(listener_registration_flag(), [] {
     ::testing::UnitTest::GetInstance()->listeners().Append(
         new WarningSummaryListener()); // NOLINT(cppcoreguidelines-owning-memory)
   });

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SIMULATOR_GENERALSIMULATOR_HPP
+#define CDA_RAIL_SIMULATOR_GENERALSIMULATOR_HPP
 
 #include "CustomExceptions.hpp"
 #include "Definitions.hpp"
@@ -362,10 +363,12 @@ public:
 
   /** @brief The full simulator state. */
   [[nodiscard]] SimulatorState get_simulator_state() const {
-    return {.train_edges    = m_train_edges,
-            .ttd_orders     = m_ttd_orders,
-            .vertex_orders  = m_vertex_orders,
-            .stop_positions = m_stop_positions};
+    return {
+        .train_edges    = m_train_edges,
+        .ttd_orders     = m_ttd_orders,
+        .vertex_orders  = m_vertex_orders,
+        .stop_positions = m_stop_positions,
+    };
   }
 
   // -------------------
@@ -619,3 +622,5 @@ template <> struct std::hash<cda_rail::simulator::SimulatorState> {
   size_t
   operator()(const cda_rail::simulator::SimulatorState& state) const noexcept;
 }; // namespace std
+
+#endif // CDA_RAIL_SIMULATOR_GENERALSIMULATOR_HPP

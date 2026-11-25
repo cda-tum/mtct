@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_DATASTRUCTURE_ROUTE_HPP
+#define CDA_RAIL_DATASTRUCTURE_ROUTE_HPP
+
 #include "Definitions.hpp"
 #include "datastructure/RailwayNetwork.hpp"
 #include "datastructure/Train.hpp"
@@ -421,7 +423,7 @@ public:
 
   // Rule of 5
   RouteMap(const RouteMap& other)            = default;
-  RouteMap(RouteMap&& other)                 = default;
+  RouteMap(RouteMap&& other) noexcept        = default;
   RouteMap& operator=(const RouteMap& other) = default;
   /**
    * @brief Move-assigns another RouteMap to this one.
@@ -429,8 +431,8 @@ public:
    * @param other The RouteMap to move from.
    * @return Reference to this RouteMap.
    */
-  RouteMap& operator=(RouteMap&& other) = default;
-  ~RouteMap()                           = default;
+  RouteMap& operator=(RouteMap&& other) noexcept = default;
+  ~RouteMap()                                    = default;
 
   // ----------------
   // ITERATORS
@@ -815,3 +817,5 @@ private:
 };
 
 } // namespace cda_rail
+
+#endif // CDA_RAIL_DATASTRUCTURE_ROUTE_HPP

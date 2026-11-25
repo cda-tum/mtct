@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_SOLVER_MIP_BASED_GENERALMIPSOLVER_HPP
+#define CDA_RAIL_SOLVER_MIP_BASED_GENERALMIPSOLVER_HPP
 
 #include "MultiArray.hpp"
 #include "gurobi_c++.h"
@@ -47,7 +48,7 @@ struct SolutionSettingsVSSGen : SolutionSettingsMIP {
   bool postprocess = false;
 };
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 /**
  * @brief Routes the output of Gurobi into the logging of this tool.
@@ -72,7 +73,7 @@ protected:
   }
 };
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 /**
  * @brief Base of every solver that builds a MIP and hands it to Gurobi.
@@ -107,7 +108,9 @@ protected:
   virtual void cleanup() {
     m_objective_expr = 0;
     m_lazy_constraints.clear();
-    m_model->reset(1);
+    if (m_model.has_value()) {
+      m_model->reset(1);
+    }
     m_vars.clear();
     m_model.reset();
     m_env.reset();
@@ -132,7 +135,7 @@ protected:
                               GRBCallback* cb) {
     this->solve_init_general(debug_input, overwrite_severity);
 
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
     PLOGD << "Create Gurobi environment and model";
     this->m_env.emplace(true);
     // this->m_env->set(GRB_StringParam_LogFile, "test_log.log");
@@ -156,3 +159,5 @@ protected:
       : GeneralSolver<T, S>(std::forward<Args>(args)...) {}
 };
 } // namespace cda_rail::solver::mip_based
+
+#endif // CDA_RAIL_SOLVER_MIP_BASED_GENERALMIPSOLVER_HPP

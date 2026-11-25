@@ -155,11 +155,14 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   // Export and import
 
-  instance.export_instance("./tmp", true);
+  instance.export_instance(
+      "./tmp-GeneralPerformanceOptimizationInstanceExportImport", true);
 
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance_read(
-      "instance-tmp", "general-performance-optimization", "./tmp");
-  std::filesystem::remove_all("./tmp");
+      "instance-tmp", "general-performance-optimization",
+      "./tmp-GeneralPerformanceOptimizationInstanceExportImport");
+  std::filesystem::remove_all(
+      "./tmp-GeneralPerformanceOptimizationInstanceExportImport");
 
   EXPECT_EQ(instance_read.get_instance_name(), "instance-tmp");
   EXPECT_EQ(instance_read.get_instance_subdirectory(),
@@ -909,7 +912,9 @@ TEST(GeneralPerformanceOptimizationInstances,
 
   EXPECT_TRUE(sol_instance.check_consistency());
 
-  sol_instance.export_solution("./tmp", "test-sol-instance-1", true, {});
+  sol_instance.export_solution(
+      "./tmp-SolGeneralPerformanceOptimizationInstanceExportImport",
+      "test-sol-instance-1", true, {});
 
   instances::SolGeneralPerformanceOptimizationInstance sol_instance_2(instance);
   sol_instance_2.set_obj(0.5);
@@ -925,21 +930,28 @@ TEST(GeneralPerformanceOptimizationInstances,
   sol_instance_2.add_train_speed("tr1", 0, 10);
   sol_instance_2.add_train_speed("tr1", 30, 5);
 
-  sol_instance_2.export_solution("./tmp", "test-sol-instance-2", false, {});
+  sol_instance_2.export_solution(
+      "./tmp-SolGeneralPerformanceOptimizationInstanceExportImport",
+      "test-sol-instance-2", false, {});
 
   auto sol1_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
-  sol1_read.load_solution("./tmp", "test-sol-instance-1");
+  sol1_read.load_solution(
+      "./tmp-SolGeneralPerformanceOptimizationInstanceExportImport",
+      "test-sol-instance-1");
 
   auto sol2_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
-  sol2_read.load_solution("./tmp", "test-sol-instance-2");
+  sol2_read.load_solution(
+      "./tmp-SolGeneralPerformanceOptimizationInstanceExportImport",
+      "test-sol-instance-2");
 
   // The status is exported by its name, independent of the values of
   // SolutionStatus. Hence, a number is no valid status.
   {
     const std::filesystem::path data_path =
-        "./tmp/solutions/test-sol-instance-1/UnnamedSubdirectory/"
+        "./tmp-SolGeneralPerformanceOptimizationInstanceExportImport/solutions/"
+        "test-sol-instance-1/UnnamedSubdirectory/"
         "UnnamedInstance/solution_data.json";
     std::ifstream  data_file(data_path);
     nlohmann::json data = nlohmann::json::parse(data_file);
@@ -951,10 +963,13 @@ TEST(GeneralPerformanceOptimizationInstances,
         cda_rail::instances::SolGeneralPerformanceOptimizationInstance(
             instance);
     EXPECT_THROW(
-        sol_numeric_status.load_solution("./tmp", "test-sol-instance-1"),
+        sol_numeric_status.load_solution(
+            "./tmp-SolGeneralPerformanceOptimizationInstanceExportImport",
+            "test-sol-instance-1"),
         cda_rail::exceptions::ImportException);
   }
-  std::filesystem::remove_all("./tmp");
+  std::filesystem::remove_all(
+      "./tmp-SolGeneralPerformanceOptimizationInstanceExportImport");
 
   EXPECT_TRUE(sol1_read.check_consistency());
   EXPECT_TRUE(sol2_read.check_consistency());
@@ -1091,12 +1106,13 @@ TEST(GeneralPerformanceOptimizationInstance, SolExitAndStopTimesExportImport) {
 
   EXPECT_TRUE(sol_instance.check_consistency());
 
-  sol_instance.export_solution("./tmp", "test-sol-instance-with-stops", true,
-                               {});
+  sol_instance.export_solution("./tmp-SolExitAndStopTimesExportImport",
+                               "test-sol-instance-with-stops", true, {});
   auto sol_read =
       cda_rail::instances::SolGeneralPerformanceOptimizationInstance(instance);
-  sol_read.load_solution("./tmp", "test-sol-instance-with-stops");
-  std::filesystem::remove_all("./tmp");
+  sol_read.load_solution("./tmp-SolExitAndStopTimesExportImport",
+                         "test-sol-instance-with-stops");
+  std::filesystem::remove_all("./tmp-SolExitAndStopTimesExportImport");
 
   EXPECT_TRUE(sol_read.check_consistency());
   EXPECT_EQ(sol_read.get_obj(), 1000);

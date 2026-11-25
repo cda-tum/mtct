@@ -182,7 +182,8 @@ TEST(GeneralHelper, Subsets2) {
 
   const std::vector<std::pair<size_t, size_t>> expected_pairs = {
       {0, 1}, {0, 2}, {0, 3}, {0, 4}, {1, 2},
-      {1, 3}, {1, 4}, {2, 3}, {2, 4}, {3, 4}};
+      {1, 3}, {1, 4}, {2, 3}, {2, 4}, {3, 4},
+  };
 
   const bool all_expected_exist = std::ranges::all_of(
       expected_pairs, [&subsets_of_size_2](const auto& expected_pair) {
@@ -200,7 +201,8 @@ TEST(GeneralHelper, Subsets3) {
       {0, 1, 2}, {0, 1, 3}, {0, 1, 4}, {0, 1, 5}, {0, 2, 3},
       {0, 2, 4}, {0, 2, 5}, {0, 3, 4}, {0, 3, 5}, {0, 4, 5},
       {1, 2, 3}, {1, 2, 4}, {1, 2, 5}, {1, 3, 4}, {1, 3, 5},
-      {1, 4, 5}, {2, 3, 4}, {2, 3, 5}, {2, 4, 5}, {3, 4, 5}};
+      {1, 4, 5}, {2, 3, 4}, {2, 3, 5}, {2, 4, 5}, {3, 4, 5},
+  };
 
   const bool all_expected_exist = std::ranges::all_of(
       expected_subsets, [&subsets_of_size_3](const auto& expected_subset) {
@@ -336,27 +338,35 @@ TEST(GeneralHelper, BoolOptionalString) {
 }
 
 TEST(Functionality, IsDirectory) {
-  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));
-  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory"));
-  std::filesystem::remove_all("./tmp");
-  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory/"));
-  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/is_directory/"));
-  std::filesystem::remove_all("./tmp");
-  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
-  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp/"));
-  std::filesystem::remove_all("./tmp");
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory\)"));
-  std::filesystem::remove_all("./tmp");
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory)"));
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\is_directory)"));
-  std::filesystem::remove_all("./tmp");
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\)"));
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp\)"));
-  std::filesystem::remove_all("./tmp");
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
-  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp)"));
-  std::filesystem::remove_all("./tmp");
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create("./tmp-IsDirectory/is_directory"));
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create("./tmp-IsDirectory/is_directory"));
+  std::filesystem::remove_all("./tmp-IsDirectory");
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create("./tmp-IsDirectory/is_directory/"));
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create("./tmp-IsDirectory/is_directory/"));
+  std::filesystem::remove_all("./tmp-IsDirectory");
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp-IsDirectory/"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create("./tmp-IsDirectory/"));
+  std::filesystem::remove_all("./tmp-IsDirectory");
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory\is_directory\)"));
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory\is_directory\)"));
+  std::filesystem::remove_all("./tmp-IsDirectory");
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory\is_directory)"));
+  EXPECT_TRUE(
+      cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory\is_directory)"));
+  std::filesystem::remove_all("./tmp-IsDirectory");
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory\)"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory\)"));
+  std::filesystem::remove_all("./tmp-IsDirectory");
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory)"));
+  EXPECT_TRUE(cda_rail::is_directory_and_create(R"(.\tmp-IsDirectory)"));
+  std::filesystem::remove_all("./tmp-IsDirectory");
 }
 
 TEST(Functionality, Iterators) {

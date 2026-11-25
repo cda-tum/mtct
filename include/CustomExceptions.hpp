@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_CUSTOMEXCEPTIONS_HPP
+#define CDA_RAIL_CUSTOMEXCEPTIONS_HPP
+
 #include "StringHelper.hpp"
 
 #include <algorithm>
@@ -183,9 +185,13 @@ public:
    * @param target Target vertex ID.
    */
   explicit EdgeNotExistentException(size_t const source, size_t const target)
-      : CustomException(concatenate_string_views(
-            {"Edge connecting vertices with IDs ", std::to_string(source), "->",
-             std::to_string(target), " does not exist."})) {}
+      : CustomException(concatenate_string_views({
+            "Edge connecting vertices with IDs ",
+            std::to_string(source),
+            "->",
+            std::to_string(target),
+            " does not exist.",
+        })) {}
   /**
    * @brief Creates an exception for a missing edge between two named vertices.
    */
@@ -262,9 +268,11 @@ public:
    * @param scheduleId The ID of the schedule.
    */
   explicit ScheduleNotExistentException(size_t const scheduleId)
-      : CustomException(concatenate_string_views({"Schedule with ID ",
-                                                  std::to_string(scheduleId),
-                                                  " does not exist."})) {}
+      : CustomException(concatenate_string_views({
+            "Schedule with ID ",
+            std::to_string(scheduleId),
+            " does not exist.",
+        })) {}
 };
 
 /**
@@ -282,15 +290,25 @@ inline void throw_if_less(double const value, double const threshold,
                           std::string_view const name, bool inclusive) {
   if (inclusive) {
     if (value <= threshold) {
-      throw InvalidInputException(concatenate_string_views(
-          {name, " must be strictly larger than ", std::to_string(threshold),
-           ", but is ", std::to_string(value), "."}));
+      throw InvalidInputException(concatenate_string_views({
+          name,
+          " must be strictly larger than ",
+          std::to_string(threshold),
+          ", but is ",
+          std::to_string(value),
+          ".",
+      }));
     }
   } else {
     if (value < threshold) {
-      throw InvalidInputException(concatenate_string_views(
-          {name, " must be at least ", std::to_string(threshold), ", but is ",
-           std::to_string(value), "."}));
+      throw InvalidInputException(concatenate_string_views({
+          name,
+          " must be at least ",
+          std::to_string(threshold),
+          ", but is ",
+          std::to_string(value),
+          ".",
+      }));
     }
   }
 };
@@ -452,7 +470,8 @@ inline void throw_if_invalid_folder_name(std::string_view const folderName) {
   static constexpr std::array<std::string_view, 22> RESERVED_NAMES = {
       "CON",  "PRN",  "AUX",  "NUL",  "COM1", "COM2", "COM3", "COM4",
       "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3",
-      "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
+      "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+  };
 
   const bool is_reserved_name =
       std::ranges::any_of(RESERVED_NAMES, matches_reserved_name);
@@ -464,3 +483,5 @@ inline void throw_if_invalid_folder_name(std::string_view const folderName) {
 }
 
 } // namespace cda_rail::exceptions
+
+#endif // CDA_RAIL_CUSTOMEXCEPTIONS_HPP

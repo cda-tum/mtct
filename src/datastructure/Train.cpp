@@ -12,10 +12,10 @@
 #include <string>
 #include <utility>
 
-cda_rail::Train::Train(std::string name, double const length,
-                       double const maxSpeed, double const acceleration,
-                       double const deceleration, bool const tim)
-    : m_name(std::move(name)), m_length(length), m_max_speed(maxSpeed),
+cda_rail::Train::Train(std::string name, double const length, double max_speed,
+                       double const acceleration, double const deceleration,
+                       bool const tim)
+    : m_name(std::move(name)), m_length(length), m_max_speed(max_speed),
       m_acceleration(acceleration), m_deceleration(deceleration), m_tim(tim) {
   cda_rail::exceptions::throw_if_negative(m_length, "Train length");
   cda_rail::exceptions::throw_if_less_than(m_max_speed, MIN_NON_ZERO,
@@ -101,18 +101,21 @@ void cda_rail::TrainList::export_trains(std::filesystem::path const& p) const {
   nlohmann::json j;
   for (const auto& train : trains) {
     // NOLINTNEXTLINE(*-pro-bounds-avoid-unchecked-container-access)
-    j[train.get_name()] = {{"length", train.get_length()},
-                           {"max_speed", train.get_max_speed()},
-                           {"acceleration", train.get_acceleration()},
-                           {"deceleration", train.get_deceleration()},
-                           {"tim", train.has_tim()}};
+    j[train.get_name()] = {
+        {"length", train.get_length()},
+        {"max_speed", train.get_max_speed()},
+        {"acceleration", train.get_acceleration()},
+        {"deceleration", train.get_deceleration()},
+        {"tim", train.has_tim()},
+    };
   }
 
   std::ofstream file(p / "trains.json");
   if (!file.is_open()) {
     throw exceptions::ExportException("Could not open trains.json for writing");
   }
-  if (!(file << j << '\n')) {
+  file << j << '\n';
+  if (!file) {
     throw exceptions::ExportException("Failed to write trains.json");
   }
 }

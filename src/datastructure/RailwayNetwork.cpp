@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cctype>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -29,10 +28,10 @@
 // CONSTRUCTORS
 // -----------------------------
 
-cda_rail::Network::Network(std::string_view const       networkName,
+cda_rail::Network::Network(std::string_view             network_name,
                            const std::filesystem::path& working_directory)
-    : Network(networkName) {
-  auto const path = working_directory / "networks" / networkName;
+    : Network(network_name) {
+  auto const path = working_directory / "networks" / network_name;
   if (!std::filesystem::exists(path)) {
     throw exceptions::ImportException("Path " + path.string() +
                                       " does not exist");
@@ -236,14 +235,14 @@ const cda_rail::Edge& cda_rail::Network::get_edge_helper(size_t index) const {
 }
 
 std::string cda_rail::Network::get_edge_name_helper(
-    std::string_view v1, std::string_view v2, bool const checkExistence) const {
-  if (checkExistence && !has_vertex(v1)) {
+    std::string_view v1, std::string_view v2, bool check_existence) const {
+  if (check_existence && !has_vertex(v1)) {
     throw exceptions::VertexNotExistentException(v1);
   }
-  if (checkExistence && !has_vertex(v2)) {
+  if (check_existence && !has_vertex(v2)) {
     throw exceptions::VertexNotExistentException(v2);
   }
-  if (checkExistence && !has_edge(v1, v2)) {
+  if (check_existence && !has_edge(v1, v2)) {
     throw exceptions::EdgeNotExistentException(v1, v2);
   }
   return std::string(v1).append("-").append(v2);
@@ -378,9 +377,13 @@ cda_rail::Network::common_vertex_helper(size_t e_idx_1, size_t e_idx_2) const {
     if (v == e2.source || v == e2.target) {
       if (shared.has_value()) {
         throw cda_rail::exceptions::ConsistencyException(
-            concatenate_string_views({"Edges", std::to_string(e_idx_1), " and ",
-                                      std::to_string(e_idx_2),
-                                      " have more than one common vertex"}));
+            concatenate_string_views({
+                "Edges",
+                std::to_string(e_idx_1),
+                " and ",
+                std::to_string(e_idx_2),
+                " have more than one common vertex",
+            }));
       }
       shared = v;
     }
@@ -715,17 +718,17 @@ size_t cda_rail::Network::max_vss_on_edge_helper(
 // SETTER
 // -----------------------------
 
-void cda_rail::Network::change_vertex_name_helper(
-    size_t index, std::string_view const newName) {
+void cda_rail::Network::change_vertex_name_helper(size_t           index,
+                                                  std::string_view new_name) {
   if (!has_vertex(index)) {
     throw exceptions::VertexNotExistentException(index);
   }
-  if (has_vertex(newName)) {
+  if (has_vertex(new_name)) {
     throw exceptions::InvalidInputException("Vertex already exists");
   }
   m_vertex_name_to_index.erase(m_vertices.at(index).name);
-  m_vertices.at(index).name = newName;
-  m_vertex_name_to_index.emplace(newName, index);
+  m_vertices.at(index).name = new_name;
+  m_vertex_name_to_index.emplace(new_name, index);
 }
 
 void cda_rail::Network::change_vertex_type_helper(size_t     index,
@@ -807,15 +810,15 @@ size_t cda_rail::Network::add_edge_helper(
 
 std::pair<size_t, size_t> cda_rail::Network::add_bidirectional_edge(
     VertexInput const& source, VertexInput const& target, double const length,
-    double const maxSpeed, std::optional<bool> const& breakable,
+    double max_speed, std::optional<bool> const& breakable,
     std::optional<double> const& min_block_length,
     std::optional<double> const& min_stop_block_length) {
   size_t const forward_edge_index =
-      add_edge(source, target, length, maxSpeed, breakable, min_block_length,
+      add_edge(source, target, length, max_speed, breakable, min_block_length,
                min_stop_block_length);
   size_t const reverse_edge_index =
       add_edge( // NOLINT(readability-suspicious-call-argument)
-          target, source, length, maxSpeed, breakable, min_block_length,
+          target, source, length, max_speed, breakable, min_block_length,
           min_stop_block_length);
   return {forward_edge_index, reverse_edge_index};
 }

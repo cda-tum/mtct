@@ -41,7 +41,7 @@ cda_rail::subsets_of_size_k_indices(size_t const n, size_t const k) {
 
   // Advance indices to the lexicographically next k-combination.
   // Returns true if the next combination exists, false if all are exhausted.
-  const auto advance_to_next_combination = [&indices, n, k]() -> bool {
+  const auto advance_to_next_combination = [&indices, n, k] -> bool {
     // Find the rightmost position whose index can still be incremented.
     // Position i is at its maximum when indices[i] == n - k + i.
     auto i = static_cast<ptrdiff_t>(k) - 1;
@@ -86,14 +86,13 @@ cda_rail::subsets_of_size_2_indices(size_t const n) {
   return result;
 }
 
-void cda_rail::initialize_plog(bool const debugInput,
-                               bool const overwriteSeverity) {
+void cda_rail::initialize_plog(bool debug_input, bool overwrite_severity) {
   if (plog::get() == nullptr) {
     static plog::ColorConsoleAppender<plog::TxtFormatter> console_appender;
     plog::init(plog::debug, &console_appender);
   }
-  if (overwriteSeverity || plog::get()->getMaxSeverity() <= plog::info) {
-    plog::get()->setMaxSeverity(debugInput ? plog::debug : plog::info);
+  if (overwrite_severity || plog::get()->getMaxSeverity() <= plog::info) {
+    plog::get()->setMaxSeverity(debug_input ? plog::debug : plog::info);
   }
 }
 

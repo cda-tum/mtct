@@ -136,16 +136,18 @@ struct LineSpeedProfile {
       std::abs(s - s_1 - s_2) < GRB_EPS ? 0 : (s - s_1 - s_2) / v_line;
   const double total_time = t_1 + t_2_change + cruise_time;
 
-  return {.v_1        = v_1,
-          .v_2        = v_2,
-          .v_line     = v_line,
-          .s          = s,
-          .total_time = total_time,
-          .a_1        = a_1,
-          .a_2        = a_2,
-          .t_1        = t_1,
-          .t_2        = total_time - t_2_change,
-          .s_1        = s_1};
+  return {
+      .v_1        = v_1,
+      .v_2        = v_2,
+      .v_line     = v_line,
+      .s          = s,
+      .total_time = total_time,
+      .a_1        = a_1,
+      .a_2        = a_2,
+      .t_1        = t_1,
+      .t_2        = total_time - t_2_change,
+      .s_1        = s_1,
+  };
 }
 
 [[nodiscard]] bool time_is_after_profile_end(double v_1, double v_2,
@@ -435,11 +437,13 @@ double cda_rail::get_line_speed(double v_1, double v_2, double v_min,
   }
 
   if (t_lb >= t) {
-    throw exceptions::ConsistencyException(concatenate_string_views(
-        {"t (", std::to_string(t),
-         ") is shorter than the fastest possible travel time (",
-         std::to_string(t_lb),
-         "). Use allow_too_short_time if this is intended."}));
+    throw exceptions::ConsistencyException(concatenate_string_views({
+        "t (",
+        std::to_string(t),
+        ") is shorter than the fastest possible travel time (",
+        std::to_string(t_lb),
+        "). Use allow_too_short_time if this is intended.",
+    }));
   }
   assert(t < t_ub);
   while (v_ub - v_lb > LINE_SPEED_ACCURACY &&
@@ -787,10 +791,15 @@ cda_rail::get_min_travel_time_acceleration_change_points(double v_1, double v_2,
     throw exceptions::ConsistencyException("v_m must be greater than 0.");
   }
   if (v_1 > v_m || v_2 > v_m) {
-    throw exceptions::ConsistencyException(concatenate_string_views(
-        {"v_m (", std::to_string(v_m),
-         ") must be greater than or equal to v_1 (", std::to_string(v_1),
-         ") and v_2 (", std::to_string(v_2), ")."}));
+    throw exceptions::ConsistencyException(concatenate_string_views({
+        "v_m (",
+        std::to_string(v_m),
+        ") must be greater than or equal to v_1 (",
+        std::to_string(v_1),
+        ") and v_2 (",
+        std::to_string(v_2),
+        ").",
+    }));
   }
 
   const double s_1 = (square(v_m) - square(v_1)) / (2 * a);

@@ -45,7 +45,8 @@ std::unique_ptr<cda_rail::simulator::GeneralSimulator> make_simulator(
 // SOLVE
 // --------------------
 
-// NOLINTBEGIN (cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTBEGIN
+// (cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance
 cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
     const cda_rail::solver::astar_based::ModelDetailMBAStar& model_detail_input,
@@ -505,7 +506,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
 
   return sol_object;
 }
-// NOLINTEND (cppcoreguidelines-pro-type-reinterpret-cast)
+// NOLINTEND
+// (cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
 
 // -----------------------
 // PRIVATE HELPER
@@ -548,11 +550,12 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
     auto const  weight      = instance->get_train_weight(tr);
 
     if (train_edges.empty()) {
-      return Candidate{.train = tr,
-                       .time =
-                           instance->get_const_schedule(tr).get_entry_time(),
-                       .weight        = weight,
-                       .is_on_network = false};
+      return Candidate{
+          .train         = tr,
+          .time          = instance->get_const_schedule(tr).get_entry_time(),
+          .weight        = weight,
+          .is_on_network = false,
+      };
     }
 
     auto const exit_vertex = instance->get_const_schedule(tr).get_exit_vertex();
@@ -562,10 +565,12 @@ cda_rail::index_set cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
       return std::nullopt;
     }
 
-    return Candidate{.train         = tr,
-                     .time          = simulator_result.exit_times.at(tr),
-                     .weight        = weight,
-                     .is_on_network = true};
+    return Candidate{
+        .train         = tr,
+        .time          = simulator_result.exit_times.at(tr),
+        .weight        = weight,
+        .is_on_network = true,
+    };
   };
 
   auto const is_better = [](Candidate const& candidate,
@@ -674,7 +679,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::get_path_extensions(
       PathExtensionData new_path_extension{
           .path = path_extension.path,
           .stop_possible_from_idx_onward =
-              path_extension.stop_possible_from_idx_onward};
+              path_extension.stop_possible_from_idx_onward,
+      };
       new_path_extension.path.insert(new_path_extension.path.end(),
                                      next_ttd_path.begin(),
                                      next_ttd_path.end());
@@ -690,8 +696,8 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::
                                  cda_rail::index_vector const& prev_order,
                                  cda_rail::index_vector const& next_order,
                                  cda_rail::index_set const&    tr_sharing_path,
-                                 bool const                    insertAtEnd) {
-  if (insertAtEnd) {
+                                 bool                          insert_at_end) {
+  if (insert_at_end) {
     return {.lb = next_order.size(), .ub = next_order.size()};
   }
 

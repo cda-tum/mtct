@@ -146,7 +146,8 @@ simulated_delays_to_json(const cda_rail::instances::SimulatedDelays& delays,
         {"exit_time", delays.exit_times.at(tr)},
         {"exit_delay", delays.exit_delays.at(tr)},
         {"stop_times", delays.stop_times.at(tr)},
-        {"stop_delays", delays.stop_delays.at(tr)}};
+        {"stop_delays", delays.stop_delays.at(tr)},
+    };
   }
   return json;
 }
@@ -156,7 +157,8 @@ cda_rail::instances::SimulatedDelays
 simulated_delays_from_json(const nlohmann::json&      json,
                            const cda_rail::TrainList& train_list) {
   cda_rail::instances::SimulatedDelays delays{
-      .success = json.at("success").get<bool>()};
+      .success = json.at("success").get<bool>(),
+  };
   if (!delays.success) {
     return delays;
   }
@@ -275,7 +277,9 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
         if (t < times.front() - GRB_EPS) {
           // The train of this solution has not entered the network yet
           return simulator::GreedySimulator::PositionBound{
-              .front = -INF, .braking_point = -INF};
+              .front         = -INF,
+              .braking_point = -INF,
+          };
         }
         const auto t_sample = std::clamp(t, times.front(), times.back());
 
@@ -291,8 +295,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
             .front = next_pos -
                      min_distance_until_speed(next_vel, a, next_t - t_sample),
             .braking_point =
-                next_pos +
-                braking_distance(next_vel, train.get_deceleration())};
+                next_pos + braking_distance(next_vel, train.get_deceleration()),
+        };
 
         // In between, the trajectory can only be approximated. This is not
         // possible if the two samples contradict the train's dynamics, which
@@ -325,16 +329,19 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::evaluate(
       .dt         = dt,
       .trajectory = simulated_delays(setup.instance, trajectory_result),
       .greedy     = simulated_delays(setup.instance, greedy_result),
-      .trains_violating_dynamics = std::move(trains_violating_dynamics)};
+      .trains_violating_dynamics = std::move(trains_violating_dynamics),
+  };
 }
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::EvaluationSetup
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_evaluation_setup() const {
-  return {.instance = *get_instance(),
-          .ttd_sections =
-              get_instance()->get_const_network().unbreakable_sections(),
-          .routes = get_const_solution_routes()};
+  return {
+      .instance = *get_instance(),
+      .ttd_sections =
+          get_instance()->get_const_network().unbreakable_sections(),
+      .routes = get_const_solution_routes(),
+  };
 }
 
 cda_rail::instances::SolGeneralPerformanceOptimizationInstance::EvaluationSetup
@@ -348,9 +355,11 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     }
   }
 
-  EvaluationSetup setup{.instance     = *get_instance(),
-                        .ttd_sections = {},
-                        .routes       = get_const_solution_routes()};
+  EvaluationSetup setup{
+      .instance     = *get_instance(),
+      .ttd_sections = {},
+      .routes       = get_const_solution_routes(),
+  };
   setup.routes.update_after_discretization(
       setup.instance.separate_edges_at_vss(m_vss_pos));
   // Without moving block, every edge belongs to a block section
@@ -378,10 +387,13 @@ nlohmann::json cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
   data["evaluation"] = {
       {"dt", m_evaluation->dt},
-      {"trajectory",
-       simulated_delays_to_json(m_evaluation->trajectory, train_list)},
+      {
+          "trajectory",
+          simulated_delays_to_json(m_evaluation->trajectory, train_list),
+      },
       {"greedy", simulated_delays_to_json(m_evaluation->greedy, train_list)},
-      {"trains_violating_dynamics", trains_violating_dynamics}};
+      {"trains_violating_dynamics", trains_violating_dynamics},
+  };
   // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
   return data;
 }
@@ -403,7 +415,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
                                                train_list),
       .greedy =
           simulated_delays_from_json(evaluation_json.at("greedy"), train_list),
-      .trains_violating_dynamics = {}};
+      .trains_violating_dynamics = {},
+  };
   for (const auto& tr_name : evaluation_json.at("trains_violating_dynamics")
                                  .get<std::vector<std::string>>()) {
     m_evaluation->trains_violating_dynamics.emplace_back(

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_CLI_OPTIONS_MB_MIP_HPP
+#define CDA_RAIL_CLI_OPTIONS_MB_MIP_HPP
 
 #include "CLI/CLI.hpp"
 #include "Definitions.hpp"
@@ -22,7 +23,8 @@ struct MbMipSettings {
   bool                       fix_routes{false};
   double                     max_velocity_delta{5.55}; // 20 km/h
   VelocityRefinementStrategy velocity_refinement_strategy{
-      VelocityRefinementStrategy::MinOneStep};
+      VelocityRefinementStrategy::MinOneStep,
+  };
   bool   simplify_headway_constraints{false};
   bool   strengthen_vertex_headway_constraints{false};
   bool   late_entry_possible{false};
@@ -37,12 +39,15 @@ struct MbMipSettings {
   bool include_reverse_headways{false};
   solver::mip_based::LazyVelocitySelectionStrategy
       lazy_velocity_selection_strategy{
-          solver::mip_based::LazyVelocitySelectionStrategy::OnlyCurrent};
+          solver::mip_based::LazyVelocitySelectionStrategy::OnlyCurrent,
+  };
   solver::mip_based::LazyConstraintSelectionStrategy
       lazy_constraint_selection_strategy{
-          solver::mip_based::LazyConstraintSelectionStrategy::OnlyViolated};
+          solver::mip_based::LazyConstraintSelectionStrategy::OnlyViolated,
+  };
   solver::mip_based::LazyTrainSelectionStrategy lazy_train_selection_strategy{
-      solver::mip_based::LazyTrainSelectionStrategy::OnlyAdjacent};
+      solver::mip_based::LazyTrainSelectionStrategy::OnlyAdjacent,
+  };
   double      abs_mip_gap{10};
   std::size_t completion_interval{0};
   double      completion_dt{solver::mip_based::DEFAULT_COMPLETION_DT};
@@ -60,7 +65,7 @@ void add_mb_mip_options(CLI::App& app, MbMipSettings& settings);
  * Resolves `--max-delay` into the two individual delays and generates the
  * parameter identifier if `--generate-parameter-identifier` was given.
  */
-void finalize_mb_mip_settings(CLI::App& app, MbMipSettings& settings);
+void finalize_mb_mip_settings(const CLI::App& app, MbMipSettings& settings);
 
 /**
  * @brief All settings, whose hash `--generate-parameter-identifier` uses as
@@ -90,3 +95,5 @@ mb_mip_solution_settings(const MbMipSettings& settings,
                          const std::string&   working_directory);
 
 } // namespace cda_rail::cli
+
+#endif // CDA_RAIL_CLI_OPTIONS_MB_MIP_HPP

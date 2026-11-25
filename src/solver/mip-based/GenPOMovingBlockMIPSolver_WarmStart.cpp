@@ -24,7 +24,7 @@
 
 using std::size_t;
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,bugprone-unchecked-optional-access)
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,bugprone-unchecked-optional-access)
 
 namespace {
 // A train whose front leaves a vertex more than this after arriving there
@@ -67,9 +67,11 @@ front_passing(const std::map<double, cda_rail::simulator::PosVel>& trajectory,
                                        (prev_sample.vel * prev_sample.vel))),
                          0.0));
   const auto mean_vel = (prev_sample.vel + vel) / 2;
-  return {.t   = mean_vel > cda_rail::EPS ? prev_t + (distance / mean_vel)
-                                          : prev_t + (share * (t - prev_t)),
-          .vel = vel};
+  return {
+      .t   = mean_vel > cda_rail::EPS ? prev_t + (distance / mean_vel)
+                                      : prev_t + (share * (t - prev_t)),
+      .vel = vel,
+  };
 }
 
 // The trains in the order of their times, ties broken by train index
@@ -94,7 +96,8 @@ std::optional<cda_rail::simulator::SimulatorState> cda_rail::solver::mip_based::
       .train_edges    = std::vector<cda_rail::index_vector>(m_num_tr),
       .ttd_orders     = std::vector<cda_rail::index_vector>(m_num_ttd),
       .vertex_orders  = std::vector<cda_rail::index_vector>(m_num_vertices),
-      .stop_positions = std::vector<std::vector<double>>(m_num_tr)};
+      .stop_positions = std::vector<std::vector<double>>(m_num_tr),
+  };
   if (m_model_detail.fix_routes) {
     for (size_t tr = 0; tr < m_num_tr; tr++) {
       const auto& tr_name =
@@ -216,7 +219,10 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::simulate_state(
   const auto obj = simulator::objective_val(m_instance, results.exit_times,
                                             results.stop_times);
   return SimulatedSolution{
-      .state = std::move(state), .results = std::move(results), .obj = obj};
+      .state   = std::move(state),
+      .results = std::move(results),
+      .obj     = obj,
+  };
 }
 
 std::optional<
@@ -261,8 +267,16 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::integer_values(
     values.insert_or_assign(var.index(), std::pair{var, value});
   };
   // Every integer variable that is not set to 1 below is 0
-  for (const auto* name : {"x", "y", "order", "x_ttd", "order_ttd", "stop",
-                           "reverse_order", "waiting_at_vertex"}) {
+  for (const auto* name : {
+           "x",
+           "y",
+           "order",
+           "x_ttd",
+           "order_ttd",
+           "stop",
+           "reverse_order",
+           "waiting_at_vertex",
+       }) {
     if (const auto it = m_vars.find(name); it != m_vars.end()) {
       for (const auto& var : std::as_const(it->second)) {
         if (exists(var)) {
@@ -298,11 +312,12 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::integer_values(
       }
       // The model does not let a train stand still at its exit vertex, see
       // set_warm_start
-      passings.push_back(
-          {.departure    = departure.t,
-           .velocity     = departure.vel,
-           .stands_still = stop || (i < route.size() &&
-                                    departure.t > arrival.t + TIME_TOLERANCE)});
+      passings.push_back({
+          .departure    = departure.t,
+          .velocity     = departure.vel,
+          .stands_still = stop || (i < route.size() &&
+                                   departure.t > arrival.t + TIME_TOLERANCE),
+      });
     }
 
     for (size_t i = 0; i < route.size(); i++) {
@@ -410,7 +425,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::relaxation_state(
       .train_edges    = std::vector<cda_rail::index_vector>(m_num_tr),
       .ttd_orders     = std::vector<cda_rail::index_vector>(m_num_ttd),
       .vertex_orders  = std::vector<cda_rail::index_vector>(m_num_vertices),
-      .stop_positions = std::vector<std::vector<double>>(m_num_tr)};
+      .stop_positions = std::vector<std::vector<double>>(m_num_tr),
+  };
   // The value of a variable, 0 if the model does not have it
   const auto value_of = [&value](const GRBVar& var) {
     return exists(var) ? value(var) : 0.0;
@@ -516,4 +532,4 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::LazyCallback::
   }
 }
 
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,bugprone-unchecked-optional-access)
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces,bugprone-unchecked-optional-access)

@@ -121,7 +121,7 @@ TEST(CustomExceptions, ThrowIfLessInclusiveThrowsAndPasses) {
   EXPECT_NO_THROW(throw_if_less(2.1, 2.0, "speed", true));
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_less(2.0, 2.0, "speed", true); },
+      [] { throw_if_less(2.0, 2.0, "speed", true); },
       "speed must be strictly larger than " + std::to_string(2.0) +
           ", but is " + std::to_string(2.0) + ".");
 }
@@ -132,7 +132,7 @@ TEST(CustomExceptions, ThrowIfLessNonInclusiveThrowsAndPasses) {
   EXPECT_NO_THROW(throw_if_less(2.1, 2.0, "speed", false));
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_less(1.9, 2.0, "speed", false); },
+      [] { throw_if_less(1.9, 2.0, "speed", false); },
       "speed must be at least " + std::to_string(2.0) + ", but is " +
           std::to_string(1.9) + ".");
 }
@@ -157,7 +157,7 @@ TEST(CustomExceptions, ThrowIfNegativeBehaviorAndMessage) {
   EXPECT_NO_THROW(throw_if_negative(1.0, "distance"));
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_negative(-1.0, "distance"); },
+      [] { throw_if_negative(-1.0, "distance"); },
       "distance must be at least " + std::to_string(0.0) + ", but is " +
           std::to_string(-1.0) + ".");
 }
@@ -170,7 +170,7 @@ TEST(CustomExceptions, ThrowIfNonPositiveWithToleranceBehavior) {
   EXPECT_NO_THROW(throw_if_non_positive(1.1, 1.0, "headway"));
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_non_positive(1.0, 1.0, "headway"); },
+      [] { throw_if_non_positive(1.0, 1.0, "headway"); },
       "headway must be strictly larger than " + std::to_string(1.0) +
           ", but is " + std::to_string(1.0) + ".");
 }
@@ -202,10 +202,10 @@ TEST(CustomExceptions, ThrowIfInvalidFolderNameRejectsEmptyAndTooLong) {
                InvalidInputException);
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_invalid_folder_name(""); },
+      [] { throw_if_invalid_folder_name(""); },
       "Folder name must not be empty.");
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_invalid_folder_name(std::string(256, 'a')); },
+      [] { throw_if_invalid_folder_name(std::string(256, 'a')); },
       "Folder name must not be longer than 255 characters.");
 }
 
@@ -214,7 +214,7 @@ TEST(CustomExceptions, ThrowIfInvalidFolderNameRejectsUnsupportedCharacters) {
   EXPECT_THROW(throw_if_invalid_folder_name("bad:name"), InvalidInputException);
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_invalid_folder_name("bad/name"); },
+      [] { throw_if_invalid_folder_name("bad/name"); },
       "Folder name contains unsupported characters. Allowed are A-Z, a-z, "
       "0-9, '_', '-', '.', and space.");
 }
@@ -224,10 +224,10 @@ TEST(CustomExceptions, ThrowIfInvalidFolderNameRejectsLeadingOrTrailingSpace) {
   EXPECT_THROW(throw_if_invalid_folder_name("bad "), InvalidInputException);
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_invalid_folder_name(" bad"); },
+      [] { throw_if_invalid_folder_name(" bad"); },
       "Folder name must not start with a space.");
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_invalid_folder_name("bad "); },
+      [] { throw_if_invalid_folder_name("bad "); },
       "Folder name must not end with a space or a dot.");
 }
 
@@ -246,7 +246,7 @@ TEST(CustomExceptions, ThrowIfInvalidFolderNameRejectsReservedWindowsNames) {
                InvalidInputException);
 
   expect_exception_message<InvalidInputException>(
-      []() { throw_if_invalid_folder_name("CON"); },
+      [] { throw_if_invalid_folder_name("CON"); },
       "Folder name must not be a Windows reserved device name.");
 }
 

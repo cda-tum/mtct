@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDA_RAIL_EOMHELPER_HPP
+#define CDA_RAIL_EOMHELPER_HPP
 
 #include <cstdint>
 #include <utility>
@@ -845,3 +846,5 @@ get_max_travel_time_acceleration_change_points(double v_1, double v_2,
 time_to_travel_distance_with_constant_acceleration(double v_0, double a,
                                                    double s);
 } // namespace cda_rail
+
+#endif // CDA_RAIL_EOMHELPER_HPP

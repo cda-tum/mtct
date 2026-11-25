@@ -15,10 +15,8 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <functional>
 #include <iterator>
 #include <limits>
-#include <numeric>
 #include <optional>
 #include <ranges>
 #include <string>
@@ -34,12 +32,11 @@ using std::size_t;
 // -----------------------------
 
 double cda_rail::Route::length(const Network& network) const {
-  const auto edge_lengths =
-      m_edges | std::views::transform([&network](size_t edge) {
-        return network.get_edge(edge).length;
-      });
-  return std::accumulate(edge_lengths.begin(), edge_lengths.end(), 0.0,
-                         std::plus{});
+  double length = 0;
+  for (const auto edge : m_edges) {
+    length += network.get_edge(edge).length;
+  }
+  return length;
 }
 
 cda_rail::Route::EdgePosition
@@ -56,17 +53,16 @@ cda_rail::Route::edge_pos_on_route(Network::EdgeInput const& edge,
     throw exceptions::ConsistencyException("Edge does not exist in route.");
   }
 
-  const auto prefix_edges =
-      std::ranges::subrange(m_edges.begin(), edge_it) |
-      std::views::transform([&network](size_t route_edge) {
-        return network.get_edge(route_edge).length;
-      });
+  double source_pos = 0;
+  for (const auto route_edge :
+       std::ranges::subrange(m_edges.begin(), edge_it)) {
+    source_pos += network.get_edge(route_edge).length;
+  }
 
-  const double source_pos = std::accumulate(
-      prefix_edges.begin(), prefix_edges.end(), 0.0, std::plus{});
-
-  return {.source = source_pos,
-          .target = source_pos + network.get_edge(*edge_it).length};
+  return {
+      .source = source_pos,
+      .target = source_pos + network.get_edge(*edge_it).length,
+  };
 }
 
 cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
@@ -75,9 +71,11 @@ cda_rail::Route::EdgePosition cda_rail::Route::edge_set_pos_on_route(
   const std::unordered_set<size_t> considered_edges(edges_to_consider.begin(),
                                                     edges_to_consider.end());
 
-  EdgePosition return_pos{.source = std::numeric_limits<double>::infinity(),
-                          .target = -1.0};
-  double       current_pos = 0.0;
+  EdgePosition return_pos{
+      .source = std::numeric_limits<double>::infinity(),
+      .target = -1.0,
+  };
+  double current_pos = 0.0;
 
   for (const size_t route_edge : m_edges) {
     const double edge_length = network.get_edge(route_edge).length;
@@ -302,9 +300,11 @@ cda_rail::RouteMap::get_parallel_overlaps(const std::string& train1,
         ++i2;
       }
 
-      result.emplace_back(ConflictPair{.pos1  = {start_pos1, pos1},
-                                       .pos2  = {start_pos2, pos2},
-                                       .edges = edges_in_overlap});
+      result.emplace_back(ConflictPair{
+          .pos1  = {start_pos1, pos1},
+          .pos2  = {start_pos2, pos2},
+          .edges = edges_in_overlap,
+      });
     } else {
       pos1 += network.get_edge(edge1).length;
       ++i1;
@@ -351,10 +351,11 @@ cda_rail::RouteMap::get_ttd_overlaps(const std::string& train1,
       const auto start_pos1 = route1.get_first_pos_on_edges(ttd_sec, network);
       const auto end_pos1   = route1.get_last_pos_on_edges(ttd_sec, network);
       assert(start_pos1.has_value() && end_pos1.has_value());
-      result.emplace_back(
-          ConflictPair{.pos1  = {start_pos1.value(), end_pos1.value()},
-                       .pos2  = {start_pos2.value(), end_pos2.value()},
-                       .edges = ttd_tracks});
+      result.emplace_back(ConflictPair{
+          .pos1  = {start_pos1.value(), end_pos1.value()},
+          .pos2  = {start_pos2.value(), end_pos2.value()},
+          .edges = ttd_tracks,
+      });
     }
   }
 
@@ -414,9 +415,11 @@ cda_rail::RouteMap::get_reverse_overlaps(const std::string& train1,
         }
       }
 
-      result.emplace_back(ConflictPair{.pos1  = {start_pos1, pos1},
-                                       .pos2  = {pos2, end_pos2},
-                                       .edges = edges_in_overlap});
+      result.emplace_back(ConflictPair{
+          .pos1  = {start_pos1, pos1},
+          .pos2  = {pos2, end_pos2},
+          .edges = edges_in_overlap,
+      });
     } else {
       pos1 += network.get_edge(edge1).length;
       ++i1;
@@ -528,7 +531,8 @@ void cda_rail::RouteMap::export_routes(const std::filesystem::path& p,
   if (!file.is_open()) {
     throw exceptions::ExportException("Could not open routes.json for writing");
   }
-  if (!(file << j << '\n')) {
+  file << j << '\n';
+  if (!file) {
     throw exceptions::ExportException("Failed to write routes.json");
   }
 }

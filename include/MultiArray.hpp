@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CDA_RAIL_MULTIARRAY_HPP
+#define CDA_RAIL_MULTIARRAY_HPP
+
 #include "FixedSizeVector.hpp"
 
 #include <sstream>
@@ -122,7 +124,7 @@ public:
    * @throws std::out_of_range If any index exceeds its dimension's extent.
    */
   template <typename... Args> T& operator()(Args... args) {
-    return m_data[flat_index(make_index_vector(args...))];
+    return m_data.at(flat_index(make_index_vector(args...)));
   }
 
   /**
@@ -252,3 +254,5 @@ void MultiArray<T>::init(const FixedSizeVector<size_t>& dims) {
 }
 
 } // namespace cda_rail
+
+#endif // CDA_RAIL_MULTIARRAY_HPP

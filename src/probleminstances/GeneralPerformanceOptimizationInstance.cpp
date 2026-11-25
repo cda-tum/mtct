@@ -33,15 +33,14 @@
 
 cda_rail::instances::GeneralPerformanceOptimizationInstance::
     GeneralPerformanceOptimizationInstance(
-        std::string_view const       instanceName,
-        std::string_view const       instanceSubdirectory,
+        std::string_view instance_name, std::string_view instance_subdirectory,
         std::filesystem::path const& working_directory)
     : GeneralProblemInstanceWithScheduleAndRoutes(
-          instanceName, instanceSubdirectory, working_directory) {
+          instance_name, instance_subdirectory, working_directory) {
   initialize_vectors();
 
-  std::ifstream file(working_directory / "instances" / instanceSubdirectory /
-                     instanceName / "problem_data.json");
+  std::ifstream file(working_directory / "instances" / instance_subdirectory /
+                     instance_name / "problem_data.json");
   if (!file.is_open()) {
     throw exceptions::ImportException("Could not open problem_data.json.");
   }
@@ -56,7 +55,7 @@ double
 cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
     const std::vector<double>&              tr_exit_times,
     const std::vector<std::vector<double>>& stop_times,
-    const bool throwErrorIfNotAllStopsSpecified) const {
+    bool throw_error_if_not_all_stops_specified) const {
   const auto train_count = get_const_train_list().size();
   if (tr_exit_times.size() != train_count || stop_times.size() != train_count) {
     throw exceptions::InvalidInputException(
@@ -73,21 +72,27 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
     auto const& tr_stop_times   = stop_times.at(tr);
     auto const& scheduled_stops = tr_schedule.get_stops();
     if (scheduled_stops.size() < tr_stop_times.size()) {
-      throw exceptions::InvalidInputException(concatenate_string_views(
-          {"Number of stop times provided for train ",
-           get_const_train_list().get_train(tr).get_name(),
-           " is greater than the number of scheduled stops (",
-           std::to_string(tr_stop_times.size()), " vs. ",
-           std::to_string(scheduled_stops.size()), ")."}));
+      throw exceptions::InvalidInputException(concatenate_string_views({
+          "Number of stop times provided for train ",
+          get_const_train_list().get_train(tr).get_name(),
+          " is greater than the number of scheduled stops (",
+          std::to_string(tr_stop_times.size()),
+          " vs. ",
+          std::to_string(scheduled_stops.size()),
+          ").",
+      }));
     }
-    if (throwErrorIfNotAllStopsSpecified &&
+    if (throw_error_if_not_all_stops_specified &&
         scheduled_stops.size() != tr_stop_times.size()) {
-      throw exceptions::InvalidInputException(concatenate_string_views(
-          {"Number of stop times provided for train ",
-           get_const_train_list().get_train(tr).get_name(),
-           " is not equal to the number of scheduled stops (",
-           std::to_string(tr_stop_times.size()), " vs. ",
-           std::to_string(scheduled_stops.size()), ")."}));
+      throw exceptions::InvalidInputException(concatenate_string_views({
+          "Number of stop times provided for train ",
+          get_const_train_list().get_train(tr).get_name(),
+          " is not equal to the number of scheduled stops (",
+          std::to_string(tr_stop_times.size()),
+          " vs. ",
+          std::to_string(scheduled_stops.size()),
+          ").",
+      }));
     }
 
     if (!tr_stop_times.empty()) {
@@ -195,9 +200,9 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     export_instance(const std::filesystem::path& working_directory,
-                    bool const                   saveNetwork) const {
+                    bool                         save_network) const {
   GeneralProblemInstanceWithScheduleAndRoutes::export_instance(
-      working_directory, saveNetwork);
+      working_directory, save_network);
   // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
   nlohmann::json j;
   // Initialized explicitly, so that the key also exists for an instance
@@ -217,7 +222,8 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     throw exceptions::ExportException(
         "Could not open problem_data.json for writing");
   }
-  if (!(file << j << '\n')) {
+  file << j << '\n';
+  if (!file) {
     throw exceptions::ExportException("Failed to write problem_data.json");
   }
 }
@@ -356,12 +362,12 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     load_solution(const std::filesystem::path&      working_directory,
-                  std::string_view const            solutionSubdirectory,
+                  std::string_view                  solution_subdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralProblemInstanceWithScheduleAndRoutes::load_solution(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
 
-  const auto p = get_export_path(working_directory, solutionSubdirectory,
+  const auto p = get_export_path(working_directory, solution_subdirectory,
                                  parameter_identifier);
   for (auto& train_pos : m_train_pos) {
     train_pos.clear();
@@ -428,18 +434,18 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
 void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& working_directory,
-        std::string_view const solutionSubdirectory, bool save_instance,
+        std::string_view solution_subdirectory, bool save_instance,
         std::optional<std::string> const& parameter_identifier) const {
   if (!check_consistency()) {
     throw exceptions::ConsistencyException();
   }
 
   SolGeneralProblemInstanceWithScheduleAndRoutes::export_solution(
-      working_directory, solutionSubdirectory, save_instance,
+      working_directory, solution_subdirectory, save_instance,
       parameter_identifier);
 
   std::filesystem::path const p = get_export_path(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
 
   // NOLINTBEGIN(misc-const-correctness)
   nlohmann::json train_pos_json;
@@ -463,7 +469,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     throw exceptions::ExportException(
         "Could not open train_pos.json for writing");
   }
-  if (!(train_pos_file << train_pos_json << '\n')) {
+  train_pos_file << train_pos_json << '\n';
+  if (!train_pos_file) {
     throw exceptions::ExportException("Failed to write train_pos.json");
   }
 
@@ -472,7 +479,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     throw exceptions::ExportException(
         "Could not open train_speed.json for writing");
   }
-  if (!(train_speed_file << train_speed_json << '\n')) {
+  train_speed_file << train_speed_json << '\n';
+  if (!train_speed_file) {
     throw exceptions::ExportException("Failed to write train_speed.json");
   }
 
@@ -481,7 +489,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     throw exceptions::ExportException(
         "Could not open train_exit_times.json for writing");
   }
-  if (!(train_exit_times_file << train_exit_times_json << '\n')) {
+  train_exit_times_file << train_exit_times_json << '\n';
+  if (!train_exit_times_file) {
     throw exceptions::ExportException("Failed to write train_exit_times.json");
   }
 
@@ -490,7 +499,8 @@ void cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     throw exceptions::ExportException(
         "Could not open train_stop_times.json for writing");
   }
-  if (!(train_stop_times_file << train_stop_times_json << '\n')) {
+  train_stop_times_file << train_stop_times_json << '\n';
+  if (!train_stop_times_file) {
     throw exceptions::ExportException("Failed to write train_stop_times.json");
   }
 }
@@ -551,12 +561,13 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const Network& n = this->get_instance()->get_const_network();
   const auto     r_len =
       this->get_const_solution_routes().get_route(tr_name).length(n);
-  return {.edge_id =
-              this->get_const_solution_routes()
-                  .get_route(tr_name)
-                  .get_edge_id_at_pos(std::min(pos0 + GRB_EPS, r_len), n),
-          .previous_time_step = t0,
-          .next_time_step     = t1};
+  return {
+      .edge_id = this->get_const_solution_routes()
+                     .get_route(tr_name)
+                     .get_edge_id_at_pos(std::min(pos0 + GRB_EPS, r_len), n),
+      .previous_time_step = t0,
+      .next_time_step     = t1,
+  };
 }
 
 namespace {
@@ -575,9 +586,11 @@ struct EdgeLimits {
                                              size_t edge, double pos1,
                                              double pos2) {
   const auto& edge_obj = network.get_edge(edge);
-  EdgeLimits  limits{.max_speed = edge_obj.max_speed,
-                     .breakable = edge_obj.breakable};
-  double      edge_source = 0;
+  EdgeLimits  limits{
+      .max_speed = edge_obj.max_speed,
+      .breakable = edge_obj.breakable,
+  };
+  double edge_source = 0;
   for (const auto& e : route.get_edges()) {
     const auto&  e_obj       = network.get_edge(e);
     const double edge_target = edge_source + e_obj.length;
@@ -649,8 +662,10 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const bool tr_leaving_route = pos2 >= r_len + GRB_EPS;
 
   if (std::abs(pos2 - pos1) < GRB_EPS) {
-    return {.pos = {.lb = std::min(pos1, pos2), .ub = std::max(pos1, pos2)},
-            .vel = {.lb = std::min(v1, v2), .ub = std::max(v1, v2)}};
+    return {
+        .pos = {.lb = std::min(pos1, pos2), .ub = std::max(pos1, pos2)},
+        .vel = {.lb = std::min(v1, v2), .ub = std::max(v1, v2)},
+    };
   }
 
   const auto& tr_obj =
@@ -674,18 +689,29 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
       reachable_distance(v1, v2, max_speed, a, d, s, t - t1, stopping_allowed);
   const PosVelBound fwd_bounds{
       .pos = {.lb = pos1 + fwd.min, .ub = pos1 + fwd.max},
-      .vel = {.lb = std::max(v1 - (d * (t - t1)), 0.0),
-              .ub = std::min(max_line_speed, v1 + (a * (t - t1)))}};
+      .vel =
+          {
+              .lb = std::max(v1 - (d * (t - t1)), 0.0),
+              .ub = std::min(max_line_speed, v1 + (a * (t - t1))),
+          },
+  };
 
   // Going backward in time from the exit state is the same problem with the
   // entry and exit speeds as well as the acceleration and deceleration swapped.
   const auto bwd =
       reachable_distance(v2, v1, max_speed, d, a, s, t2 - t, stopping_allowed);
   const PosVelBound bounds{
-      .pos = {.lb = std::max(fwd_bounds.pos.lb, pos2 - bwd.max),
-              .ub = std::min(fwd_bounds.pos.ub, pos2 - bwd.min)},
-      .vel = {.lb = std::max(fwd_bounds.vel.lb, v2 - (a * (t2 - t))),
-              .ub = std::min(fwd_bounds.vel.ub, v2 + (d * (t2 - t)))}};
+      .pos =
+          {
+              .lb = std::max(fwd_bounds.pos.lb, pos2 - bwd.max),
+              .ub = std::min(fwd_bounds.pos.ub, pos2 - bwd.min),
+          },
+      .vel =
+          {
+              .lb = std::max(fwd_bounds.vel.lb, v2 - (a * (t2 - t))),
+              .ub = std::min(fwd_bounds.vel.ub, v2 + (d * (t2 - t))),
+          },
+  };
 
   // The stored times stem from a solution that may only be feasible within
   // the solver's tolerances, in which case they can be marginally shorter or
@@ -696,11 +722,11 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   const double vel_tol = 2 * GRB_EPS * std::max(a, d);
   if (bounds.pos.lb > bounds.pos.ub + pos_tol ||
       bounds.vel.lb > bounds.vel.ub + vel_tol) {
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
     PLOGW << "Bounds of train " << tr_name << " at time " << t
           << " from its states at times " << t1 << " and " << t2
           << " are inconsistent; using the bounds from time " << t1 << " only";
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,readability-inconsistent-ifelse-braces)
     return fwd_bounds;
   }
   return bounds;
@@ -1249,10 +1275,10 @@ cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     export_solution(
         const std::filesystem::path& working_directory,
-        std::string_view const solutionSubdirectory, bool export_instance,
+        std::string_view solution_subdirectory, bool export_instance,
         std::optional<std::string> const& parameter_identifier) const {
   SolGeneralPerformanceOptimizationInstance::export_solution(
-      working_directory, solutionSubdirectory, export_instance,
+      working_directory, solution_subdirectory, export_instance,
       parameter_identifier);
 
   // NOLINTNEXTLINE(misc-const-correctness)
@@ -1265,13 +1291,14 @@ void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
   }
 
   std::filesystem::path const p = get_export_path(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
   std::ofstream vss_pos_file(p / "vss_pos.json");
   if (!vss_pos_file.is_open()) {
     throw exceptions::ExportException(
         "Could not open vss_pos.json for writing");
   }
-  if (!(vss_pos_file << vss_pos_json << '\n')) {
+  vss_pos_file << vss_pos_json << '\n';
+  if (!vss_pos_file) {
     throw exceptions::ExportException("Failed to write vss_pos.json");
   }
 }
@@ -1299,13 +1326,13 @@ bool cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
 
 void cda_rail::instances::SolVSSGeneralPerformanceOptimizationInstance::
     load_solution(const std::filesystem::path&      working_directory,
-                  std::string_view const            solutionSubdirectory,
+                  std::string_view                  solution_subdirectory,
                   std::optional<std::string> const& parameter_identifier) {
   SolGeneralPerformanceOptimizationInstance::load_solution(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
 
   std::filesystem::path const p = this->get_export_path(
-      working_directory, solutionSubdirectory, parameter_identifier);
+      working_directory, solution_subdirectory, parameter_identifier);
   std::ifstream vss_pos_file(p / "vss_pos.json");
   if (!vss_pos_file.is_open()) {
     throw exceptions::ImportException("Could not open vss_pos.json.");
