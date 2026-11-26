@@ -561,7 +561,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
   }
 
   assert(t >= t0 - GRB_EPS);
-  assert(t <= t1 + GRB_EPS || t0 == t1);
+  assert(t <= t1 + GRB_EPS || t <= get_exit_time(tr_name) + GRB_EPS);
   const auto pos0 = get_train_pos(tr_name, t0);
 
   const Network& n = this->get_instance()->get_const_network();
@@ -655,7 +655,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
   const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
   assert(t >= t1 - GRB_EPS);
-  assert(t <= t2 + GRB_EPS || t1 == t2);
+  assert(t <= t2 + GRB_EPS || t <= get_exit_time(tr_name) + GRB_EPS);
 
   const auto v1   = get_train_speed(tr_name, t1);
   const auto v2   = get_train_speed(tr_name, t2);
@@ -745,7 +745,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
                                       double             t) const {
   const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
   assert(t >= t1 - GRB_EPS);
-  assert(t <= t2 + GRB_EPS || t1 == t2);
+  assert(t <= t2 + GRB_EPS || t <= get_exit_time(tr_name) + GRB_EPS);
 
   const auto pos_1 = get_train_pos(tr_name, t1);
   const auto v1    = get_train_speed(tr_name, t1);
