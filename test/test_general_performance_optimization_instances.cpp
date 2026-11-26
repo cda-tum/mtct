@@ -1360,6 +1360,22 @@ TEST(GeneralPerformanceOptimizationInstances, StopDiscretizationIsRestored) {
   EXPECT_EQ(instance.get_const_routes().get_route("tr1").get_edges(), route);
 }
 
+TEST(GeneralPerformanceOptimizationInstances,
+     StopDiscretizationOfATransformedInstance) {
+  // The station tracks of the given instance are already separated. Only the
+  // separation of the guard is undone, so that the route keeps the edges of
+  // the given instance instead of the ones they were derived from.
+  instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  instance.discretize_stops();
+  const auto route = instance.get_const_routes().get_route("tr1").get_edges();
+
+  const instances::StopDiscretization stop_discretization(instance);
+  EXPECT_EQ(instance.get_const_network().get_old_path(
+                instance.get_const_routes().get_route("tr1").get_edges()),
+            route);
+}
+
 TEST(GeneralPerformanceOptimizationInstances, ServiceStartTimes) {
   // The services of tr1, tr2 and tr3 are scheduled to start at 240, 120 and
   // 180. A train arriving early waits for its service, a late one starts it

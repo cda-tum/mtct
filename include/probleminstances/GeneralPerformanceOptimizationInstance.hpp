@@ -567,7 +567,9 @@ public:
  * On the separated tracks, a train can also stop within a long platform, e.g.,
  * behind another train. The moving block solvers solve on the separated
  * instance and build their solution on original(), mapping their routes back
- * by Network::get_old_path. Positions along a route, as well as stop and exit
+ * by Network::get_old_path, which only undoes this separation, also if the
+ * original instance was transformed before. Positions along a route, as well
+ * as stop and exit
  * times, are the same in both instances. The original instance is restored on
  * every exit path, also if an exception is thrown.
  */

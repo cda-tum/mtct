@@ -647,6 +647,13 @@ public:
   get_old_path(const cda_rail::index_vector& path) const;
 
   /**
+   * @brief Forgets from which edges earlier transformations derived the edges,
+   *        so that get_old_edge and get_old_path refer to the network as it is
+   *        now.
+   */
+  void reset_old_edges() { m_new_edge_to_old_edge_after_transform.clear(); }
+
+  /**
    * @brief Returns the index of the vertex with the given name.
    * @param name Vertex name.
    * @return Numeric vertex index.

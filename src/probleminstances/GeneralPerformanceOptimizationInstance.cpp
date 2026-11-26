@@ -260,8 +260,11 @@ cda_rail::instances::StopDiscretization::StopDiscretization(
     GeneralPerformanceOptimizationInstance& instance)
     : m_instance(instance), m_original(instance) {
   // Separated on a copy, so that the instance is unchanged if this throws,
-  // in which case the destructor does not run
+  // in which case the destructor does not run. Only this separation is
+  // mapped back, so that routes refer to the edges of the original instance,
+  // even if it was transformed before.
   auto separated = m_original;
+  separated.get_editable_network().reset_old_edges();
   separated.discretize_stops();
   m_instance = std::move(separated);
 }
