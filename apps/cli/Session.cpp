@@ -3,6 +3,8 @@
 #include "CustomExceptions.hpp"
 #include "StringHelper.hpp"
 #include "datastructure/RailwayNetwork.hpp"
+#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 
@@ -205,10 +207,53 @@ void cda_rail::cli::Session::set_solution(
     std::unique_ptr<instances::SolGeneralPerformanceOptimizationInstance>
                                     solution,
     std::optional<double>           time_step,
-    solver::GeneralSolutionSettings export_settings) {
-  m_solution                 = std::move(solution);
-  m_solution_time_step       = time_step;
+    solver::GeneralSolutionSettings export_settings, nlohmann::json solver_data,
+    std::optional<std::string> generated_parameter_identifier) {
+  m_solution                       = std::move(solution);
+  m_solution_time_step             = time_step;
+  m_solution_export_settings       = std::move(export_settings);
+  m_solver_data                    = std::move(solver_data);
+  m_generated_parameter_identifier = std::move(generated_parameter_identifier);
+}
+
+std::filesystem::path cda_rail::cli::Session::export_solution(
+    solver::GeneralSolutionSettings export_settings,
+    bool                            generate_parameter_identifier) {
+  const auto& sol = solution();
+  if (export_settings.export_option == solver::GeneralExportOption::NoExport) {
+    throw exceptions::InvalidInputException(
+        "The export settings do not export anything.");
+  }
+  if (generate_parameter_identifier) {
+    if (!m_generated_parameter_identifier.has_value()) {
+      throw exceptions::InvalidInputException(
+          "No parameter identifier can be generated, since the solver "
+          "settings of this solution are unknown.");
+    }
+    export_settings.parameter_identifier = m_generated_parameter_identifier;
+  }
+  export_settings.evaluation_time_step = std::nullopt;
+
+  sol.export_solution(
+      export_settings.working_directory, export_settings.solution_subdirectory,
+      export_settings.export_option ==
+          solver::GeneralExportOption::ExportSolutionWithInstance,
+      export_settings.parameter_identifier);
+  const auto path = sol.get_export_path(export_settings.working_directory,
+                                        export_settings.solution_subdirectory,
+                                        export_settings.parameter_identifier);
+  if (!m_solver_data.is_null()) {
+    // As if the solver had exported to this place, whose identifier every
+    // solver records in its data
+    auto solver_data = m_solver_data;
+    if (solver_data.contains("parameter_identifier_string")) {
+      solver_data["parameter_identifier_string"] =
+          export_settings.parameter_identifier.value_or("");
+    }
+    solver::write_solver_data(path, solver_data);
+  }
   m_solution_export_settings = std::move(export_settings);
+  return path;
 }
 
 std::optional<std::filesystem::path>

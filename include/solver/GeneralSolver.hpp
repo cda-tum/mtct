@@ -67,6 +67,30 @@ struct GeneralSolutionSettings {
 };
 
 /**
+ * @brief Writes solver data, see GeneralSolver::get_solver_data, to
+ *        solver_data.json in @p export_directory.
+ *
+ * @throws exceptions::ExportException If the directory could not be created or
+ *         the file could not be written
+ */
+inline void write_solver_data(std::filesystem::path const& export_directory,
+                              nlohmann::json const&        solver_data) {
+  if (!is_directory_and_create(export_directory)) {
+    throw exceptions::ExportException("Could not create directory " +
+                                      export_directory.string());
+  }
+  std::ofstream data_file(export_directory / "solver_data.json");
+  if (!data_file.is_open()) {
+    throw exceptions::ExportException(
+        "Could not open solver_data.json for writing");
+  }
+  data_file << solver_data << '\n';
+  if (!data_file) {
+    throw exceptions::ExportException("Failed to write solver_data.json");
+  }
+}
+
+/**
  * @brief Base of every solver, connecting an instance type to its solution
  *        type.
  *
@@ -98,6 +122,7 @@ protected:
   decltype(std::chrono::high_resolution_clock::now()) m_model_solved;
   int64_t                                             m_create_time = 0;
   int64_t                                             m_solve_time  = 0;
+  nlohmann::json                                      m_solver_data;
 
   template <typename... Args>
   struct IsSingleInstanceArgument : std::false_type {};
@@ -156,21 +181,13 @@ protected:
     std::unordered_map<std::string, std::string> string_data;
   };
   /**
-   * @brief Exports solver data, i.e., timing and further information (e.g.
-   * iterations, nodes, etc.) into solver_data.json.
+   * @brief Solver data, i.e., timing and further information (e.g.
+   * iterations, nodes, etc.), as written to solver_data.json.
    *
-   * @param export_directory The directory of the solution export
    * @param further_data Additional solver-specific data
-   * @throws exceptions::ExportException If the export directory could not be
-   * created
    */
-  void export_solver_data(std::filesystem::path const& export_directory,
-                          FurtherData const&           further_data = {}) {
-    if (!is_directory_and_create(export_directory)) {
-      throw exceptions::ExportException("Could not create directory " +
-                                        export_directory.string());
-    }
-
+  [[nodiscard]] nlohmann::json
+  solver_data(FurtherData const& further_data) const {
     nlohmann::json data;
     data["model_creation_time"] =
         get_time_difference_in_seconds(m_start, m_model_created);
@@ -190,15 +207,19 @@ protected:
     for (auto const& [key, value] : further_data.string_data) {
       data[concatenate_string_views({key, "_string"})] = value;
     }
-    std::ofstream data_file(export_directory / "solver_data.json");
-    if (!data_file.is_open()) {
-      throw exceptions::ExportException(
-          "Could not open solver_data.json for writing");
-    }
-    data_file << data << '\n';
-    if (!data_file) {
-      throw exceptions::ExportException("Failed to write solver_data.json");
-    }
+    return data;
+  }
+  /**
+   * @brief Exports solver data, see solver_data, into solver_data.json.
+   *
+   * @param export_directory The directory of the solution export
+   * @param further_data Additional solver-specific data
+   * @throws exceptions::ExportException If the export directory could not be
+   * created
+   */
+  void export_solver_data(std::filesystem::path const& export_directory,
+                          FurtherData const&           further_data = {}) {
+    write_solver_data(export_directory, solver_data(further_data));
   }
 
   /**
@@ -210,7 +231,8 @@ protected:
    * option is GeneralExportOption::NoExport. If an evaluation time step is
    * given and the solution type supports it, the solution is evaluated before
    * it is exported, so that the evaluation is part of @p solution afterwards.
-   * If the evaluation fails, the solution is exported without it.
+   * If the evaluation fails, the solution is exported without it. The solver
+   * data is kept in any case, see get_solver_data.
    *
    * @param solution The solution to export
    * @param solution_settings Settings describing where and what to export
@@ -221,6 +243,7 @@ protected:
   export_general_solution(S&                             solution,
                           const GeneralSolutionSettings& solution_settings,
                           FurtherData const&             further_data = {}) {
+    m_solver_data = solver_data(further_data);
     if (solution_settings.export_option == GeneralExportOption::NoExport) {
       return std::nullopt;
     }
@@ -257,12 +280,21 @@ protected:
                              solution_settings.solution_subdirectory,
                              export_instance,
                              solution_settings.parameter_identifier);
-    export_solver_data(export_path, further_data);
+    write_solver_data(export_path, m_solver_data);
 
     return export_path;
   }
 
 public:
+  /**
+   * @brief The solver data of the last solve, as written to solver_data.json
+   *        if the solution is exported, so that it can be exported later.
+   *        Null before the first solve.
+   */
+  [[nodiscard]] const nlohmann::json& get_solver_data() const {
+    return m_solver_data;
+  }
+
   /**
    * @brief Accesses the problem instance stored in this solver.
    * @return const T& Const reference to the stored problem instance.

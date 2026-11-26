@@ -46,6 +46,48 @@ void cda_rail::cli::log_instance_settings(const InstanceSettings& settings) {
   PLOGD << "  Working directory: " << settings.working_directory;
 }
 
+cda_rail::cli::ExportLocationOptions
+cda_rail::cli::add_export_location_options(CLI::App&       app,
+                                           ExportSettings& settings) {
+  auto* working_directory =
+      app.add_option("-b,--export-working-directory",
+                     settings.export_working_directory,
+                     "Working directory for exporting solutions. If unset, the "
+                     "normal working directory is used.")
+          ->group("Export Options");
+  auto* solution_subdirectory =
+      app.add_option(
+             "-e,--solution-export-subdirectory",
+             settings.solution_subdirectory,
+             "Subdirectory to export the solution to. Will be created in "
+             "export_working_directory/solutions/solution_subdirectory/"
+             "instance_subdirectory/instance_name-parameters.")
+          ->group("Export Options");
+  auto* parameter_identifier_option =
+      app.add_option(
+             "-p,--parameter-identifier", settings.parameter_identifier,
+             "Optional identifier to distinguish different parameterizations "
+             "of the same instance. Will be appended to the instance name in "
+             "the export path as instance_name-parameter_identifier. If "
+             "empty, no parameter identifier will be appended")
+          ->capture_default_str()
+          ->group("Export Options");
+  app.add_flag("-g,--generate-parameter-identifier",
+               settings.generate_identifier,
+               "Whether to automatically generate a parameter identifier "
+               "based on the parameter settings. If set, the parameter "
+               "identifier will be a short hash of all parameter values, "
+               "which are stored in solver_data.json. Otherwise the "
+               "identifier has to be set explicitly if it should not remain "
+               "empty.")
+      ->excludes(parameter_identifier_option)
+      ->group("Export Options");
+  return {
+      .working_directory     = working_directory,
+      .solution_subdirectory = solution_subdirectory,
+  };
+}
+
 void cda_rail::cli::add_export_options(CLI::App& app, ExportSettings& settings,
                                        ExportOptionSupport const support) {
   auto* export_sol_flag =
@@ -100,21 +142,10 @@ void cda_rail::cli::add_export_options(CLI::App& app, ExportSettings& settings,
                          "--export-solution-and-instance");
   requires_export_option.non_modifying();
 
-  app.add_option("-b,--export-working-directory",
-                 settings.export_working_directory,
-                 "Working directory for exporting solutions. If unset, the "
-                 "normal working directory is used.")
-      ->check(requires_export_option)
-      ->group("Export Options");
-  auto* solution_subdir_opt =
-      app.add_option(
-             "-e,--solution-export-subdirectory",
-             settings.solution_subdirectory,
-             "Subdirectory to export the solution to. Will be created in "
-             "export_working_directory/solutions/solution_subdirectory/"
-             "instance_subdirectory/instance_name-parameters.")
-          ->check(requires_export_option)
-          ->group("Export Options");
+  const auto location = add_export_location_options(app, settings);
+  location.working_directory->check(requires_export_option);
+  auto* solution_subdir_opt = location.solution_subdirectory;
+  solution_subdir_opt->check(requires_export_option);
   if (support.lp_model) {
     app.add_option("--model-name", settings.model_name,
                    "File name (without extension) used when exporting the "
@@ -138,26 +169,6 @@ void cda_rail::cli::add_export_options(CLI::App& app, ExportSettings& settings,
   if (export_lp_flag != nullptr) {
     export_lp_flag->needs(solution_subdir_opt);
   }
-
-  auto* parameter_identifier_option =
-      app.add_option(
-             "-p,--parameter-identifier", settings.parameter_identifier,
-             "Optional identifier to distinguish different parameterizations "
-             "of the same instance. Will be appended to the instance name in "
-             "the export path as instance_name-parameter_identifier. If "
-             "empty, no parameter identifier will be appended")
-          ->capture_default_str()
-          ->group("Export Options");
-  app.add_flag("-g,--generate-parameter-identifier",
-               settings.generate_identifier,
-               "Whether to automatically generate a parameter identifier "
-               "based on the parameter settings. If set, the parameter "
-               "identifier will be a short hash of all parameter values, "
-               "which are stored in solver_data.json. Otherwise the "
-               "identifier has to be set explicitly if it should not remain "
-               "empty.")
-      ->excludes(parameter_identifier_option)
-      ->group("Export Options");
 
   // The evaluation is part of the solution export, which exporting the model
   // alone does not include.
