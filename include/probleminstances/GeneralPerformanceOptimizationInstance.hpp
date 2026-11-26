@@ -740,6 +740,9 @@ public:
   /**
    * @brief Returns the containing edge and surrounding time bounds.
    *
+   * Between the train's last sample and its exit time, both time bounds are
+   * the last sample.
+   *
    * @param tr_name Name of the train.
    * @param t Query time.
    * @return Edge/time-bound data at time @p t.

@@ -587,6 +587,43 @@ TEST(GeneralPerformanceOptimizationInstances,
   }
 }
 
+TEST(GeneralPerformanceOptimizationInstances, PosAndVelUntilExitTime) {
+  // The last sample can be marginally before the exit time, until which the
+  // train is still present at that sample
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge(v0, v1, 400, 30, false);
+  instance.add_train("tr1", 50, 30, 1, 1, 0, 10, v0, 30, 10, v1);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+  sol_instance.add_empty_route("tr1");
+  sol_instance.push_back_edge_to_route("tr1", {"v0", "v1"});
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_speed("tr1", 0, 10);
+  sol_instance.add_train_pos("tr1", 29.9, 450);
+  sol_instance.add_train_speed("tr1", 29.9, 10);
+  sol_instance.set_train_exit_time("tr1", 30);
+
+  const auto approx = sol_instance.get_approximate_train_pos_and_vel("tr1", 30);
+  ASSERT_TRUE(approx.has_value());
+  EXPECT_APPROX_EQ_6(approx->pos, 450);
+  EXPECT_APPROX_EQ_6(approx->vel, 10);
+
+  const auto [pos_bounds, vel_bounds] =
+      sol_instance.get_exact_pos_and_vel_bounds("tr1", 30);
+  EXPECT_APPROX_EQ_6(pos_bounds.lb, 450);
+  EXPECT_APPROX_EQ_6(pos_bounds.ub, 450);
+  EXPECT_APPROX_EQ_6(vel_bounds.lb, 10);
+  EXPECT_APPROX_EQ_6(vel_bounds.ub, 10);
+
+  EXPECT_THROW(
+      static_cast<void>(sol_instance.get_exact_pos_and_vel_bounds("tr1", 30.1)),
+      cda_rail::exceptions::ConsistencyException);
+}
+
 TEST(GeneralPerformanceOptimizationInstances,
      SolGeneralPerformanceOptimizationInstanceTrainOrderWithReverseEdge) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;

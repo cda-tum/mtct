@@ -550,12 +550,18 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     }
   }
   if (t1 < 0) {
-    throw exceptions::ConsistencyException(
-        "Train " + tr_name + " not present at time " + std::to_string(t));
+    // The last sample is taken when the train leaves, which, within the
+    // solver's tolerances, can be marginally before its exit time. Until then,
+    // the train is still present at its last sample.
+    if (t0 < 0 || t > get_exit_time(tr_name) + GRB_EPS) {
+      throw exceptions::ConsistencyException(
+          "Train " + tr_name + " not present at time " + std::to_string(t));
+    }
+    t1 = t0;
   }
 
   assert(t >= t0 - GRB_EPS);
-  assert(t <= t1 + GRB_EPS);
+  assert(t <= t1 + GRB_EPS || t0 == t1);
   const auto pos0 = get_train_pos(tr_name, t0);
 
   const Network& n = this->get_instance()->get_const_network();
@@ -649,7 +655,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
   const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
   assert(t >= t1 - GRB_EPS);
-  assert(t <= t2 + GRB_EPS);
+  assert(t <= t2 + GRB_EPS || t1 == t2);
 
   const auto v1   = get_train_speed(tr_name, t1);
   const auto v2   = get_train_speed(tr_name, t2);
@@ -739,7 +745,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
                                       double             t) const {
   const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
   assert(t >= t1 - GRB_EPS);
-  assert(t <= t2 + GRB_EPS);
+  assert(t <= t2 + GRB_EPS || t1 == t2);
 
   const auto pos_1 = get_train_pos(tr_name, t1);
   const auto v1    = get_train_speed(tr_name, t1);

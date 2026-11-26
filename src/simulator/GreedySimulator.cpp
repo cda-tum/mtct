@@ -1630,30 +1630,41 @@ cda_rail::simulator::GreedySimulator::apply_exit_time(
 
   // The rear must not pass the exit vertex before the exit time. As long as
   // this time step ends before, the train has to be able to stop before it
-  // leaves or, braking fully, leave no earlier than its exit time. Within the
-  // time step that contains the exit time, the front must not be beyond its
-  // exit position at the exit time, where the speed changes linearly within a
-  // time step. Following this limit, the train brakes fully and leaves exactly
-  // at its exit time.
+  // leaves or, braking fully in the following time steps, leave no earlier
+  // than its exit time. Within the time step that contains the exit time, the
+  // front must not be beyond its exit position at the exit time. In both
+  // cases, the speed changes linearly within a time step and cannot become
+  // negative, hence, a slow train cannot brake fully within its last time
+  // step. Following this limit, the train brakes fully and leaves exactly at
+  // its exit time.
   const auto rear_passes_early = [&](double v_1) {
+    auto t_start = current_time - dt;
+    auto p       = pos;
+    auto v       = v_0;
+    auto v_next  = v_1;
     if (current_time + GRB_EPS < exit_time) {
-      const auto remaining_distance = exit_pos - pos_after(v_1);
-      if (remaining_distance <= 0) {
+      p = pos_after(v_1);
+      if (p >= exit_pos) {
         return true;
       }
-      if (braking_distance(v_1, d) <= remaining_distance) {
+      if (braking_distance(v_1, d) <= exit_pos - p) {
         return false;
       }
-      return current_time +
-                 ((v_1 -
-                   std::sqrt(std::max(0.0, (v_1 * v_1) -
-                                               (2 * d * remaining_distance)))) /
-                  d) +
-                 GRB_EPS <
-             exit_time;
+      t_start = current_time;
+      v       = v_1;
+      v_next  = std::max(0.0, v - (d * dt));
+      while (t_start + dt + GRB_EPS < exit_time) {
+        p += (v + v_next) / 2.0 * dt;
+        if (p > exit_pos + GRB_EPS) {
+          return true;
+        }
+        t_start += dt;
+        v      = v_next;
+        v_next = std::max(0.0, v - (d * dt));
+      }
     }
-    const auto tau = exit_time - (current_time - dt);
-    return pos + (v_0 * tau) + ((v_1 - v_0) * tau * tau / (2 * dt)) >
+    const auto tau = exit_time - t_start;
+    return p + (v * tau) + ((v_next - v) * tau * tau / (2 * dt)) >
            exit_pos + GRB_EPS;
   };
 
