@@ -2685,8 +2685,12 @@ SOLVER_TEST(SimpleStationStopsWithinPlatform) {
     const auto& network = instance.get_const_network();
     const auto& route1  = sol.get_const_solution_routes().get_route("tr1");
     const auto& route2  = sol.get_const_solution_routes().get_route("tr2");
-    EXPECT_EQ(route1.get_edges(),
-              instance.get_const_routes().get_route("tr1").get_edges());
+    // Both station tracks are optimal, the standard library decides the tie.
+    EXPECT_TRUE(route1.check_consistency(network)) << "dt = " << dt;
+    EXPECT_EQ(route1.size(),
+              instance.get_const_routes().get_route("tr1").size())
+        << "dt = " << dt;
+    EXPECT_EQ(route1.get_edges(), route2.get_edges()) << "dt = " << dt;
     const auto stop_time = sol.get_stop_times("tr1").at(0);
     const auto pos1 = sol.get_approximate_train_pos_and_vel("tr1", stop_time);
     const auto pos2 = sol.get_approximate_train_pos_and_vel("tr2", stop_time);
