@@ -1016,8 +1016,14 @@ TEST_F(CliTest, ExportTheSolutionOfTheLastSolve) {
 
   // The solution can be exported again, and the evaluation is written back to
   // the last export
-  run(session, "solution export -e again -p again");
-  run(session, "solution evaluate");
+  const auto again_path =
+      (directory / "solutions" / "again" / "cli-test" / "TestInstance-again")
+          .string();
+  EXPECT_EQ(run_capturing(session, "solution export -e again -p again"),
+            "Wrote solution to " + again_path + "\n");
+  EXPECT_NE(run_capturing(session, "solution evaluate")
+                .find("Wrote evaluation to " + again_path + "\n"),
+            std::string::npos);
   cda_rail::instances::SolGeneralPerformanceOptimizationInstance again(
       session.const_instance());
   again.load_solution(directory, "again", "again");

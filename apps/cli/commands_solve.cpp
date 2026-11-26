@@ -198,7 +198,7 @@ void cda_rail::cli::add_solution_commands(CLI::App& app, Session& session) {
     const auto path = session.evaluate_solution(*time_step);
     log_solution_evaluation(session.solution());
     if (path.has_value()) {
-      std::cout << "Wrote the evaluation to " << path->string() << '\n';
+      std::cout << "Wrote evaluation to " << path->string() << '\n';
     }
   });
 
@@ -230,7 +230,7 @@ void cda_rail::cli::add_solution_commands(CLI::App& app, Session& session) {
     }
     const auto path = session.export_solution(
         std::move(solution_settings), export_settings->generate_identifier);
-    std::cout << "Exported the solution to " << path.string() << '\n';
+    std::cout << "Wrote solution to " << path.string() << '\n';
   });
 }
 
