@@ -127,6 +127,10 @@ namespace cda_rail::solver::astar_based {
  * the weighted scheduled exit times to the objective, i.e., it counts exit
  * times rather than exit delays. This constant does not affect the search and
  * is subtracted from every reported value, including the lower bound.
+ *
+ * As in GenPOMovingBlockMIPSolver, the search runs on separated station tracks,
+ * see instances::StopDiscretization, so that a train can also stop within a
+ * long platform, while the solution refers to the original network.
  */
 class GenPOMovingBlockAStarSolver
     : public GeneralSolver<

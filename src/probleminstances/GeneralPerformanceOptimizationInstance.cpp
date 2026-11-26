@@ -107,6 +107,21 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
   }
   return obj;
 }
+std::vector<std::vector<double>> cda_rail::instances::
+    GeneralPerformanceOptimizationInstance::service_start_times(
+        const std::vector<std::vector<double>>& arrival_times) const {
+  auto stop_times = arrival_times;
+  for (size_t tr = 0; tr < stop_times.size(); ++tr) {
+    const auto& scheduled_stops = get_const_schedule(tr).get_stops();
+    for (size_t stop = 0; stop < stop_times.at(tr).size(); ++stop) {
+      stop_times.at(tr).at(stop) =
+          std::max(stop_times.at(tr).at(stop),
+                   scheduled_stops.at(stop).get_service_time());
+    }
+  }
+  return stop_times;
+}
+
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
     sum_of_weighted_exit_times() const {
   double retval{0.0};
@@ -239,6 +254,23 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     this->get_editable_timetable().update_after_discretization(new_edges);
     this->get_editable_routes().update_after_discretization(new_edges);
   }
+}
+
+cda_rail::instances::StopDiscretization::StopDiscretization(
+    GeneralPerformanceOptimizationInstance& instance)
+    : m_instance(instance), m_original(instance) {
+  // Separated on a copy, so that the instance is unchanged if this throws,
+  // in which case the destructor does not run. Only this separation is
+  // mapped back, so that routes refer to the edges of the original instance,
+  // even if it was transformed before.
+  auto separated = m_original;
+  separated.get_editable_network().reset_old_edges();
+  separated.discretize_stops();
+  m_instance = std::move(separated);
+}
+
+cda_rail::instances::StopDiscretization::~StopDiscretization() {
+  m_instance = std::move(m_original);
 }
 
 bool cda_rail::instances::GeneralPerformanceOptimizationInstance::
@@ -550,12 +582,18 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     }
   }
   if (t1 < 0) {
-    throw exceptions::ConsistencyException(
-        "Train " + tr_name + " not present at time " + std::to_string(t));
+    // The last sample is taken when the train leaves, which, within the
+    // solver's tolerances, can be marginally before its exit time. Until then,
+    // the train is still present at its last sample.
+    if (t0 < 0 || t > get_exit_time(tr_name) + GRB_EPS) {
+      throw exceptions::ConsistencyException(
+          "Train " + tr_name + " not present at time " + std::to_string(t));
+    }
+    t1 = t0;
   }
 
   assert(t >= t0 - GRB_EPS);
-  assert(t <= t1 + GRB_EPS);
+  assert(t <= t1 + GRB_EPS || t <= get_exit_time(tr_name) + GRB_EPS);
   const auto pos0 = get_train_pos(tr_name, t0);
 
   const Network& n = this->get_instance()->get_const_network();
@@ -649,7 +687,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
     get_exact_pos_and_vel_bounds(const std::string& tr_name, double t) const {
   const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
   assert(t >= t1 - GRB_EPS);
-  assert(t <= t2 + GRB_EPS);
+  assert(t <= t2 + GRB_EPS || t <= get_exit_time(tr_name) + GRB_EPS);
 
   const auto v1   = get_train_speed(tr_name, t1);
   const auto v2   = get_train_speed(tr_name, t2);
@@ -739,7 +777,7 @@ cda_rail::instances::SolGeneralPerformanceOptimizationInstance::
                                       double             t) const {
   const auto [edge, t1, t2] = get_edge_and_time_bounds(tr_name, t);
   assert(t >= t1 - GRB_EPS);
-  assert(t <= t2 + GRB_EPS);
+  assert(t <= t2 + GRB_EPS || t <= get_exit_time(tr_name) + GRB_EPS);
 
   const auto pos_1 = get_train_pos(tr_name, t1);
   const auto v1    = get_train_speed(tr_name, t1);

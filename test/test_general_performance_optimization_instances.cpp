@@ -587,6 +587,43 @@ TEST(GeneralPerformanceOptimizationInstances,
   }
 }
 
+TEST(GeneralPerformanceOptimizationInstances, PosAndVelUntilExitTime) {
+  // The last sample can be marginally before the exit time, until which the
+  // train is still present at that sample
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  const auto v0 = instance.get_editable_network().add_vertex(
+      "v0", cda_rail::VertexType::TTD);
+  const auto v1 = instance.get_editable_network().add_vertex(
+      "v1", cda_rail::VertexType::TTD);
+  instance.get_editable_network().add_edge(v0, v1, 400, 30, false);
+  instance.add_train("tr1", 50, 30, 1, 1, 0, 10, v0, 30, 10, v1);
+
+  instances::SolGeneralPerformanceOptimizationInstance sol_instance(instance);
+  sol_instance.add_empty_route("tr1");
+  sol_instance.push_back_edge_to_route("tr1", {"v0", "v1"});
+  sol_instance.add_train_pos("tr1", 0, 0);
+  sol_instance.add_train_speed("tr1", 0, 10);
+  sol_instance.add_train_pos("tr1", 29.9, 450);
+  sol_instance.add_train_speed("tr1", 29.9, 10);
+  sol_instance.set_train_exit_time("tr1", 30);
+
+  const auto approx = sol_instance.get_approximate_train_pos_and_vel("tr1", 30);
+  ASSERT_TRUE(approx.has_value());
+  EXPECT_APPROX_EQ_6(approx->pos, 450);
+  EXPECT_APPROX_EQ_6(approx->vel, 10);
+
+  const auto [pos_bounds, vel_bounds] =
+      sol_instance.get_exact_pos_and_vel_bounds("tr1", 30);
+  EXPECT_APPROX_EQ_6(pos_bounds.lb, 450);
+  EXPECT_APPROX_EQ_6(pos_bounds.ub, 450);
+  EXPECT_APPROX_EQ_6(vel_bounds.lb, 10);
+  EXPECT_APPROX_EQ_6(vel_bounds.ub, 10);
+
+  EXPECT_THROW(
+      static_cast<void>(sol_instance.get_exact_pos_and_vel_bounds("tr1", 30.1)),
+      cda_rail::exceptions::ConsistencyException);
+}
+
 TEST(GeneralPerformanceOptimizationInstances,
      SolGeneralPerformanceOptimizationInstanceTrainOrderWithReverseEdge) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
@@ -1286,6 +1323,87 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
         << instance.get_const_network().get_edge(e).target
         << " not found in station 1";
   }
+}
+
+TEST(GeneralPerformanceOptimizationInstances, StopDiscretizationIsRestored) {
+  instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  const auto num_edges    = instance.get_const_network().number_of_edges();
+  const auto num_vertices = instance.get_const_network().number_of_vertices();
+  const auto route = instance.get_const_routes().get_route("tr1").get_edges();
+
+  {
+    const instances::StopDiscretization stop_discretization(instance);
+    EXPECT_GT(instance.get_const_network().number_of_edges(), num_edges);
+    EXPECT_EQ(
+        stop_discretization.original().get_const_network().number_of_edges(),
+        num_edges);
+    // The separated route is the original one on the original edges
+    const auto& separated_route =
+        instance.get_const_routes().get_route("tr1").get_edges();
+    EXPECT_GT(separated_route.size(), route.size());
+    EXPECT_EQ(instance.get_const_network().get_old_path(separated_route),
+              route);
+  }
+  EXPECT_EQ(instance.get_const_network().number_of_edges(), num_edges);
+  EXPECT_EQ(instance.get_const_network().number_of_vertices(), num_vertices);
+  EXPECT_EQ(instance.get_const_routes().get_route("tr1").get_edges(), route);
+
+  // Also if an exception leaves the scope
+  EXPECT_THROW(
+      {
+        const instances::StopDiscretization stop_discretization(instance);
+        throw exceptions::ConsistencyException("leaving the scope");
+      },
+      exceptions::ConsistencyException);
+  EXPECT_EQ(instance.get_const_network().number_of_edges(), num_edges);
+  EXPECT_EQ(instance.get_const_routes().get_route("tr1").get_edges(), route);
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     StopDiscretizationOfATransformedInstance) {
+  // The station tracks of the given instance are already separated. Only the
+  // separation of the guard is undone, so that the route keeps the edges of
+  // the given instance instead of the ones they were derived from.
+  instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  instance.discretize_stops();
+  const auto route = instance.get_const_routes().get_route("tr1").get_edges();
+
+  const instances::StopDiscretization stop_discretization(instance);
+  EXPECT_EQ(instance.get_const_network().get_old_path(
+                instance.get_const_routes().get_route("tr1").get_edges()),
+            route);
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ServiceStartTimes) {
+  // The services of tr1, tr2 and tr3 are scheduled to start at 240, 120 and
+  // 180. A train arriving early waits for its service, a late one starts it
+  // when it arrives, and missing stops stay missing.
+  const instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  EXPECT_EQ(instance.service_start_times({{195}, {130}, {}}),
+            (std::vector<std::vector<double>>{{240}, {130}, {}}));
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     StopDiscretizationKeepsTheInstanceIfItFails) {
+  // A breakable edge next to a NoBorder vertex cannot be separated
+  instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", VertexType::NoBorder);
+  const auto v2      = network.add_vertex("v2", VertexType::TTD);
+  const auto track   = network.add_edge(v0, v1, 500, 30, true);
+  network.add_edge(v1, v2, 500, 30, false);
+  instance.add_empty_station("Station");
+  instance.add_track_to_station("Station", track);
+  const auto num_edges = instance.get_const_network().number_of_edges();
+
+  EXPECT_THROW(
+      { const instances::StopDiscretization stop_discretization(instance); },
+      exceptions::ConsistencyException);
+  EXPECT_EQ(instance.get_const_network().number_of_edges(), num_edges);
 }
 
 TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {

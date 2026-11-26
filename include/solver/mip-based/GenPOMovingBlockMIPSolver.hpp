@@ -269,6 +269,10 @@ struct SolverStrategyMovingBlock {
  * from a discrete set per vertex, see VelocityRefinementStrategy. The
  * separation of the trains is expressed by their order on the edges and TTD
  * sections, whose headway constraints are separated lazily.
+ *
+ * The model is built on separated station tracks, see
+ * instances::StopDiscretization, so that a train can also stop within a long
+ * platform, while the solution refers to the original network.
  */
 class GenPOMovingBlockMIPSolver
     : public GeneralMIPSolver<

@@ -7,6 +7,8 @@
 #include "Session.hpp"
 #include "VSSModel.hpp"
 #include "datastructure/RailwayNetwork.hpp"
+#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "options_common.hpp"
 #include "options_mb_astar.hpp"
 #include "options_mb_mip.hpp"
@@ -20,12 +22,15 @@
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -926,6 +931,142 @@ TEST_F(CliTest, EvaluateTheSolutionOfTheLastSolve) {
   // The solution belongs to the instance it was obtained for
   run(session, "instance close");
   EXPECT_FALSE(session.has_solution());
+}
+
+namespace {
+// Every file below the directory, by its path relative to it, with its
+// content.
+std::map<std::string, std::string>
+files_below(const std::filesystem::path& directory) {
+  std::map<std::string, std::string> files;
+  for (const auto& entry :
+       std::filesystem::recursive_directory_iterator(directory)) {
+    if (entry.is_regular_file()) {
+      const std::ifstream file(entry.path(), std::ios::binary);
+      std::ostringstream  buffer;
+      buffer << file.rdbuf();
+      files[std::filesystem::relative(entry.path(), directory)
+                .generic_string()] = buffer.str();
+    }
+  }
+  return files;
+}
+
+// The solver data of the solution exported to the given subdirectory.
+nlohmann::json exported_solver_data(const std::filesystem::path& directory,
+                                    const std::string& solution_subdirectory,
+                                    const std::string& parameter_identifier) {
+  std::ifstream file(directory / "solutions" / solution_subdirectory /
+                     "cli-test" / ("TestInstance-" + parameter_identifier) /
+                     "solver_data.json");
+  return nlohmann::json::parse(file);
+}
+} // namespace
+
+TEST_F(CliTest, ExportingAfterSolvingEqualsExportingWhileSolving) {
+  // The same solve, exported by itself and afterwards, gives the very same
+  // files, including the instance, the solver data and the generated
+  // parameter identifier
+  for (const std::string solve : {
+           "solve mb-mip -t 60",
+           "solve mb-astar --dt 10",
+           "solve vss-mip -c 15 -t 60",
+       }) {
+    std::filesystem::remove_all(directory / "solutions");
+    cda_rail::cli::Session session{directory};
+    build_solvable_instance(session);
+
+    run(session, solve + " -i -e during -g --evaluate --evaluation-dt 5");
+    ASSERT_TRUE(session.has_solution()) << solve;
+    run(session, "solution export -i -e after -g");
+
+    const auto during = files_below(directory / "solutions" / "during");
+    EXPECT_EQ(std::ranges::count_if(during | std::views::keys,
+                                    [](const std::string& path) {
+                                      return path.ends_with("solver_data.json");
+                                    }),
+              1)
+        << solve;
+    EXPECT_EQ(during, files_below(directory / "solutions" / "after")) << solve;
+  }
+}
+
+TEST_F(CliTest, ExportTheSolutionOfTheLastSolve) {
+  cda_rail::cli::Session session{directory};
+  build_solvable_instance(session);
+
+  // Without a solve, there is nothing to export
+  run(session, "solution export -e after");
+  EXPECT_FALSE(std::filesystem::exists(directory / "solutions"));
+
+  // The solver data is kept although the solve did not export, and it names
+  // the identifier of the export
+  run(session, "solve mb-astar --dt 10 -p during -o -e during");
+  run(session, "solve mb-astar --dt 10");
+  run(session, "solution export -e after -p after");
+  const auto during = exported_solver_data(directory, "during", "during");
+  const auto after  = exported_solver_data(directory, "after", "after");
+  EXPECT_EQ(after.at("parameter_identifier_string"), "after");
+  for (const auto& [key, value] : during.items()) {
+    ASSERT_TRUE(after.contains(key)) << key;
+    if (!key.ends_with("_time") && key != "parameter_identifier_string") {
+      EXPECT_EQ(after.at(key), value) << key;
+    }
+  }
+
+  // The solution can be exported again, and the evaluation is written back to
+  // the last export
+  const auto again_path =
+      (directory / "solutions" / "again" / "cli-test" / "TestInstance-again")
+          .string();
+  EXPECT_EQ(run_capturing(session, "solution export -e again -p again"),
+            "Wrote solution to " + again_path + "\n");
+  EXPECT_NE(run_capturing(session, "solution evaluate")
+                .find("Wrote evaluation to " + again_path + "\n"),
+            std::string::npos);
+  cda_rail::instances::SolGeneralPerformanceOptimizationInstance again(
+      session.const_instance());
+  again.load_solution(directory, "again", "again");
+  EXPECT_TRUE(again.get_evaluation().has_value());
+  cda_rail::instances::SolGeneralPerformanceOptimizationInstance first(
+      session.const_instance());
+  first.load_solution(directory, "after", "after");
+  EXPECT_FALSE(first.get_evaluation().has_value());
+
+  // An identifier can only be generated from the settings of a solve
+  session.set_solution(
+      std::make_unique<
+          cda_rail::instances::SolGeneralPerformanceOptimizationInstance>(
+          session.solution()),
+      std::nullopt, {});
+  EXPECT_THROW(
+      std::ignore = session.export_solution(
+          {
+              .export_option =
+                  cda_rail::solver::GeneralExportOption::ExportSolution,
+              .working_directory     = directory.string(),
+              .solution_subdirectory = "generated",
+          },
+          true),
+      cda_rail::exceptions::InvalidInputException);
+  EXPECT_FALSE(std::filesystem::exists(directory / "solutions" / "generated"));
+}
+
+TEST_F(CliTest, AnExportedVssSolutionGuidesTheVssGenerationMip) {
+  cda_rail::cli::Session session{directory};
+  build_solvable_instance(session);
+
+  run(session, "solve vss-mip -c 15 -t 60");
+  run(session, "solution export -e vss-solutions");
+  ASSERT_TRUE(std::filesystem::exists(directory / "solutions" /
+                                      "vss-solutions" / "cli-test" /
+                                      "TestInstance" / "solution_data.json"));
+
+  run(session, "solve vss-mip -c 15 -t 60 -m vss-solutions -o -e "
+               "cli-test-solutions");
+  expect_solution_exported(directory);
+  ASSERT_TRUE(session.has_solution());
+  EXPECT_EQ(session.solution().get_status(), cda_rail::SolutionStatus::Optimal);
 }
 
 TEST_F(CliTest, LogAnEvaluationEndingInADeadlock) {

@@ -157,6 +157,20 @@ public:
                     bool throw_error_if_not_all_stops_specified = true) const;
 
   /**
+   * @brief The stop times of a solution, given the times at which the trains
+   *        reach their stops, e.g., in a simulation.
+   *
+   * A stop time is the time at which the service starts, i.e., once the train
+   * has arrived, but no earlier than the scheduled service time.
+   *
+   * @param arrival_times Arrival times per train and stop, possibly only for
+   *        the first stops of a train.
+   * @return Stop times of the same shape.
+   */
+  [[nodiscard]] std::vector<std::vector<double>> service_start_times(
+      const std::vector<std::vector<double>>& arrival_times) const;
+
+  /**
    * @brief Calculates the weighted sum of all (earliest) exit times.
    *
    * @return Weighted sum
@@ -546,6 +560,40 @@ public:
 };
 
 /**
+ * @brief Separates the station tracks of an instance, see
+ *        GeneralPerformanceOptimizationInstance::discretize_stops, as long as
+ *        it exists.
+ *
+ * On the separated tracks, a train can also stop within a long platform, e.g.,
+ * behind another train. The moving block solvers solve on the separated
+ * instance and build their solution on original(), mapping their routes back
+ * by Network::get_old_path, which only undoes this separation, also if the
+ * original instance was transformed before. Positions along a route, as well
+ * as stop and exit
+ * times, are the same in both instances. The original instance is restored on
+ * every exit path, also if an exception is thrown.
+ */
+class StopDiscretization {
+  GeneralPerformanceOptimizationInstance& m_instance;
+  GeneralPerformanceOptimizationInstance  m_original;
+
+public:
+  /** @brief Separates the station tracks of @p instance. */
+  explicit StopDiscretization(GeneralPerformanceOptimizationInstance& instance);
+  /** @brief Restores the original instance. */
+  ~StopDiscretization();
+  StopDiscretization(const StopDiscretization&)            = delete;
+  StopDiscretization& operator=(const StopDiscretization&) = delete;
+  StopDiscretization(StopDiscretization&&)                 = delete;
+  StopDiscretization& operator=(StopDiscretization&&)      = delete;
+
+  /** @brief The instance as it was before its station tracks were separated. */
+  [[nodiscard]] const GeneralPerformanceOptimizationInstance& original() const {
+    return m_original;
+  }
+};
+
+/**
  * @brief The delays of the trains in one simulation of a solution's decisions.
  *
  * The times and delays are only filled if the simulation succeeded. They are
@@ -739,6 +787,9 @@ public:
   };
   /**
    * @brief Returns the containing edge and surrounding time bounds.
+   *
+   * Between the train's last sample and its exit time, both time bounds are
+   * the last sample.
    *
    * @param tr_name Name of the train.
    * @param t Query time.

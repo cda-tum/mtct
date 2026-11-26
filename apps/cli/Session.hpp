@@ -2,6 +2,8 @@
 #define CDA_RAIL_CLI_SESSION_HPP
 
 #include "datastructure/RailwayNetwork.hpp"
+#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
 
@@ -26,7 +28,7 @@ namespace cda_rail::cli {
  * `status` reports and which the commands that discard state warn about.
  *
  * In addition, the session keeps the solution of the last `solve`, so that it
- * can be evaluated afterwards.
+ * can be evaluated and exported afterwards.
  */
 class Session {
   std::filesystem::path m_working_directory;
@@ -45,6 +47,8 @@ class Session {
                                   m_solution;
   std::optional<double>           m_solution_time_step;
   solver::GeneralSolutionSettings m_solution_export_settings;
+  nlohmann::json                  m_solver_data;
+  std::optional<std::string>      m_generated_parameter_identifier;
 
 public:
   explicit Session(std::filesystem::path working_directory)
@@ -163,17 +167,52 @@ public:
    *        evaluate_solution uses by default.
    * @param export_settings Where the solver exported @p solution to, which is
    *        where evaluate_solution writes it back to.
+   * @param solver_data The solver data of the solve, see
+   *        solver::GeneralSolver::get_solver_data, which export_solution writes
+   *        to solver_data.json. If null, no solver_data.json is written.
+   * @param generated_parameter_identifier The identifier that
+   *        `--generate-parameter-identifier` yields for the solver settings,
+   *        which export_solution can use.
    */
   void set_solution(
       std::unique_ptr<instances::SolGeneralPerformanceOptimizationInstance>
                                       solution,
       std::optional<double>           time_step,
-      solver::GeneralSolutionSettings export_settings);
+      solver::GeneralSolutionSettings export_settings,
+      nlohmann::json                  solver_data                    = {},
+      std::optional<std::string>      generated_parameter_identifier = {});
+
+  /**
+   * @brief Exports the solution with the files `solve` would have written,
+   *        i.e., including solver_data.json, to
+   *        working_directory/solutions/solution_subdirectory/
+   *        instance_subdirectory/instance_name[-parameter_identifier].
+   *
+   * Only the MIP model itself (`--export-lp-model`) cannot be exported
+   * afterwards. The solution may be exported more than once, also to
+   * different places. The last export is where evaluate_solution writes back
+   * to.
+   *
+   * @param export_settings Where to export to. Its evaluation time step is
+   *        ignored, since an evaluation, see evaluate_solution, is part of the
+   *        solution.
+   * @param generate_parameter_identifier If set, the generated identifier
+   *        passed to set_solution is used instead of the one in
+   *        @p export_settings.
+   * @return The directory written to.
+   * @throws cda_rail::exceptions::InvalidInputException If there is no
+   *         solution, if @p export_settings does not export, or if an
+   *         identifier is to be generated but none was passed to set_solution.
+   */
+  std::filesystem::path
+  export_solution(solver::GeneralSolutionSettings export_settings,
+                  bool generate_parameter_identifier);
 
   /**
    * @brief Evaluates the solution, see
    *        instances::SolGeneralPerformanceOptimizationInstance::evaluate, and
-   *        writes it back with its evaluation if the solver exported it.
+   *        writes it back with its evaluation to where it was last exported,
+   *        if it was.
    *
    * @param time_step Time step of the evaluation. If unset, the time step of
    *        the solver is used.

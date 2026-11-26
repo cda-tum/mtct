@@ -1,6 +1,7 @@
 #include "Definitions.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
 #include "solver/GeneralSolver.hpp"
+#include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 #include "solver/mip-based/GeneralMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
 
@@ -56,6 +57,27 @@ TEST(VSSGenMBInfoSolver, Default1NoTolerance) {
   cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
       solver(load_moving_block_solution("SimpleStation",
                                         SOLUTION_SUBDIRECTORY_NO_TOLERANCE));
+
+  const auto sol = solver.solve();
+
+  EXPECT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal);
+  EXPECT_EQ(sol.get_obj(), 1);
+}
+
+TEST(VSSGenMBInfoSolver, Default1AStarSolution) {
+  // A train that brakes into the time step containing its exit time must not
+  // leave before it, otherwise the VSS model asks for a train that has already
+  // left
+  const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", INSTANCE_SUBDIRECTORY, "data");
+  cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver astar_solver(
+      instance);
+  const auto mb_sol = astar_solver.solve({.dt = 6}, {}, {}, -1, false);
+  ASSERT_EQ(mb_sol.get_status(), cda_rail::SolutionStatus::Optimal);
+
+  cda_rail::solver::mip_based::VSSGenTimetableSolverWithMovingBlockInformation
+      solver(mb_sol);
 
   const auto sol = solver.solve();
 

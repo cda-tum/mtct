@@ -67,7 +67,7 @@
         }
       }
     },
-    "trains_violating_dynamics": ["S2Petershausen"],
+    "trains_violating_dynamics": [],
     "trajectory": {
       "obj": 25.0,
       "success": true,

@@ -208,7 +208,7 @@ instance station-delay-weight [<w>]     route add / clear / list
 network new / load / list / info        solve mb-mip
 network save / reload / close           solve mb-astar
 network rename <new-name>               solve vss-mip
-                                        solution evaluate
+                                        solution evaluate / export
 ```
 
 Nothing is written before you ask for it.
@@ -230,6 +230,16 @@ If the solution was exported, the evaluation is written back to it.
 
 ```
 rail (SimpleStation)> solution evaluate --dt 1
+```
+
+A solution that was not exported by `solve` can be exported afterwards with `solution export`, which takes the same `--solution-export-subdirectory`, `--export-working-directory`, `--parameter-identifier` and `--generate-parameter-identifier` options as `solve`, and `--export-solution-and-instance` to export the instance as well.
+It writes the same files as `solve --export-solution` would have, including `solver_data.json`, only the MIP model of `--export-lp-model` cannot be exported afterwards.
+The solution can be exported more than once, also to different places, and `solution evaluate` writes back to the last of them.
+
+```
+rail (SimpleStation)> solve mb-astar --dt 6
+rail (SimpleStation)> solution evaluate
+rail (SimpleStation)> solution export --solution-export-subdirectory my-solutions
 ```
 
 Finally, the very same commands can be put in a file, one per line, and run with `--script`:
@@ -474,6 +484,8 @@ Export Options:
 Both moving block apps solve the same problem, namely routing and scheduling the trains such that they are separated by moving block.
 The times given in the instance are lower bounds only, and the objective is to minimize the weighted delays at the stations and when leaving the network.
 Unless `--allow-late-entry` is used, the trains enter the network exactly at their scheduled time.
+A train can stop at the end of every station track and, if a track is at least twice as long as its minimal stop block length, also within it, where it is split into as many equally long blocks as that length allows, e.g., behind another train on the same platform.
+For this, both apps split the station tracks internally, and their solutions refer to the original network.
 The two apps only differ in the method used to solve this problem.
 
 ##### MILP Based

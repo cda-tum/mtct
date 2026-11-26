@@ -1,11 +1,15 @@
 #include "CLI/CLI.hpp"
 #include "CommandInterpreter.hpp"
+#include "Formatting.hpp"
 #include "Session.hpp"
+#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "options_common.hpp"
 #include "options_mb_astar.hpp"
 #include "options_mb_mip.hpp"
 #include "options_vss_mip.hpp"
 #include "probleminstances/GeneralPerformanceOptimizationInstance.hpp"
+#include "solver/GeneralSolver.hpp"
 #include "solver/astar-based/GenPOMovingBlockAStarSolver.hpp"
 #include "solver/mip-based/GenPOMovingBlockMIPSolver.hpp"
 #include "solver/mip-based/VSSGenTimetableSolver.hpp"
@@ -14,6 +18,7 @@
 #include <memory>
 #include <optional>
 #include <plog/Log.h>
+#include <utility>
 
 // The solvers run on the instance the session holds, including its unsaved
 // edits. Only the instance options of the standalone apps are therefore
@@ -60,7 +65,9 @@ void add_mb_mip_command(CLI::App& solve_cmd, Session& session) {
             solution),
         std::nullopt,
         static_cast<const cda_rail::solver::GeneralSolutionSettings&>(
-            solution_settings));
+            solution_settings),
+        solver.get_solver_data(),
+        hash_identifier(generate_mb_mip_identifier(*settings)));
   });
 }
 
@@ -92,7 +99,8 @@ void add_mb_astar_command(CLI::App& solve_cmd, Session& session) {
         std::make_unique<
             cda_rail::instances::SolGeneralPerformanceOptimizationInstance>(
             solution),
-        settings->dt, solution_settings);
+        settings->dt, solution_settings, solver.get_solver_data(),
+        hash_identifier(generate_mb_astar_identifier(*settings)));
   });
 }
 
@@ -117,7 +125,8 @@ void add_vss_mip_command(CLI::App& solve_cmd, Session& session) {
         vss_mip_solution_settings(*settings, working_directory);
 
     PLOGI << "Solving...";
-    const auto solution =
+    nlohmann::json solver_data;
+    const auto     solution =
         [&] -> instances::SolVSSGeneralPerformanceOptimizationInstance {
       if (settings->use_moving_block_information()) {
         instances::SolGeneralPerformanceOptimizationInstance
@@ -130,17 +139,21 @@ void add_vss_mip_command(CLI::App& solve_cmd, Session& session) {
 
         mip_based::VSSGenTimetableSolverWithMovingBlockInformation solver(
             moving_block_solution);
-        return solver.solve(vss_mip_model_detail_mb(*settings), model_settings,
-                            solver_strategy, solution_settings,
-                            settings->solving.time_limit,
-                            settings->solving.debug_output, true);
+        auto result = solver.solve(
+            vss_mip_model_detail_mb(*settings), model_settings, solver_strategy,
+            solution_settings, settings->solving.time_limit,
+            settings->solving.debug_output, true);
+        solver_data = solver.get_solver_data();
+        return result;
       }
 
       mip_based::VSSGenTimetableSolver solver(session.instance());
-      return solver.solve(vss_mip_model_detail(*settings), model_settings,
-                          solver_strategy, solution_settings,
-                          settings->solving.time_limit,
-                          settings->solving.debug_output, true);
+      auto                             result = solver.solve(
+          vss_mip_model_detail(*settings), model_settings, solver_strategy,
+          solution_settings, settings->solving.time_limit,
+          settings->solving.debug_output, true);
+      solver_data = solver.get_solver_data();
+      return result;
     }();
     log_solution_status(solution.get_status(), solution.get_obj());
     log_solution_evaluation(solution);
@@ -149,7 +162,9 @@ void add_vss_mip_command(CLI::App& solve_cmd, Session& session) {
             instances::SolVSSGeneralPerformanceOptimizationInstance>(solution),
         settings->delta_t,
         static_cast<const cda_rail::solver::GeneralSolutionSettings&>(
-            solution_settings));
+            solution_settings),
+        std::move(solver_data),
+        hash_identifier(generate_vss_mip_identifier(*settings)));
   });
 }
 } // namespace
@@ -183,8 +198,39 @@ void cda_rail::cli::add_solution_commands(CLI::App& app, Session& session) {
     const auto path = session.evaluate_solution(*time_step);
     log_solution_evaluation(session.solution());
     if (path.has_value()) {
-      std::cout << "Wrote the evaluation to " << path->string() << '\n';
+      std::cout << "Wrote evaluation to " << path->string() << '\n';
     }
+  });
+
+  auto* export_cmd = solution_cmd->add_subcommand(
+      "export",
+      "Export the solution, including solver_data.json, as 'solve' does with "
+      "--export-solution. The solution can be exported more than once; "
+      "'solution evaluate' writes back to the last export. The MIP model "
+      "itself (--export-lp-model) can only be exported by 'solve'.");
+  auto export_settings = std::make_shared<cda_rail::cli::ExportSettings>();
+  export_cmd
+      ->add_flag(
+          "-i,--export-solution-and-instance",
+          [export_settings](int) {
+            export_settings->export_option = cda_rail::solver::
+                GeneralExportOption::ExportSolutionWithInstance;
+          },
+          "Export the instance as well.")
+      ->group("Export Options");
+  cda_rail::cli::add_export_location_options(*export_cmd, *export_settings)
+      .solution_subdirectory->required();
+  export_cmd->callback([&session, export_settings] {
+    auto solution_settings = cda_rail::cli::general_solution_settings(
+        *export_settings, session.working_directory().string());
+    if (solution_settings.export_option ==
+        cda_rail::solver::GeneralExportOption::NoExport) {
+      solution_settings.export_option =
+          cda_rail::solver::GeneralExportOption::ExportSolution;
+    }
+    const auto path = session.export_solution(
+        std::move(solution_settings), export_settings->generate_identifier);
+    std::cout << "Wrote solution to " << path.string() << '\n';
   });
 }
 

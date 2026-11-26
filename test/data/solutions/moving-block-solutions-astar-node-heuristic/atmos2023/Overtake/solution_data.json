@@ -25,7 +25,7 @@
         }
       }
     },
-    "trains_violating_dynamics": ["tr3"],
+    "trains_violating_dynamics": [],
     "trajectory": {
       "obj": 0.0,
       "success": true,

@@ -68,6 +68,20 @@ struct ExportOptionSupport {
   std::string_view lp_model_solution_extension{".json"};
 };
 
+/** @brief The options added by add_export_location_options. */
+struct ExportLocationOptions {
+  CLI::Option* working_directory;
+  CLI::Option* solution_subdirectory;
+};
+
+/**
+ * @brief Adds the options saying where a solution is exported to, i.e., the
+ *        export working directory, the solution subdirectory and the parameter
+ *        identifier, which the solvers and `solution export` share.
+ */
+ExportLocationOptions add_export_location_options(CLI::App&       app,
+                                                  ExportSettings& settings);
+
 /**
  * @brief Adds the export options to @p app.
  *

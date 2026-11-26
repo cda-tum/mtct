@@ -631,6 +631,29 @@ public:
   };
 
   /**
+   * @brief Returns the path of the network before its transformations that
+   *        corresponds to @p path.
+   *
+   * Consecutive edges into which one edge was separated, see get_old_edge,
+   * are replaced by that edge, so that a route of the transformed network
+   * becomes the same route of the original network.
+   *
+   * @param path Edge indices of a path of this network.
+   * @return Edge indices of the original network.
+   * @throws cda_rail::exceptions::EdgeNotExistentException If an edge does not
+   *         exist.
+   */
+  [[nodiscard]] cda_rail::index_vector
+  get_old_path(const cda_rail::index_vector& path) const;
+
+  /**
+   * @brief Forgets from which edges earlier transformations derived the edges,
+   *        so that get_old_edge and get_old_path refer to the network as it is
+   *        now.
+   */
+  void reset_old_edges() { m_new_edge_to_old_edge_after_transform.clear(); }
+
+  /**
    * @brief Returns the index of the vertex with the given name.
    * @param name Vertex name.
    * @return Numeric vertex index.
