@@ -56,9 +56,9 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
 
   PLOGI << "Create model";
 
-  const instances::GeneralPerformanceOptimizationInstance old_instance =
-      m_instance;
-  this->m_instance.discretize_stops();
+  // The model is built on separated station tracks, while the solution refers
+  // to the original instance, which is restored on every exit path
+  const instances::StopDiscretization stop_discretization(m_instance);
 
   // A train that cannot reach its exit vertex from its entry vertex cannot use
   // any edge. Hence, it has no variables, and the instance is infeasible.
@@ -70,14 +70,13 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
             << " cannot reach its exit vertex, hence the instance is "
                "infeasible";
       instances::SolGeneralPerformanceOptimizationInstance solution(
-          old_instance);
+          stop_discretization.original());
       solution.set_status(SolutionStatus::Infeasible);
       export_general_solution(
           solution, solution_settings_input,
           get_further_data(model_detail_input, solver_strategy_input,
                            solution_settings_input, time_limit, {}));
       cleanup();
-      this->m_instance = old_instance;
       return solution;
     }
   }
@@ -171,7 +170,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
   if (cb.has_value() && cb.value().get_exception() != nullptr) {
     PLOGE << "Optimization stopped by an exception in the lazy callback";
     cleanup();
-    this->m_instance = old_instance;
     std::rethrow_exception(cb.value().get_exception());
   }
 
@@ -210,7 +208,8 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
           << " s";
   }
 
-  instances::SolGeneralPerformanceOptimizationInstance solution(old_instance);
+  instances::SolGeneralPerformanceOptimizationInstance solution(
+      stop_discretization.original());
   extract_solution(solution);
   statistics.simulated_solution = use_simulated_incumbent(solution);
 
@@ -251,8 +250,6 @@ cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::solve(
                        m_solution_settings, time_limit, statistics));
 
   cleanup();
-
-  this->m_instance = old_instance;
 
   return solution;
 }

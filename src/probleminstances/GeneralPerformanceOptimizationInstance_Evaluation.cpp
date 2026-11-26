@@ -111,20 +111,18 @@ cda_rail::instances::SimulatedDelays simulated_delays(
   }
   delays.obj = instance.get_objective_val(result.exit_times, result.stop_times);
   delays.exit_times = result.exit_times;
+  // The simulator reports when a train reaches its stop, the service starts
+  // no earlier than scheduled
+  delays.stop_times = instance.service_start_times(result.stop_times);
   for (size_t tr = 0; tr < instance.get_const_train_list().size(); ++tr) {
     const auto& schedule = instance.get_const_schedule(tr);
     delays.exit_delays.emplace_back(result.exit_times.at(tr) -
                                     schedule.get_exit_time());
-    // The simulator reports when a train reaches its stop, the service starts
-    // no earlier than scheduled
-    auto& tr_stop_times  = delays.stop_times.emplace_back();
     auto& tr_stop_delays = delays.stop_delays.emplace_back();
     for (size_t stop = 0; stop < schedule.get_stops().size(); ++stop) {
-      const auto service_time =
-          schedule.get_stops().at(stop).get_service_time();
-      tr_stop_times.emplace_back(
-          std::max(result.stop_times.at(tr).at(stop), service_time));
-      tr_stop_delays.emplace_back(tr_stop_times.back() - service_time);
+      tr_stop_delays.emplace_back(
+          delays.stop_times.at(tr).at(stop) -
+          schedule.get_stops().at(stop).get_service_time());
     }
   }
   return delays;

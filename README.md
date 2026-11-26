@@ -484,6 +484,8 @@ Export Options:
 Both moving block apps solve the same problem, namely routing and scheduling the trains such that they are separated by moving block.
 The times given in the instance are lower bounds only, and the objective is to minimize the weighted delays at the stations and when leaving the network.
 Unless `--allow-late-entry` is used, the trains enter the network exactly at their scheduled time.
+A train can stop at the end of every station track and, if a track is at least twice as long as its minimal stop block length, also within it, where it is split into as many equally long blocks as that length allows, e.g., behind another train on the same platform.
+For this, both apps split the station tracks internally, and their solutions refer to the original network.
 The two apps only differ in the method used to solve this problem.
 
 ##### MILP Based

@@ -131,12 +131,7 @@
         }
       }
     },
-    "trains_violating_dynamics": [
-      "S1Freising",
-      "S2Dachau",
-      "S2Petershausen",
-      "S8Airport"
-    ],
+    "trains_violating_dynamics": ["S8Airport"],
     "trajectory": {
       "obj": 25.0,
       "success": true,

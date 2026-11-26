@@ -2,14 +2,14 @@
   "evaluation": {
     "dt": 15.0,
     "greedy": {
-      "obj": 105.0,
+      "obj": 0.0,
       "success": true,
       "trains": {
         "tr1": {
           "exit_delay": 0.0,
           "exit_time": 645.0,
-          "stop_delays": [105.0],
-          "stop_times": [345.0]
+          "stop_delays": [0.0],
+          "stop_times": [240.0]
         },
         "tr2": {
           "exit_delay": 0.0,
@@ -27,14 +27,14 @@
     },
     "trains_violating_dynamics": [],
     "trajectory": {
-      "obj": 105.0,
+      "obj": 0.0,
       "success": true,
       "trains": {
         "tr1": {
           "exit_delay": 0.0,
           "exit_time": 645.0,
-          "stop_delays": [105.0],
-          "stop_times": [345.0]
+          "stop_delays": [0.0],
+          "stop_times": [240.0]
         },
         "tr2": {
           "exit_delay": 0.0,
@@ -52,7 +52,7 @@
     }
   },
   "has_solution": true,
-  "lb": 105.0,
-  "obj": 105.0,
+  "lb": 0.0,
+  "obj": 0.0,
   "status": "Optimal"
 }

@@ -1325,6 +1325,71 @@ TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops1) {
   }
 }
 
+TEST(GeneralPerformanceOptimizationInstances, StopDiscretizationIsRestored) {
+  instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  const auto num_edges    = instance.get_const_network().number_of_edges();
+  const auto num_vertices = instance.get_const_network().number_of_vertices();
+  const auto route = instance.get_const_routes().get_route("tr1").get_edges();
+
+  {
+    const instances::StopDiscretization stop_discretization(instance);
+    EXPECT_GT(instance.get_const_network().number_of_edges(), num_edges);
+    EXPECT_EQ(
+        stop_discretization.original().get_const_network().number_of_edges(),
+        num_edges);
+    // The separated route is the original one on the original edges
+    const auto& separated_route =
+        instance.get_const_routes().get_route("tr1").get_edges();
+    EXPECT_GT(separated_route.size(), route.size());
+    EXPECT_EQ(instance.get_const_network().get_old_path(separated_route),
+              route);
+  }
+  EXPECT_EQ(instance.get_const_network().number_of_edges(), num_edges);
+  EXPECT_EQ(instance.get_const_network().number_of_vertices(), num_vertices);
+  EXPECT_EQ(instance.get_const_routes().get_route("tr1").get_edges(), route);
+
+  // Also if an exception leaves the scope
+  EXPECT_THROW(
+      {
+        const instances::StopDiscretization stop_discretization(instance);
+        throw exceptions::ConsistencyException("leaving the scope");
+      },
+      exceptions::ConsistencyException);
+  EXPECT_EQ(instance.get_const_network().number_of_edges(), num_edges);
+  EXPECT_EQ(instance.get_const_routes().get_route("tr1").get_edges(), route);
+}
+
+TEST(GeneralPerformanceOptimizationInstances, ServiceStartTimes) {
+  // The services of tr1, tr2 and tr3 are scheduled to start at 240, 120 and
+  // 180. A train arriving early waits for its service, a late one starts it
+  // when it arrives, and missing stops stay missing.
+  const instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  EXPECT_EQ(instance.service_start_times({{195}, {130}, {}}),
+            (std::vector<std::vector<double>>{{240}, {130}, {}}));
+}
+
+TEST(GeneralPerformanceOptimizationInstances,
+     StopDiscretizationKeepsTheInstanceIfItFails) {
+  // A breakable edge next to a NoBorder vertex cannot be separated
+  instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", VertexType::NoBorder);
+  const auto v2      = network.add_vertex("v2", VertexType::TTD);
+  const auto track   = network.add_edge(v0, v1, 500, 30, true);
+  network.add_edge(v1, v2, 500, 30, false);
+  instance.add_empty_station("Station");
+  instance.add_track_to_station("Station", track);
+  const auto num_edges = instance.get_const_network().number_of_edges();
+
+  EXPECT_THROW(
+      { const instances::StopDiscretization stop_discretization(instance); },
+      exceptions::ConsistencyException);
+  EXPECT_EQ(instance.get_const_network().number_of_edges(), num_edges);
+}
+
 TEST(GeneralPerformanceOptimizationInstances, DiscretizationOfStops2) {
   // Create instance members
   Network network("SimpleStation", "./data/");

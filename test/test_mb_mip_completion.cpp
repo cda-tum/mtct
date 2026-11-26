@@ -386,6 +386,32 @@ TEST(GenPOMovingBlockMIPSolver, SimulatedIncumbentIfModelInfeasible) {
   EXPECT_FALSE(sol_station.has_solution());
 }
 
+TEST(GenPOMovingBlockMIPSolver, SimulatedIncumbentStopsWhenServiceStarts) {
+  // As in SimulatedIncumbentIfModelInfeasible, the simulated solution is
+  // returned. Tr1 reaches its stop before its service is scheduled to start
+  // at 60, which is hence its stop time, as in the model.
+  cda_rail::instances::GeneralPerformanceOptimizationInstance instance;
+  auto&      network = instance.get_editable_network();
+  const auto v0      = network.add_vertex("v0", cda_rail::VertexType::TTD);
+  const auto v1      = network.add_vertex("v1", cda_rail::VertexType::TTD);
+  const auto v2      = network.add_vertex("v2", cda_rail::VertexType::TTD);
+  const auto e01     = network.add_edge(v0, v1, 100, 10);
+  const auto e12     = network.add_edge(v1, v2, 10, 10);
+  network.add_successor(e01, e12);
+  instance.add_train("Tr1", 10, 10, 2, 2, true, 0, 10, v0, 0, 10, v2, 1);
+  instance.add_empty_station("S");
+  instance.add_track_to_station("S", e01);
+  instance.insert_stop("Tr1", "S", 60, 30);
+  instance.add_empty_route("Tr1");
+  instance.push_back_edge_to_route("Tr1", e01);
+  instance.push_back_edge_to_route("Tr1", e12);
+
+  cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver solver(instance);
+  const auto sol = solver.solve({}, {.completion_interval = 1}, {}, 60);
+  ASSERT_TRUE(sol.has_solution());
+  EXPECT_EQ(sol.get_stop_times("Tr1"), std::vector<double>{60});
+}
+
 TEST(GenPOMovingBlockMIPSolver, RelaxationStateBreaksTiesByEdgeIndex) {
   // Both routes of Tr1 have the same values, hence it takes the edge with the
   // smaller index, which is the one of the short route

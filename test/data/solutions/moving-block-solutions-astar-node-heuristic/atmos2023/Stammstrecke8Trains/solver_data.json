@@ -11,8 +11,8 @@
   "max_edge_cost_double": 644.0693972463423,
   "max_heuristic_inconsistency_double": 0.0,
   "min_edge_cost_double": 8.94427190999886,
-  "model_creation_time": 0.0,
-  "model_solving_time": 0.137,
+  "model_creation_time": 0.001,
+  "model_solving_time": 0.587,
   "next_state_strategy_string": "NextRelevantTTD",
   "parameter_identifier_string": "8f5d4898",
   "remaining_time_heuristic_string": "Simple",
@@ -22,6 +22,6 @@
   "time_aware_state_transitions_bool": true,
   "time_limit_int": 1800,
   "time_step_double": 15.0,
-  "total_time": 0.138,
+  "total_time": 0.588,
   "weighted_exit_times_double": 9480.0
 }

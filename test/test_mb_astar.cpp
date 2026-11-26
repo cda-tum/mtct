@@ -30,6 +30,29 @@ using namespace cda_rail;
   }                                                                            \
   static void Name##_with(simulator::SimulatorType simulator_type)
 
+namespace {
+// A stop time is when the service starts, i.e., never before the scheduled
+// service time, even if the train arrives earlier.
+void expect_stop_times_are_service_starts(
+    const instances::SolGeneralPerformanceOptimizationInstance& sol) {
+  if (!sol.has_solution()) {
+    return;
+  }
+  const auto& instance = *sol.get_instance();
+  for (size_t tr = 0; tr < instance.get_const_train_list().size(); ++tr) {
+    const auto& tr_name =
+        instance.get_const_train_list().get_train(tr).get_name();
+    const auto& stops      = instance.get_const_schedule(tr).get_stops();
+    const auto& stop_times = sol.get_stop_times(tr_name);
+    ASSERT_EQ(stop_times.size(), stops.size()) << tr_name;
+    for (size_t stop = 0; stop < stops.size(); ++stop) {
+      EXPECT_GE(stop_times.at(stop), stops.at(stop).get_service_time())
+          << tr_name << ", stop " << stop;
+    }
+  }
+}
+} // namespace
+
 // ----------------------------------
 // New Tests for Time-Aware Version
 // ----------------------------------
@@ -2640,6 +2663,46 @@ TEST(GenPOMovingBlockAStarSolver, NextStateStrategyToString) {
                exceptions::ConsistencyException);
 }
 
+SOLVER_TEST(SimpleStationStopsWithinPlatform) {
+  // The platforms of SimpleStation are twice as long as their minimal stop
+  // block length. As in the moving block MIP, tr1 hence stops behind tr2 on
+  // the same platform, which needs no delay, instead of waiting until tr2 has
+  // left. The solution refers to the original network.
+  const cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
+      "SimpleStation", "atmos2023", "./data");
+  for (const double dt : {6.0, 15.0}) {
+    cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver solver(instance);
+    const auto sol = solver.solve({.dt = dt, .simulator_type = simulator_type},
+                                  {}, {}, -1, false);
+
+    ASSERT_EQ(sol.get_status(), cda_rail::SolutionStatus::Optimal)
+        << "dt = " << dt;
+    EXPECT_NEAR(sol.get_obj(), 0, 1e-6) << "dt = " << dt;
+    expect_stop_times_are_service_starts(sol);
+    EXPECT_EQ(solver.get_instance().get_const_network().number_of_edges(),
+              instance.get_const_network().number_of_edges());
+
+    const auto& network = instance.get_const_network();
+    const auto& route1  = sol.get_const_solution_routes().get_route("tr1");
+    const auto& route2  = sol.get_const_solution_routes().get_route("tr2");
+    EXPECT_EQ(route1.get_edges(),
+              instance.get_const_routes().get_route("tr1").get_edges());
+    const auto stop_time = sol.get_stop_times("tr1").at(0);
+    const auto pos1 = sol.get_approximate_train_pos_and_vel("tr1", stop_time);
+    const auto pos2 = sol.get_approximate_train_pos_and_vel("tr2", stop_time);
+    ASSERT_TRUE(pos1.has_value() && pos2.has_value()) << "dt = " << dt;
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
+    EXPECT_LE(pos1->pos,
+              pos2->pos -
+                  instance.get_const_train_list().get_train("tr2").get_length())
+        << "dt = " << dt;
+    EXPECT_EQ(route1.get_edge_id_at_pos(pos1->pos - 1, network),
+              route2.get_edge_id_at_pos(pos2->pos - 1, network))
+        << "dt = " << dt;
+    // NOLINTEND(bugprone-unchecked-optional-access)
+  }
+}
+
 SOLVER_TEST(SingleTrackCorridor) {
   cda_rail::instances::GeneralPerformanceOptimizationInstance instance(
       "SingleTrackCorridor", "atmos2023", "./data");
@@ -2702,6 +2765,10 @@ SOLVER_TEST(SingleTrackCorridor) {
   EXPECT_TRUE(sol_obj_5.has_solution());
   EXPECT_TRUE(sol_obj_6.has_solution());
   EXPECT_TRUE(sol_obj_7.has_solution());
+  for (const auto* sol : {&sol_obj, &sol_obj_2, &sol_obj_3, &sol_obj_4,
+                          &sol_obj_5, &sol_obj_6, &sol_obj_7}) {
+    expect_stop_times_are_service_starts(*sol);
+  }
 
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);
@@ -2776,6 +2843,9 @@ SOLVER_TEST(Stammstrecke4Trains) {
   EXPECT_TRUE(sol_obj_2.has_solution());
   EXPECT_TRUE(sol_obj_3.has_solution());
   EXPECT_TRUE(sol_obj_4.has_solution());
+  for (const auto* sol : {&sol_obj, &sol_obj_2, &sol_obj_3, &sol_obj_4}) {
+    expect_stop_times_are_service_starts(*sol);
+  }
 
   EXPECT_EQ(sol_obj.get_status(), cda_rail::SolutionStatus::Optimal);
   EXPECT_EQ(sol_obj_2.get_status(), cda_rail::SolutionStatus::Optimal);

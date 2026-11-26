@@ -64,6 +64,11 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   cda_rail::exceptions::throw_if_less_than(solver_strategy_input.a_star_weight,
                                            1.0, "A* weight");
 
+  // As the moving block MIP, the search runs on separated station tracks, so
+  // that a train can also stop within a long platform, while the solution
+  // refers to the original instance, which is restored on every exit path
+  const instances::StopDiscretization stop_discretization(m_instance);
+
   const auto ttd_sections =
       get_instance().get_const_network().unbreakable_sections();
   const auto simulator = make_simulator(model_detail_input.simulator_type,
@@ -88,7 +93,7 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
   double max_heuristic_inconsistency{0.0};
 
   cda_rail::instances::SolGeneralPerformanceOptimizationInstance sol_object(
-      get_instance());
+      stop_discretization.original());
 
   sol_object.reset_routes();
 
@@ -369,7 +374,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
         throw std::runtime_error("Empty train edge list for train " + tr_name);
       }
       sol_object.add_empty_route(tr_name);
-      for (const auto& e : tr_edges) {
+      // As the moving block MIP, the original edges of the separated ones
+      for (const auto e :
+           get_instance().get_const_network().get_old_path(tr_edges)) {
         sol_object.push_back_edge_to_route(tr_name, e);
       }
       for (const auto& [time, posvel] : tr_trajectory) {
@@ -378,7 +385,9 @@ cda_rail::solver::astar_based::GenPOMovingBlockAStarSolver::solve(
       }
     }
     sol_object.set_exit_times(final_simulation_result.exit_times);
-    sol_object.set_stop_times(final_simulation_result.stop_times);
+    // The simulator reports when the trains reach their stops
+    sol_object.set_stop_times(
+        get_instance().service_start_times(final_simulation_result.stop_times));
     // Evaluated directly rather than as reported(best_obj), which would carry
     // the rounding error of the large constant
     sol_object.set_obj(simulator::objective_val(

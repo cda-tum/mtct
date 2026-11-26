@@ -92,6 +92,7 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
 
     double                                 current_pos = 0;
     std::vector<std::pair<size_t, double>> route_marker_tr;
+    cda_rail::index_vector                 route;
     route_marker_tr.emplace_back(entry, current_pos);
     while (!edges_to_consider.empty()) {
       const auto& edge_id_ptr = edges_to_consider.begin();
@@ -103,14 +104,14 @@ void cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::extract_solution(
             m_instance.get_const_network().get_edge(edge_id);
         current_pos += edge_object.length;
         route_marker_tr.emplace_back(edge_object.target, current_pos);
-        const auto& [old_edge_id, old_edge_pos] =
-            m_instance.get_const_network().get_old_edge(edge_id);
-        if (old_edge_pos == 0) {
-          sol.push_back_edge_to_route(tr_object.get_name(), old_edge_id);
-        }
+        route.emplace_back(edge_id);
         edges_to_consider = m_instance.get_const_network().out_edges(
             m_instance.get_const_network().get_edge(edge_id).target);
       }
+    }
+    // The solution refers to the original edges of the separated ones
+    for (const auto edge : m_instance.get_const_network().get_old_path(route)) {
+      sol.push_back_edge_to_route(tr_object.get_name(), edge);
     }
     route_markers.push_back(route_marker_tr);
   }
@@ -191,12 +192,10 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       const auto& tr_name =
           m_instance.get_const_train_list().get_train(tr).get_name();
       sol.add_empty_route(tr_name);
-      for (const auto e : incumbent.state.train_edges.at(tr)) {
-        // As extract_solution(), the original edges of the discretized ones
-        const auto& [old_edge_id, old_edge_pos] = network.get_old_edge(e);
-        if (old_edge_pos == 0) {
-          sol.push_back_edge_to_route(tr_name, old_edge_id);
-        }
+      // As extract_solution(), the original edges of the separated ones
+      for (const auto e :
+           network.get_old_path(incumbent.state.train_edges.at(tr))) {
+        sol.push_back_edge_to_route(tr_name, e);
       }
       for (const auto& [t, posvel] :
            incumbent.results.train_trajectories.at(tr)) {
@@ -205,7 +204,9 @@ bool cda_rail::solver::mip_based::GenPOMovingBlockMIPSolver::
       }
     }
     sol.set_exit_times(incumbent.results.exit_times);
-    sol.set_stop_times(incumbent.results.stop_times);
+    // As extract_stop_time(), when the services start
+    sol.set_stop_times(
+        m_instance.service_start_times(incumbent.results.stop_times));
     sol.set_obj(incumbent.obj);
     sol.set_solution_found();
   }

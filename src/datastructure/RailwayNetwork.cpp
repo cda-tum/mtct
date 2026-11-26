@@ -194,6 +194,18 @@ cda_rail::Network::get_old_edge_helper(size_t new_edge) const {
              : std::pair{new_edge, 0.0};
 }
 
+cda_rail::index_vector
+cda_rail::Network::get_old_path(const cda_rail::index_vector& path) const {
+  cda_rail::index_vector old_path;
+  for (const auto edge : path) {
+    const auto old_edge = get_old_edge_helper(edge).first;
+    if (old_path.empty() || old_path.back() != old_edge) {
+      old_path.emplace_back(old_edge);
+    }
+  }
+  return old_path;
+}
+
 size_t cda_rail::Network::get_vertex_index(std::string_view const name) const {
   if (!has_vertex(name)) {
     throw exceptions::VertexNotExistentException(name);

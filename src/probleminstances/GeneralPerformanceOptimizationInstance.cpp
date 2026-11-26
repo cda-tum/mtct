@@ -107,6 +107,21 @@ cda_rail::instances::GeneralPerformanceOptimizationInstance::get_objective_val(
   }
   return obj;
 }
+std::vector<std::vector<double>> cda_rail::instances::
+    GeneralPerformanceOptimizationInstance::service_start_times(
+        const std::vector<std::vector<double>>& arrival_times) const {
+  auto stop_times = arrival_times;
+  for (size_t tr = 0; tr < stop_times.size(); ++tr) {
+    const auto& scheduled_stops = get_const_schedule(tr).get_stops();
+    for (size_t stop = 0; stop < stop_times.at(tr).size(); ++stop) {
+      stop_times.at(tr).at(stop) =
+          std::max(stop_times.at(tr).at(stop),
+                   scheduled_stops.at(stop).get_service_time());
+    }
+  }
+  return stop_times;
+}
+
 double cda_rail::instances::GeneralPerformanceOptimizationInstance::
     sum_of_weighted_exit_times() const {
   double retval{0.0};
@@ -239,6 +254,20 @@ void cda_rail::instances::GeneralPerformanceOptimizationInstance::
     this->get_editable_timetable().update_after_discretization(new_edges);
     this->get_editable_routes().update_after_discretization(new_edges);
   }
+}
+
+cda_rail::instances::StopDiscretization::StopDiscretization(
+    GeneralPerformanceOptimizationInstance& instance)
+    : m_instance(instance), m_original(instance) {
+  // Separated on a copy, so that the instance is unchanged if this throws,
+  // in which case the destructor does not run
+  auto separated = m_original;
+  separated.discretize_stops();
+  m_instance = std::move(separated);
+}
+
+cda_rail::instances::StopDiscretization::~StopDiscretization() {
+  m_instance = std::move(m_original);
 }
 
 bool cda_rail::instances::GeneralPerformanceOptimizationInstance::
