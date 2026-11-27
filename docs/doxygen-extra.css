@@ -1,0 +1,22 @@
+/* README logo: GitHub picks the variant via the #gh-*-mode-only suffix, the docs
+   do the same here. Doxygen drops the README's centering, and the logo is kept
+   smaller than on GitHub. */
+img[src*="logo-train-control-toolkit"] {
+  display: block;
+  margin: 0 auto;
+  width: min(60%, 400px);
+}
+
+img[src$="#gh-dark-mode-only"] {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  img[src$="#gh-light-mode-only"] {
+    display: none;
+  }
+
+  img[src$="#gh-dark-mode-only"] {
+    display: block;
+  }
+}

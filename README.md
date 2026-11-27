@@ -8,10 +8,8 @@
 # MTCT - Munich Train Control Toolkit
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="_img/logo-train-control-toolkit-white-medium.png" width="60%">
-    <img src="_img/logo-train-control-toolkit-medium.png" width="60%">
-  </picture>
+  <img src="_img/logo-train-control-toolkit-medium.png#gh-light-mode-only" alt="MTCT logo" width="60%">
+  <img src="_img/logo-train-control-toolkit-white-medium.png#gh-dark-mode-only" alt="MTCT logo" width="60%">
 </p>
 
 ## A Tool for Automated Design and Optimization of ETCS Systems with Hybrid Train Detection or Moving Block
